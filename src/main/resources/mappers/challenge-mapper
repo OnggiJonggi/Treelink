@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="challengeMapper">
+
+	<select id="selectChal" parameterType="SearchChallenge" resultType="ChallengeResponse">
+	<bind name="searchPattern" value="'%' + search + '%'" />
+		select *
+		from (
+			select a1.*
+			,P.PICTURE
+			,rownum rnum
+			,(SELECT THUMBNAIL FROM CHALLENGE C2 WHERE C2.CHAL_NO = a1.CHAL_NO) AS THUMBNAIL
+			from(
+				select
+					C.CHAL_NO
+					,C.USER_NO
+					,C.TITLE
+					,C.CONTENT
+					,C.VERIFY_CYCLE
+					,C.CREATE_DATE
+					,C.START_DATE
+					,C.END_DATE
+					,C.STATUS
+					,C.PICTURE_REQUIRED
+					,C.REPLY_REQUIRED
+					,CC.CATEGORY_NAME
+					,U.NICK
+					,P.IS_OPEN
+					,COUNT(cp.user_no) as PARTICIPATE_COUNT
+				    ,CASE WHEN COUNT(cp.user_no) = 0 THEN 0 ELSE ROUND(
+				           SUM(CASE WHEN cp.STATUS = 'S' THEN 1 ELSE 0 END) * 100.0
+				             / COUNT(cp.user_no) , 2) END AS SUCCESS_RATIO
+				    ,CASE WHEN COUNT(cp.user_no) = 0 THEN 0 ELSE ROUND(
+				           SUM(CASE WHEN cp.STATUS = 'F' THEN 1 ELSE 0 END) * 100.0
+				             / COUNT(cp.user_no) , 2) END AS FAIL_RATIO
+
+				from CHALLENGE c
+				left join CHALLENGE_CATEGORY cc on(c.CATEGORY_NO = cc.CATEGORY_NO)
+				left join CHALLENGE_PARTICIPATION cp on(c.CHAL_NO = cp.CHAL_NO)
+				left join USERS u on(c.USER_NO = u.USER_NO)
+				left join PROFILE p on(u.USER_NO = p.USER_NO)
+
+				where C.STATUS != 'D'
+				<if test="search != ''">
+					<choose>
+						<when test='searchType == "T"'>
+							and C.TITLE like #{searchPattern}
+						</when>
+						<when test='searchType == "C"'>
+							and C.CONTENT like #{searchPattern}
+						</when>
+						<when test='searchType == "N	"'>
+							and U.NICK like #{searchPattern}
+						</when>
+						<otherwise>
+							and (
+							C.TITLE like #{searchPattern}
+							or C.CONTENT like #{searchPattern}
+							or U.NICK like #{searchPattern}
+							)
+    						</otherwise>
+					</choose>
+				</if>
+				<if test="categoryNo != 0">
+					<choose>
+						<when test="categoryNo % 10 != 0">
+							and C.CATEGORY_NO = #{categoryNo}
+						</when>
+						<otherwise>
+							and C.CATEGORY_NO &gt;= #{categoryNo}
+							and C.CATEGORY_NO &lt; (#{categoryNo} + 10)
+						</otherwise>
+					</choose>
+				</if>
+				<if test="verifyCycle != 0">
+					<choose>
+						<when test="verifyCycle &gt; 0 and verifyCycle &lt;= 127">
+							and BITAND(C.VERIFY_CYCLE, #{verifyCycle}) = #{verifyCycle}
+						</when>
+						<otherwise>
+							and C.VERIFY_CYCLE = #{verifyCycle}
+						</otherwise>
+					</choose>
+				</if>
+				<if test="startDate1 != null">
+					and C.START_DATE &gt; #{startDate1}
+				</if>
+				<if test="startDate2 != null">
+					and C.START_DATE &lt; #{startDate2}
+				</if>
+				<if test="endDate1 != null">
+					and C.END_DATE &gt; #{endDate1}
+				</if>
+				<if test="endDate2 != null">
+					and C.END_DATE &lt; #{endDate2}
+				</if>
+				<if test="status != ''">
+					and C.STATUS = #{status}
+				</if>
+				<if test="pictureRequired != ''">
+					and C.PICTURE_REQUIRED = #{pictureRequired}
+				</if>
+				<if test="replyRequired != ''">
+					and C.REPLY_REQUIRED = #{replyRequired}
+				</if>
+
+				group by
+					C.CHAL_NO
+					,C.USER_NO
+					,C.TITLE
+					,C.CONTENT
+					,C.VERIFY_CYCLE
+					,C.CREATE_DATE
+					,C.START_DATE
+					,C.END_DATE
+					,C.STATUS
+					,C.PICTURE_REQUIRED
+					,C.REPLY_REQUIRED
+					,CC.CATEGORY_NAME
+					,U.NICK
+					,P.IS_OPEN
+				
+				order by
+				<choose>
+					<when test='orderby == "P"'>
+						COUNT(cp.user_no) desc
+					</when>
+					<when test='orderby == "S"'>
+						CASE WHEN SUM(CASE WHEN cp.STATUS = 'S' THEN 1 ELSE 0 END) = 0 THEN 0
+						ELSE ROUND(SUM(CASE WHEN cp.STATUS = 'S' THEN 1 ELSE 0 END) * 100.0 / COUNT(cp.user_no), 2)
+						END DESC
+					</when>
+					<otherwise>
+						CASE WHEN C.STATUS = 'Y' THEN 0 ELSE 1 END,
+						C.CREATE_DATE DESC
+					</otherwise>
+				</choose>
+			) a1
+
+			left join PROFILE P ON a1.USER_NO = P.USER_NO
+
+			where rownum &lt;= (#{currentPage}+1) * #{showLimit}
+		)
+		where rnum &gt; #{currentPage} * #{showLimit}
+	</select>
+
+	<insert id="newChal" parameterType="ChallengeRequest">
+		<selectKey keyProperty="chalNo" resultType="int"
+			order="BEFORE">
+			SELECT SEQ_CHALLENGE.nextval FROM dual
+		</selectKey>
+		INSERT INTO CHALLENGE(
+			CHAL_NO
+			,USER_NO
+			,CATEGORY_NO
+			,TITLE
+			,CONTENT
+			,THUMBNAIL
+			,VERIFY_CYCLE
+			,CREATE_DATE
+			,START_DATE
+			,END_DATE
+			,STATUS
+			,PICTURE_REQUIRED
+			,REPLY_REQUIRED
+			)
+		VALUES (
+			#{chalNo}
+			,#{userNo}
+			,#{categoryNo}
+			,#{title}
+			,#{content}
+			,#{thumbnail}
+			,#{verifyCycle}
+			,SYSDATE
+			<choose>
+				<when test="startDate == null">
+					,SYSDATE
+				</when>
+				<otherwise>
+					,#{startDate}
+				</otherwise>
+			</choose>
+			,#{endDate}
+			,'Y'
+			,#{pictureRequired}
+			,#{replyRequired}
+			)
+	</insert>
+
+	<select id="selectMyChal" parameterType="SearchMyChallenge" resultType="ChallengeResponse">
+		select *
+		from (
+			select a1.*
+			,P.PICTURE
+			,rownum rnum
+			,(SELECT THUMBNAIL FROM CHALLENGE C2 WHERE C2.CHAL_NO = a1.CHAL_NO) AS THUMBNAIL
+			from(
+				select
+					C.CHAL_NO
+					,C.USER_NO
+					,C.TITLE
+					,C.CONTENT
+					,C.VERIFY_CYCLE
+					,C.CREATE_DATE
+					,C.START_DATE
+					,C.END_DATE
+					,C.STATUS
+					,C.PICTURE_REQUIRED
+					,C.REPLY_REQUIRED
+					,CC.CATEGORY_NAME
+					,U.NICK
+					,P.IS_OPEN
+					,COUNT(cp.user_no) as PARTICIPATE_COUNT
+				    ,CASE WHEN COUNT(cp.user_no) = 0 THEN 0 ELSE ROUND(
+				           SUM(CASE WHEN cp.STATUS = 'S' THEN 1 ELSE 0 END) * 100.0
+				             / COUNT(cp.user_no) , 2) END AS SUCCESS_RATIO
+				    ,CASE WHEN COUNT(cp.user_no) = 0 THEN 0 ELSE ROUND(
+				           SUM(CASE WHEN cp.STATUS = 'F' THEN 1 ELSE 0 END) * 100.0
+				             / COUNT(cp.user_no) , 2) END AS FAIL_RATIO
+
+				from CHALLENGE c
+				left join CHALLENGE_CATEGORY cc on(c.CATEGORY_NO = cc.CATEGORY_NO)
+				left join CHALLENGE_PARTICIPATION cp on(c.CHAL_NO = cp.CHAL_NO)
+				left join USERS u on(c.USER_NO = u.USER_NO)
+				left join PROFILE p on(u.USER_NO = p.USER_NO)
+
+				where C.STATUS != 'D'
+				<choose>
+					<when test='searchType == "O"'>
+						and c.USER_NO = #{userNo}
+					</when>
+					<when test='searchType == "J"'>
+						and cp.USER_NO = #{userNo}
+						and c.USER_NO != #{userNo}
+					</when>
+				</choose>
+				
+				GROUP BY
+					C.CHAL_NO
+					,C.USER_NO
+					,C.TITLE
+					,C.CONTENT
+					,C.VERIFY_CYCLE
+					,C.CREATE_DATE
+					,C.START_DATE
+					,C.END_DATE
+					,C.STATUS
+					,C.PICTURE_REQUIRED
+					,C.REPLY_REQUIRED
+					,CC.CATEGORY_NAME
+					,U.NICK
+					,P.IS_OPEN
+				
+				order by CASE WHEN C.STATUS = 'Y' THEN 0 ELSE 1 END,
+					C.CREATE_DATE DESC
+			) a1
+			left join PROFILE P ON a1.USER_NO = P.USER_NO
+			where rownum &lt;= (#{currentPage}+1) * #{showLimit}
+		)
+		where rnum &gt; #{currentPage} * #{showLimit}
+	</select>
+	
+	<select id="chalDetail" parameterType="int" resultType="ChallengeResponse">
+	select a1.*
+		,P.PICTURE
+		,(SELECT THUMBNAIL FROM CHALLENGE C2 WHERE C2.CHAL_NO = a1.CHAL_NO)
+		,(SELECT CC2.CATEGORY_NAME FROM CHALLENGE_CATEGORY CC2
+         	WHERE CC2.CATEGORY_NO = a1.MAJOR_CATEGORY_NO
+       		) AS CATEGORY_MAJOR_NAME
+	from (select
+				C.CHAL_NO
+				,C.USER_NO
+				,C.CATEGORY_NO
+				,C.TITLE
+				,C.CONTENT
+				,C.VERIFY_CYCLE
+				,C.CREATE_DATE
+				,C.START_DATE
+				,C.END_DATE
+				,C.STATUS
+				,C.PICTURE_REQUIRED
+				,C.REPLY_REQUIRED
+				,CC.CATEGORY_NAME
+				,(TRUNC(C.CATEGORY_NO / 10) * 10) AS MAJOR_CATEGORY_NO
+				,U.NICK
+				,P.BIO
+				,P.IS_OPEN
+				,COUNT(cp.user_no) as PARTICIPATE_COUNT
+				,SUM(CASE WHEN cp.STATUS = 'S' THEN 1 ELSE 0 END) as SUCCESS_COUNT
+				,SUM(CASE WHEN cp.STATUS = 'F' THEN 1 ELSE 0 END) as FAIL_COUNT
+			    ,CASE WHEN COUNT(cp.user_no) = 0 THEN 0 ELSE ROUND(
+			           SUM(CASE WHEN cp.STATUS = 'S' THEN 1 ELSE 0 END) * 100.0
+			             / COUNT(cp.user_no) , 2) END AS SUCCESS_RATIO
+			    ,CASE WHEN COUNT(cp.user_no) = 0 THEN 0 ELSE ROUND(
+			           SUM(CASE WHEN cp.STATUS = 'F' THEN 1 ELSE 0 END) * 100.0
+			             / COUNT(cp.user_no) , 2) END AS FAIL_RATIO
+
+			from CHALLENGE c
+			left join CHALLENGE_CATEGORY cc on(c.CATEGORY_NO = cc.CATEGORY_NO)
+			left join CHALLENGE_PARTICIPATION cp on(c.CHAL_NO = cp.CHAL_NO)
+			left join USERS u on(c.USER_NO = u.USER_NO)
+			left join PROFILE p on(c.USER_NO = p.USER_NO)
+
+			where c.CHAL_NO = #{chalNo}
+			and c.STATUS != 'D'
+
+			group by
+				C.CHAL_NO
+				,C.USER_NO
+				,C.CATEGORY_NO
+				,C.TITLE
+				,C.CONTENT
+				,C.VERIFY_CYCLE
+				,C.CREATE_DATE
+				,C.START_DATE
+				,C.END_DATE
+				,C.STATUS
+				,C.PICTURE_REQUIRED
+				,C.REPLY_REQUIRED
+				,CC.CATEGORY_NAME
+				,U.NICK
+				,P.BIO
+				,P.IS_OPEN
+			) a1
+	left join PROFILE P ON a1.USER_NO = P.USER_NO
+	</select>
+	
+	<select id="selectRequired" parameterType="int" resultType="ChallengeRequired">
+		select PICTURE_REQUIRED, REPLY_REQUIRED
+		from CHALLENGE
+		where CHAL_NO = #{chalNo}
+	</select>
+	
+	<select id="goUpdateChal" parameterType="int" resultType="ChallengeRequest">
+		select CHAL_NO
+			,USER_NO
+			,CATEGORY_NO
+			,TITLE
+			,CONTENT
+			,THUMBNAIL
+			,VERIFY_CYCLE
+			,START_DATE
+			,END_DATE
+			,STATUS
+			,PICTURE_REQUIRED
+			,REPLY_REQUIRED
+		from CHALLENGE
+		where CHAL_NO = #{chalNo}
+		and status = 'Y'
+	</select>
+	
+	<select id="loginUserIsWriter" parameterType="loginUserAndChal" resultType="int" >
+		select count(*)
+		from CHALLENGE
+		where CHAL_NO = #{chalNo}
+		and USER_NO = #{userNo}
+	</select>
+	
+	<update id="deleteChal" parameterType="int">
+		update CHALLENGE
+		set STATUS = 'D'
+		where CHAL_NO = #{chalNo}
+		and STATUS = 'Y'
+	</update>
+	
+	<update id="closeChal" parameterType="int">
+		update CHALLENGE
+		set STATUS = 'N'
+		where CHAL_NO = #{chalNo}
+		and STATUS = 'Y'
+	</update>
+	
+	<update id="updateChal" parameterType="ChallengeRequest">
+		update CHALLENGE
+		set CATEGORY_NO = #{categoryNo}
+			,TITLE = #{title}
+			,CONTENT = #{content}
+			,THUMBNAIL = #{thumbnail}
+			,VERIFY_CYCLE = #{verifyCycle}
+			<choose>
+				<when test="startDate == null">
+					,START_DATE = SYSDATE
+				</when>
+				<otherwise>
+					,START_DATE = #{startDate}
+				</otherwise>
+			</choose>
+			,END_DATE = #{endDate}
+			,PICTURE_REQUIRED = #{pictureRequired}
+			,REPLY_REQUIRED = #{replyRequired}
+		where CHAL_NO = #{chalNo}
+		and USER_NO = #{userNo}
+	</update>
+</mapper>
