@@ -19,6 +19,7 @@ public class Member {
 		private String userId;
 		private String userPwd;
 		private String name;
+		private String nickName;
 		private List<String> roles;
 		private String state;
 	}
@@ -38,7 +39,12 @@ public class Member {
 		private String userPwd;
 		
 		@NotBlank(message="이름없는 고객이 트리링크를 떠돈다.")
+		@Pattern(regexp = MemberRegexp.NAME_REGEXP, message="이름이 이상해요.")
 		private String name;
+		
+		@NotBlank(message="별명없는 고객이 트리링크를 떠돈다.")
+		@Pattern(regexp = MemberRegexp.NAME_REGEXP, message="제대로 된 별명 주세요.")
+		private String nickName;
 	}
 
 }
