@@ -74,6 +74,13 @@
 			<scope>test</scope>
 		</dependency>
 		
+		<!-- thymeleaf와 spring security 연동-->
+		<dependency>
+		    <groupId>org.thymeleaf.extras</groupId>
+		    <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+		    <scope>compile</scope>
+		</dependency>
+		
 		<!-- 오라클, 마이바티스 -->
 		<dependency>
 		    <groupId>com.oracle.database.jdbc</groupId>
@@ -90,6 +97,14 @@
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		
+		<!-- Swagger -->
+		<dependency>
+		    <groupId>org.springdoc</groupId>
+		    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+		    <version>3.0.3</version>
+		    <scope>compile</scope>
 		</dependency>
 	</dependencies>
 

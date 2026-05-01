@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,9 +8,58 @@
     <th:block th:replace="~{/common/fragment :: library}"></th:block>
     <link rel="stylesheet" th:href="@{/css/common/main.css}">
 </head>
+
 <body>
-업체 조회하기
-로그인
-    <script th:src="@{/js/common/main.js}"></script>
+    <main class="main-wrapper">
+
+        <!-- 1. 로고 -->
+        <div class="logo-area">
+            <img th:src="@{static/img/main-logo.png}" alt="TreeLink 로고" width="360" height="120" loading="eager">
+        </div>
+
+        <!-- 2. 두 개의 메뉴 카드 -->
+        <div class="card-row">
+
+            <!-- 3. 업체 조회 카드 -->
+            <a th:href="@{/companies}" class="menu-card" role="link" aria-label="업체 조회하기">
+                <div class="card-icon">
+                    <i data-lucide="building-2"></i>
+                </div>
+                <span class="card-label">업체 조회하기</span>
+            </a>
+
+            <!-- 4. 로그인 상태: 회원 정보 카드 -->
+            <a th:if="${#authorization.expression('isAuthenticated()')}" th:href="@{/member/detail}" class="menu-card"
+                role="link" aria-label="내 정보 보기">
+                <div class="card-icon">
+                    <i data-lucide="circle-user-round"></i>
+                </div>
+                <span class="card-label" th:text="${#authentication.principal.name}">
+                    홍길동
+                </span>
+                <span class="card-sub">내 정보</span>
+            </a>
+
+            <!-- 5. 비로그인 상태: 로그인 / 회원가입 카드 -->
+            <div th:if="${!#authorization.expression('isAuthenticated()')}" class="menu-card" role="region"
+                aria-label="로그인 또는 회원가입">
+                <div class="card-icon">
+                    <i data-lucide="key-round"></i>
+                </div>
+                <div class="btn-group">
+                    <a th:href="@{/member/login}" class="btn btn-primary">로그인</a>
+                    <a th:href="@{/member/join}" class="btn btn-outline">회원가입</a>
+                </div>
+            </div>
+
+        </div><!-- /.card-row -->
+
+
+        <script>
+            lucide.createIcons();
+        </script>
+
+        <script th:src="@{/js/common/main.js}"></script>
 </body>
+
 </html>

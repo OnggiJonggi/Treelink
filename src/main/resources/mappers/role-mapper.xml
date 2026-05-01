@@ -3,17 +3,17 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="RoleMapper">
+<mapper namespace="website.treelink.golbal.security.RoleMapper">
 
-	<insert id="selectUrlIsAllowed" parameterType="Roles$UserNoUrl" >
+	<select id="selectUrlIsAllowed" parameterType="website.treelink.golbal.security.RoleVO$UserNoUrl" >
 		select IS_ALLOWED
 		from MEMBERS M
-		left join MEMBERS_ROLES MR
-		left join ROLES R
-		left join ROLE_RESOURCES RR
-		left join URL_RESOURCES UR
+		left join MEMBERS_ROLES MR on M.MEMBERS_NO = MR.MEMBERS_NO
+		left join ROLES R on MR.ROLES_ID = R.ROLES_ID
+		left join ROLE_RESOURCES RR on R.ROLES_ID = RR.ROLES_ID
+		left join URL_RESOURCES UR on RR.URL_RESOURCES_ID = UR.URL_RESOURCES_ID
 		where M.MEMBERS_NO = #{userNO}
 		and #{url} LIKE UR.URL_PATTERN || '%'
-	</insert>
+	</select>
 	
 </mapper>
