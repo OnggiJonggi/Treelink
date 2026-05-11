@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import jakarta.validation.Valid;
 
-/**
- * 계정 관리 클라쓰
- * 로그인/로그아웃은 쓰뿌륑-콘트롤라가 대신함
- */
+
 @Controller
 @RequestMapping("/member")
 public class MemberController {
 	@Autowired
 	private MemberService service;
 	
+	/**
+	 * 로그인 페이지로
+	 */
 	@GetMapping("/login")
 	public String login() {
 		return "member/login";

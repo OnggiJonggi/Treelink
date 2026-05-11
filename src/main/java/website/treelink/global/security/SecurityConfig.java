@@ -26,7 +26,7 @@ public class SecurityConfig {
 
         // http요청 관리
         http.authorizeHttpRequests(auth -> auth
-            .requestMatchers("/templates/**", "/favicon.ico").permitAll()
+            .requestMatchers("/templates/**", "/static/favicon.png").permitAll()
             .requestMatchers("/", "/member/join", "/member/login").permitAll()
             .anyRequest().permitAll()
 //            .anyRequest().access(customAuthManager) // 커스텀한 클래스에서 결정
@@ -61,4 +61,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-
