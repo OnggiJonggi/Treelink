@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="website.treelink.company.CompanyMapper">
+
+  <insert id="insertCompany" parameterType="CompanyRegistor" >
+    <selectKey keyProperty="companyNo" resultType="_int" order="BEFORE">
+      SELECT SEQ_COMPANY.nextval FROM DUAL
+    </selectKey>
+    insert into COMPANY (
+      COMPANY_NO
+      ,COMPANY_NAME
+      ,REPRESENTATIVE_NAME
+      ,PHONE
+      ,EMAIL
+      ,CREATE_DATE
+    ) VAULES(
+      #{companyNo}
+      ,#{companyName}
+      ,#{representativeName}
+      ,#{phone}
+      ,#{email}
+      ,#{createDate}
+    )
+  </insert>
+
+  <insert id="insertCompanySpecialty">
+    INSERT ALL
+    <foreach collection="option" item="specialtyNo">
+      INTO COMPANY_SPECIALTY (COMPANY_NO, SPECIALTY_NO, MEMO)
+      VALUES (
+        #{companyNo},
+        #{specialtyNo},
+        <if test="specialtyNo == 12">
+          #{ectMemo}
+        </if>
+        <if test="specialtyNo != 12">
+          NULL
+        </if>
+      )
+    </foreach>
+    SELECT * FROM DUAL
+  </insert>
+</mapper>

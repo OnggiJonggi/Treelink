@@ -16,7 +16,9 @@ public enum ErrorCode {
 	ID_IS_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-003", "이미 사용된 아이디입니다."),
 	NICKNAME_IS_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-004", "이미 사용된 닉네임입니다"),
 	
-	CANNOT_GRANT_ROLE(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-101", "권한을 부여할 수 없습니다");
+	CANNOT_GRANT_ROLE(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-101", "권한을 부여할 수 없습니다"),
+	
+	API_BADREQUEST(HttpStatus.INTERNAL_SERVER_ERROR, "API-001", "API작동 실패");
 	
 	private final HttpStatus httpStatus;
 	private final String code;

@@ -18,3 +18,14 @@
 
 로그인 페이지(/member/login)
   폼 제출(post, /member/login)
+
+관리자 페이지(/admin/main)
+  업체 추가(get, /admin/company/registor)
+  평가 추가(get, /evaluator/evaluation/registor)
+  평가 검색(get, /admin/evaluation/list)
+  회원 검색(get, /admin/member/list)
+
+업체 추가(/admin/company/registor)
+  사업자등록번호 확인(post, /admin/company/check-businessno)
+  폼 제출(post, /admin/company/registor)
+

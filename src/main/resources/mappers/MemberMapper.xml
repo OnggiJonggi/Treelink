@@ -48,7 +48,7 @@
 			,PWD
 			,NAME
 			,NICKNAME
-			)
+		)
 		values(
 			#{memberNo}
 			,#{userId}

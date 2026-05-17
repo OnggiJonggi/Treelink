@@ -21,6 +21,10 @@
         <!-- Role -->
         <typeAlias type="website.treelink.global.security.RoleVO$UrlAccessCheck" alias="RoleUrlAccessCheck"/>
         
+        <!-- Company -->
+        <typeAlias type="website.treelink.company.CompanyVO$Registor" alias="CompanyRegistor"/>
+        
+        
         <!-- 전역 설정 -->
         <package name="website.treelink"/>
     </typeAliases>

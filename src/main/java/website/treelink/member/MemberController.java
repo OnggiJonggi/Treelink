@@ -22,7 +22,7 @@ public class MemberController {
 	 * 로그인 페이지로
 	 */
 	@GetMapping("/login")
-	public String login() {
+	public String goLogin() {
 		return "member/login";
 	}
 	
@@ -31,7 +31,7 @@ public class MemberController {
 	 * @return 회원가입 페이지
 	 */
 	@GetMapping("/join")
-	public String join(Model model){
+	public String goJoin(Model model){
 		// thymeleaf에서 th:object로 받아갈 빈 객체 보내기
 		model.addAttribute("memberJoin", new MemberVO.Join());
 		return "member/join";

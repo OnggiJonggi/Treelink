@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TreeLink - 관리자</title>
+  <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/admin/main.css}">
+</head>
+
+<body>
+  <main class="main-wrapper">
+
+    <!-- 로고 (클릭 시 메인 페이지 이동) -->
+    <div class="logo-area">
+      <a th:href="@{/}" aria-label="TreeLink 홈으로 이동">
+        <img th:src="@{/img/main-logo.png}" alt="TreeLink 로고" width="360" height="120" loading="eager">
+      </a>
+    </div>
+
+    <!-- 관리자 메뉴 카드 2x2 그리드 -->
+    <div class="card-row">
+
+      <!-- 업체 추가 -->
+      <a th:href="@{/admin/company/registor}" class="menu-card" role="link" aria-label="업체 추가">
+        <div class="card-icon">
+          <i data-lucide="building-2"></i>
+        </div>
+        <span class="card-label">업체 추가</span>
+      </a>
+
+      <!-- 평가 추가 -->
+      <a th:href="@{/evaluator/evaluation/registor}" class="menu-card" role="link" aria-label="평가 추가">
+        <div class="card-icon">
+          <i data-lucide="clipboard-pen"></i>
+        </div>
+        <span class="card-label">평가 추가</span>
+      </a>
+
+      <!-- 평가 검색 -->
+      <a th:href="@{/admin/evaluation/list}" class="menu-card" role="link" aria-label="평가 검색">
+        <div class="card-icon">
+          <i data-lucide="file-search"></i>
+        </div>
+        <span class="card-label">평가 검색</span>
+      </a>
+
+      <!-- 회원 검색 -->
+      <a th:href="@{/admin/member/list}" class="menu-card" role="link" aria-label="회원 검색">
+        <div class="card-icon">
+          <i data-lucide="users-round"></i>
+        </div>
+        <span class="card-label">회원 검색</span>
+      </a>
+
+    </div><!-- /.card-row -->
+  </main>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+
+</html>

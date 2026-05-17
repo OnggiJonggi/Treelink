@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사업체 등록하기</title>
+  <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/admin/company/registor.css}">
+</head>
+
+<body>
+
+  <main class="page-wrapper">
+
+    <!-- 페이지 헤더 -->
+    <div class="page-header">
+      <div class="page-header__icon">
+        <i data-lucide="building-2"></i>
+      </div>
+      <div>
+        <h1 class="page-title">사업체 등록하기</h1>
+        <p class="page-subtitle">새로운 사업체 정보를 입력하고 등록해 주세요.</p>
+      </div>
+    </div>
+
+    <!-- =====================================================
+         STEP 1 : 사업자 번호 확인 폼
+    ====================================================== -->
+    <section class="form-card" id="section-verify">
+      <div class="form-card__header">
+        <span class="step-badge">1단계</span>
+        <h2 class="form-card__title">사업자 번호 확인</h2>
+        <p class="form-card__desc">사업자 번호, 대표 이름, 창립일을 입력 후 확인 버튼을 눌러주세요.</p>
+      </div>
+
+      <div class="form-card__body">
+
+        <!-- 사업자 번호 -->
+        <div class="field-group">
+          <label class="field-label">
+            <i data-lucide="hash" class="field-icon"></i>
+            사업자 번호 <span class="required">*</span>
+          </label>
+          <div class="split-input-row" id="businessno-row">
+            <input type="text" id="bno1" class="split-input" maxlength="3" placeholder="000" inputmode="numeric"
+              autocomplete="off" aria-label="사업자번호 앞 3자리">
+            <span class="split-sep">-</span>
+            <input type="text" id="bno2" class="split-input" maxlength="2" placeholder="00" inputmode="numeric"
+              autocomplete="off" aria-label="사업자번호 중간 2자리">
+            <span class="split-sep">-</span>
+            <input type="text" id="bno3" class="split-input split-input--wide" maxlength="5" placeholder="00000"
+              inputmode="numeric" autocomplete="off" aria-label="사업자번호 뒤 5자리">
+          </div>
+          <p class="field-error" id="err-businessNo"></p>
+        </div>
+
+        <!-- 대표 이름 -->
+        <div class="field-group">
+          <label class="field-label" for="representativeName-verify">
+            <i data-lucide="user" class="field-icon"></i>
+            대표 이름 <span class="required">*</span>
+          </label>
+          <input type="text" id="representativeName-verify" class="form-input" maxlength="10" placeholder="대표자명 입력"
+            autocomplete="off">
+          <p class="field-error" id="err-representativeName"></p>
+        </div>
+
+        <!-- 창립일 -->
+        <div class="field-group">
+          <label class="field-label">
+            <i data-lucide="calendar" class="field-icon"></i>
+            창립일 <span class="required">*</span>
+          </label>
+          <div class="split-input-row" id="createdate-row">
+            <input type="text" id="cd-year" class="split-input split-input--year" maxlength="4" placeholder="YYYY"
+              inputmode="numeric" autocomplete="off" aria-label="창립일 연도">
+            <span class="split-sep">년</span>
+            <input type="text" id="cd-month" class="split-input" maxlength="2" placeholder="MM" inputmode="numeric"
+              autocomplete="off" aria-label="창립일 월">
+            <span class="split-sep">월</span>
+            <input type="text" id="cd-day" class="split-input" maxlength="2" placeholder="DD" inputmode="numeric"
+              autocomplete="off" aria-label="창립일 일">
+            <span class="split-sep">일</span>
+          </div>
+          <p class="field-error" id="err-createDate"></p>
+        </div>
+
+      </div><!-- /.form-card__body -->
+
+      <!-- 확인 버튼 / 확인 완료 영역 -->
+      <div class="form-card__footer">
+        <div id="verify-pending">
+          <button type="button" class="btn btn-primary btn--full" id="btn-verify">
+            <i data-lucide="shield-check"></i>
+            사업자 번호 확인하기
+          </button>
+        </div>
+        <div id="verify-done" class="verify-success" style="display:none;">
+          <i data-lucide="check-circle-2"></i>
+          <span>사업자 번호가 확인되었어요</span>
+        </div>
+      </div>
+
+    </section><!-- /#section-verify -->
+
+
+    <!-- =====================================================
+         STEP 2 : 사업체 상세 정보 폼
+    ====================================================== -->
+    <section class="form-card" id="section-main" style="display:none;">
+      <div class="form-card__header">
+        <span class="step-badge">2단계</span>
+        <h2 class="form-card__title">사업체 상세 정보</h2>
+        <p class="form-card__desc">사업체 정보를 입력해 주세요.</p>
+      </div>
+
+      <form id="main-form" th:action="@{/admin/company/registor}" method="post" th:object="${companyRegistor}"
+        novalidate>
+
+        <!-- CSRF -->
+        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+        <!-- ── 1단계 데이터 hidden ────────────────────── -->
+        <input type="hidden" id="hidden-businessNo" name="businessNo">
+        <input type="hidden" id="hidden-representativeName" name="representativeName">
+        <input type="hidden" id="hidden-createDate" name="createDate">
+        <!-- ──────────────────────────────────────────── -->
+
+        <div class="form-card__body">
+
+          <!-- 회사 이름 -->
+          <div class="field-group">
+            <label class="field-label" for="companyName">
+              <i data-lucide="building" class="field-icon"></i>
+              회사 이름 <span class="required">*</span>
+            </label>
+            <input type="text" id="companyName" name="companyName" class="form-input" maxlength="100"
+              placeholder="회사 이름 입력" autocomplete="off" th:field="*{companyName}">
+            <p class="field-error" id="err-companyName"></p>
+          </div>
+
+          <!-- 전화번호 -->
+          <div class="field-group">
+            <label class="field-label">
+              <i data-lucide="phone" class="field-icon"></i>
+              전화번호 <span class="required">*</span>
+            </label>
+            <div class="split-input-row" id="phone-row">
+              <input type="text" id="ph1" class="split-input" maxlength="3" placeholder="000" inputmode="numeric"
+                autocomplete="off" aria-label="전화번호 앞자리">
+              <span class="split-sep">-</span>
+              <input type="text" id="ph2" class="split-input split-input--ph-mid" maxlength="4" placeholder="0000"
+                inputmode="numeric" autocomplete="off" aria-label="전화번호 중간">
+              <span class="split-sep">-</span>
+              <input type="text" id="ph3" class="split-input split-input--ph-mid" maxlength="4" placeholder="0000"
+                inputmode="numeric" autocomplete="off" aria-label="전화번호 뒷자리">
+            </div>
+            <input type="hidden" id="hidden-phone" name="phone">
+            <p class="field-error" id="err-phone"></p>
+          </div>
+
+          <!-- 이메일 -->
+          <div class="field-group">
+            <label class="field-label">
+              <i data-lucide="mail" class="field-icon"></i>
+              이메일
+            </label>
+            <div class="split-input-row email-row" id="email-row">
+              <input type="text" id="email-local" class="form-input email-part" placeholder="이메일 아이디" autocomplete="off"
+                aria-label="이메일 로컬 파트">
+              <span class="split-sep split-sep--at">@</span>
+              <input type="text" id="email-domain" class="form-input email-part" placeholder="도메인 (예: gmail.com)"
+                autocomplete="off" aria-label="이메일 도메인">
+            </div>
+            <input type="hidden" id="hidden-email" name="email">
+            <p class="field-error" id="err-email"></p>
+          </div>
+
+          <!-- 주 종목 -->
+          <div class="field-group">
+            <label class="field-label">
+              <i data-lucide="list-checks" class="field-icon"></i>
+              주 종목 <span class="field-hint">(최대 3개 선택)</span>
+            </label>
+            <div class="option-grid" id="option-grid">
+              <label class="option-chip" data-value="1">
+                <input type="checkbox" class="option-check" value="1" name="option"> 벌초
+              </label>
+              <label class="option-chip" data-value="2">
+                <input type="checkbox" class="option-check" value="2" name="option"> 초화류 식재
+              </label>
+              <label class="option-chip" data-value="3">
+                <input type="checkbox" class="option-check" value="3" name="option"> 수목 식재
+              </label>
+              <label class="option-chip" data-value="4">
+                <input type="checkbox" class="option-check" value="4" name="option"> 전정 및 가지치기
+              </label>
+              <label class="option-chip" data-value="5">
+                <input type="checkbox" class="option-check" value="5" name="option"> 예초 및 제초
+              </label>
+              <label class="option-chip" data-value="6">
+                <input type="checkbox" class="option-check" value="6" name="option"> 병해충 방제
+              </label>
+              <label class="option-chip" data-value="7">
+                <input type="checkbox" class="option-check" value="7" name="option"> 관수 관리
+              </label>
+              <label class="option-chip" data-value="8">
+                <input type="checkbox" class="option-check" value="8" name="option"> 잔디 관리
+              </label>
+              <label class="option-chip" data-value="9">
+                <input type="checkbox" class="option-check" value="9" name="option"> 하자 보수
+              </label>
+              <label class="option-chip" data-value="10">
+                <input type="checkbox" class="option-check" value="10" name="option"> 정기 유지관리
+              </label>
+              <label class="option-chip" data-value="11">
+                <input type="checkbox" class="option-check" value="11" name="option"> 조경시설물 관리
+              </label>
+              <label class="option-chip option-chip--etc" data-value="12">
+                <input type="checkbox" class="option-check" value="12" name="option" id="opt-etc"> 기타
+              </label>
+            </div>
+            <p class="field-error" id="err-option"></p>
+
+            <!-- 기타 메모 -->
+            <div class="etc-memo-wrap" id="etc-memo-wrap" style="display:none;">
+              <input type="text" id="etcMemo" name="etcMemo" class="form-input" maxlength="20"
+                placeholder="기타 종목을 입력하세요 (최대 20자)" disabled autocomplete="off">
+              <p class="field-error" id="err-etcMemo"></p>
+            </div>
+          </div>
+
+        </div><!-- /.form-card__body -->
+
+        <div class="form-card__footer">
+          <button type="submit" class="btn btn-primary btn--full" id="btn-submit">
+            <i data-lucide="save"></i>
+            사업체 등록하기
+          </button>
+        </div>
+
+      </form>
+    </section><!-- /#section-main -->
+
+  </main>
+
+  <script th:src="@{/js/admin/company/registor.js}"></script>
+  <script>lucide.createIcons();</script>
+</body>
+
+</html>
