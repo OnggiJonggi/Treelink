@@ -6,9 +6,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 import website.treelink.global.regex.MemberRegexp;
 import website.treelink.global.security.CryptedNumberVO;
@@ -24,9 +25,9 @@ public class MemberVO {
 	
 	@NoArgsConstructor
 	@AllArgsConstructor
-	@Getter
-	@Setter
+	@Data
 	@ToString(callSuper = true)
+	@EqualsAndHashCode(callSuper = true)
 	public static class Detail extends CryptedNumberVO{
 		private String userId;
 		private String userPwd;
@@ -37,9 +38,7 @@ public class MemberVO {
 	
 	@NoArgsConstructor
 	@AllArgsConstructor
-	@Getter
-	@Setter
-	@ToString
+	@Data
 	public static class Join{
 		private int memberNo;
 		

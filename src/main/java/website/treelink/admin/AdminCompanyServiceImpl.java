@@ -5,34 +5,30 @@ import org.springframework.transaction.annotation.Transactional;
 
 import website.treelink.company.CompanyMapper;
 import website.treelink.company.CompanyVO;
-import website.treelink.global.api.BusinessNoCheckService;
 
 @Service
 public class AdminCompanyServiceImpl implements AdminCompanyService{
 
 	private final CompanyMapper companyMapper;
-	private final BusinessNoCheckService businessNoCheckService;
-	public AdminCompanyServiceImpl( CompanyMapper companyMapper
-			,BusinessNoCheckService checkBusinessNo) {
+	public AdminCompanyServiceImpl( CompanyMapper companyMapper) {
 		this.companyMapper = companyMapper;
-		this.businessNoCheckService = checkBusinessNo;
 	}
 	
 	@Override
 	@Transactional
 	public int companyRegistor(CompanyVO.Registor companyRegistor) {
 		// 회사 등록
-		int companyNo = companyMapper.insertCompany(companyRegistor);
+		companyMapper.insertCompany(companyRegistor);
 		
 		// 주 종목 등록
 		if(companyRegistor.getOption() != null) {
-			companyMapper.insertCompanySpecaility(
-					companyNo
+			companyMapper.insertCompanySpecialty(
+					companyRegistor.getCompanyNo()
 					,companyRegistor.getOption()
 					,companyRegistor.getEtcMemo());
 		}
 		
-		return companyNo;
+		return companyRegistor.getCompanyNo();
 	}
 
 }

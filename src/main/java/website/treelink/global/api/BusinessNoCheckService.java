@@ -34,7 +34,7 @@ public class BusinessNoCheckService {
 	public void checkBusinessNo(BusinessNoCheckVO.request request) {
 		BusinessNoCheckVO.apiRequest apiRequest = BusinessNoCheckVO.apiRequest.builder()
 		.b_no(request.getBusinessNo())
-		.start_dt(request.getCreateDate()
+		.start_dt(request.getCreatedOn()
 			.format(DateTimeFormatter.ofPattern("yyyyMMdd")))
 		.p_nm(request.getRepresentativeName())
 		.p_nm2("")
@@ -66,10 +66,17 @@ public class BusinessNoCheckService {
         		);
         
         if (response.getBody() == null
+        	|| response.getBody().getCode() != null
     		|| response.getBody().getData() == null
-    		|| response.getBody().getData().isEmpty()
-        	|| !response.getBody().getData().get(0).getValid().equals("01"))
+    		|| response.getBody().getData().isEmpty())
+    		throw new CustomException(ErrorCode.API_SERVER_ERROR);
+        
+        else if(response.getBody().getData().get(0).getValid().equals("02"))
         	throw new CustomException(ErrorCode.API_BADREQUEST);
+        
+        else if(!response.getBody().getData().get(0).getValid().equals("01"))
+        	throw new CustomException(ErrorCode.API_SERVER_ERROR);
+        	
 	}
 	
 }

@@ -10,9 +10,9 @@ public interface CompanyMapper {
 
 	public int insertCompany(CompanyVO.Registor companyRegistor);
 
-	public void insertCompanySpecaility(
+	public void insertCompanySpecialty(
 			@Param("companyNo") int companyNo
 			,@Param("option") List<Integer> option
-			,@Param("ectMemo") String ectMemo);
+			,@Param("etcMemo") String etcMemo);
 
 }

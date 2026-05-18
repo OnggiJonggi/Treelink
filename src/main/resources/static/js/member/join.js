@@ -2,9 +2,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     /* ── 정규식 ───────────────────────────── */
     const REGEX = {
-        userId:   /^[A-Za-z0-9]{4,12}$/,
-        userPwd:  /^[A-Za-z0-9@$!%*#?&]{4,20}$/,
-        name:     /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$/,
+        userId: /^[A-Za-z0-9]{4,12}$/,
+        userPwd: /^[A-Za-z0-9@$!%*#?&]{4,20}$/,
+        name: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$/,
         nickname: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$/,
     };
 
@@ -12,14 +12,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const checked = { userId: false, nickname: false };
 
     /* ── DOM 참조 ────────────────────────── */
-    const form            = document.getElementById('joinForm');
-    const inputUserId     = document.getElementById('userId');
-    const inputPwd        = document.getElementById('userPwd');
-    const inputName       = document.getElementById('name');
-    const inputNickname   = document.getElementById('nickname');
-    const btnCheckId      = document.getElementById('btn-check-id');
-    const btnCheckNick    = document.getElementById('btn-check-nickname');
-    const btnEyePwd       = document.getElementById('btn-eye-pwd');
+    const form = document.getElementById('joinForm');
+    const inputUserId = document.getElementById('userId');
+    const inputPwd = document.getElementById('userPwd');
+    const inputName = document.getElementById('name');
+    const inputNickname = document.getElementById('nickname');
+    const btnCheckId = document.getElementById('btn-check-id');
+    const btnCheckNick = document.getElementById('btn-check-nickname');
+    const btnEyePwd = document.getElementById('btn-eye-pwd');
 
     /* ── 피드백 헬퍼 ─────────────────────── */
     function setFeedback(id, msg, isOk) {
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const input = document.getElementById(id);
         el.textContent = msg;
         el.className = 'form-feedback ' + (isOk ? 'ok' : 'err');
-        input.classList.toggle('is-valid',   isOk  && msg !== '');
+        input.classList.toggle('is-valid', isOk && msg !== '');
         input.classList.toggle('is-invalid', !isOk && msg !== '');
     }
 
@@ -46,9 +46,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const ok = REGEX[regexKey].test(val);
         if (!ok) {
             const msgs = {
-                userId:   '아이디: 영문·숫자 4~12자로 입력해 주세요.',
-                userPwd:  '비밀번호: 영문·숫자·특수문자(@$!%*#?&) 4~20자로 입력해 주세요.',
-                name:     '이름: 한글·영문·숫자 1~10자로 입력해 주세요.',
+                userId: '아이디: 영문·숫자 4~12자로 입력해 주세요.',
+                userPwd: '비밀번호: 영문·숫자·특수문자(@$!%*#?&) 4~20자로 입력해 주세요.',
+                name: '이름: 한글·영문·숫자 1~10자로 입력해 주세요.',
                 nickname: '닉네임: 한글·영문·숫자 1~10자로 입력해 주세요.',
             };
             setFeedback(input.id, msgs[regexKey], false);
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btnCheckId.textContent = '확인 중…';
 
         $.ajax({
-            url: '/member/check-id',
+            url: '/api/member/check-id',
             type: 'POST',
             data: { userId: val },
             success: function () {
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btnCheckNick.textContent = '확인 중…';
 
         $.ajax({
-            url: '/member/check-nickname',
+            url: '/api/member/check-nickname',
             type: 'POST',
             data: { 'check-nickname': val },
             success: function () {

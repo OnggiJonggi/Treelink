@@ -18,7 +18,8 @@ public enum ErrorCode {
 	
 	CANNOT_GRANT_ROLE(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-101", "권한을 부여할 수 없습니다"),
 	
-	API_BADREQUEST(HttpStatus.INTERNAL_SERVER_ERROR, "API-001", "API작동 실패");
+	API_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "API-001", "API작동 실패"),
+	API_BADREQUEST(HttpStatus.BAD_REQUEST, "API-002", "존재하지 않는 사업자입니다");
 	
 	private final HttpStatus httpStatus;
 	private final String code;

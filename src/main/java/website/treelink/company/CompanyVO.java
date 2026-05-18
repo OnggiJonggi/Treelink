@@ -15,7 +15,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 import website.treelink.global.regex.CompanyRegexp;
 
@@ -23,8 +23,9 @@ import website.treelink.global.regex.CompanyRegexp;
 public class CompanyVO {
 	@NoArgsConstructor
 	@AllArgsConstructor
-	@Getter
+	@Data
 	public static class Registor {
+		private int companyNo;
 		
 		@NotBlank(message = "사업자 번호가 뭔가요")
 		@Pattern(regexp = CompanyRegexp.BUSINESS_NO_REGEXP, message = "사업자 번호가 이상해요")
@@ -48,7 +49,7 @@ public class CompanyVO {
 		@NotNull(message = "언제인가요")
 		@DateTimeFormat(pattern = "yyyy-MM-dd")
 		@Past(message = "날짜가 이상해요")
-		private LocalDate createDate;
+		private LocalDate createdOn;
 
 		@Size(max = 3, message = "3개까지. 4개부터는 떽! 이야")
 		private List<@Min(1) @Max(12) Integer> option;

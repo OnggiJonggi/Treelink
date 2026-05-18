@@ -1,7 +1,6 @@
 package website.treelink.member;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -59,26 +58,5 @@ public class MemberController {
 		return "redirect:/";
 	}
 	
-	/**
-	 * 아이디 중복 확인
-	 * @param member
-	 * @return 정상 200
-	 */
-	@PostMapping("/check-id")
-	public ResponseEntity<Void> checkId(String userId) {
-		service.checkId(userId);
-		return ResponseEntity.ok().build();
-	}
-	
-	/**
-	 * 닉네임 중복 확인
-	 * @param nickname
-	 * @return 정상 200, 이상해요 500
-	 */
-	@PostMapping("/check-nickname")
-	public ResponseEntity<Void> checkNickName(String nickname) {
-		service.checkNick(nickname);
-		return ResponseEntity.ok().build();
-	}
 	
 }

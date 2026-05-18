@@ -14,14 +14,14 @@
       ,REPRESENTATIVE_NAME
       ,PHONE
       ,EMAIL
-      ,CREATE_DATE
-    ) VAULES(
+      ,CREATED_ON
+    ) VALUES(
       #{companyNo}
       ,#{companyName}
       ,#{representativeName}
       ,#{phone}
       ,#{email}
-      ,#{createDate}
+      ,#{createdOn}
     )
   </insert>
 
@@ -32,12 +32,10 @@
       VALUES (
         #{companyNo},
         #{specialtyNo},
-        <if test="specialtyNo == 12">
-          #{ectMemo}
-        </if>
-        <if test="specialtyNo != 12">
-          NULL
-        </if>
+		<choose>
+		  <when test="specialtyNo == 12">#{etcMemo}</when>
+		  <otherwise>NULL</otherwise>
+		</choose>
       )
     </foreach>
     SELECT * FROM DUAL

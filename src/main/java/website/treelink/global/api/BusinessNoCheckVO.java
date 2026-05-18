@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
-import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -13,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 import website.treelink.global.regex.CompanyRegexp;
 
@@ -21,6 +21,8 @@ public class BusinessNoCheckVO {
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@Getter
+	@Setter
+	@ToString
 	public static class request{
 		
 		@NotBlank(message = "사업자 번호가 뭔가요")
@@ -33,7 +35,7 @@ public class BusinessNoCheckVO {
 		
 		@NotNull(message = "창립일이 언제에요")
 		@DateTimeFormat(pattern = "yyyy-MM-dd")
-		private LocalDate createDate;
+		private LocalDate createdOn;
 	}
 	
 	@AllArgsConstructor
@@ -55,14 +57,17 @@ public class BusinessNoCheckVO {
     @AllArgsConstructor
     @NoArgsConstructor
     @Getter
+    @ToString
     public static class apiResponseWrapper {
         private String status_code; // 응답 상태 코드
         private List<apiResponse> data; // 실제 데이터 목록
+        private Integer code; // 오류 판별용
     }
     
 	@AllArgsConstructor
 	@NoArgsConstructor
 	@Getter
+	@ToString
 	public static class apiResponse{
         private String b_no; // 사업자등록번호
         private String valid; // 01: 일치, 02: 불일치

@@ -12,8 +12,8 @@
   평가자 페이지(get, /evaluator/main)
 
 회원가입 페이지(/member/join)
-  아이디 중복확인(post, /member/check-id)
-  닉네임 중복확인(post, /member/check-nickname)
+  아이디 중복확인(post, /api/member/check-id)
+  닉네임 중복확인(post, /api/member/check-nickname)
   폼 제출(post, /member/join)
 
 로그인 페이지(/member/login)
@@ -26,6 +26,5 @@
   회원 검색(get, /admin/member/list)
 
 업체 추가(/admin/company/registor)
-  사업자등록번호 확인(post, /admin/company/check-businessno)
+  사업자등록번호 확인(post, /api/admin/company/check-businessno)
   폼 제출(post, /admin/company/registor)
-

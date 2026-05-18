@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  /* ── 정규식 (서버와 동일) ─────────────────────────── */
+  // 정규식
   const REG = {
     COMPANY_NAME: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,100}$/,
     REPRESENTATIVE_NAME: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$/,
@@ -11,7 +11,7 @@
     BUSINESS_NO_DIGIT: /^\d{10}$/,
   };
 
-  /* ── CSRF (fragment에서 주입된 메타 태그 활용) ─────── */
+  // csrf
   function getCsrfHeader() {
     const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
     const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
@@ -37,9 +37,7 @@
     return true;
   }
 
-  /* ================================================================
-     자동 다음 칸 이동 + 숫자만 입력 허용 + 백스페이스 이전 칸 이동
-  ================================================================ */
+  // 자동 다음 칸 이동 / 숫자만 입력 허용 / 백스페이스 이전 칸 이동
   function initSplitInputs(ids, opts = {}) {
     const inputs = ids.map(id => document.getElementById(id));
 
@@ -64,17 +62,14 @@
     });
   }
 
-  /* ================================================================
-     STEP 1 – 사업자 번호 확인
-  ================================================================ */
+  // 사업자번호 확인
   initSplitInputs(['bno1', 'bno2', 'bno3']);
   initSplitInputs(['cd-year', 'cd-month', 'cd-day']);
 
-  /* --- STEP1 검증 --- */
   function validateVerifyForm() {
     let ok = true;
 
-    /* 사업자 번호 */
+    // 사업자번호
     const bno = (
       document.getElementById('bno1').value +
       document.getElementById('bno2').value +
@@ -89,7 +84,7 @@
       clearError('err-businessNo');
     }
 
-    /* 대표 이름 */
+    // 대표 이름 
     const repEl = document.getElementById('representativeName-verify');
     if (!REG.REPRESENTATIVE_NAME.test(repEl.value.trim())) {
       markInvalid(repEl, 'err-representativeName', '대표 이름은 한글·영문·숫자 1~10자여야 해요');
@@ -98,7 +93,7 @@
       markValid(repEl, 'err-representativeName');
     }
 
-    /* 창립일 */
+    // 창립일 
     const y = document.getElementById('cd-year').value;
     const m = document.getElementById('cd-month').value;
     const d = document.getElementById('cd-day').value;
@@ -109,24 +104,24 @@
     }
     if (!dateOk) {
       ['cd-year', 'cd-month', 'cd-day'].forEach(id => document.getElementById(id).classList.add('is-invalid'));
-      showError('err-createDate', '유효한 과거 날짜를 입력해 주세요');
+      showError('err-createdOn', '유효한 과거 날짜를 입력해 주세요');
       ok = false;
     } else {
       ['cd-year', 'cd-month', 'cd-day'].forEach(id => document.getElementById(id).classList.remove('is-invalid'));
-      clearError('err-createDate');
+      clearError('err-createdOn');
     }
 
     return ok;
   }
 
-  /* --- 사업자 번호 확인 버튼 클릭 --- */
+  // 버튼 누르기
   document.getElementById('btn-verify').addEventListener('click', function () {
     if (!validateVerifyForm()) return;
 
     const bno = (
       document.getElementById('bno1').value +
-      document.getElementById('bno2').value +
-      document.getElementById('bno3').value
+      document.getElementById('bno2').value.padStart(2, '0') +
+      document.getElementById('bno3').value.padStart(2, '0')
     );
     const rep = document.getElementById('representativeName-verify').value.trim();
     const y = document.getElementById('cd-year').value;
@@ -134,22 +129,19 @@
     const d = document.getElementById('cd-day').value.padStart(2, '0');
     const dateStr = `${y}-${m}-${d}`;
 
-    const formattedBno = `${bno.slice(0, 3)}-${bno.slice(3, 5)}-${bno.slice(5)}`;
-
     $.ajax({
-      url: '/admin/company/check-businessno',
+      url: '/api/admin/company/check-businessno',
       method: 'POST',
-      contentType: 'application/json',
-      data: JSON.stringify({
-        businessNo: formattedBno,
+      data: {
+        businessNo: bno,
         representativeName: rep,
-        createDate: dateStr
-      }),
+        createdOn: dateStr
+      },
       headers: getCsrfHeader(),
       success: function () {
         lockVerifyForm();
         showVerifySuccess();
-        transferVerifyDataToMainForm(formattedBno, rep, dateStr);
+        transferVerifyDataToMainForm(bno, rep, dateStr);
         revealMainForm();
       },
       error: function (xhr) {
@@ -182,7 +174,7 @@
   function transferVerifyDataToMainForm(bno, rep, dateStr) {
     document.getElementById('hidden-businessNo').value = bno;
     document.getElementById('hidden-representativeName').value = rep;
-    document.getElementById('hidden-createDate').value = dateStr;
+    document.getElementById('hidden-createdOn').value = dateStr;
   }
 
   function revealMainForm() {
@@ -192,10 +184,10 @@
   }
 
   /* ================================================================
-     STEP 2 – 사업체 상세 정보 폼
+     사업체 상세 정보
   ================================================================ */
 
-  /* 전화번호 자동이동 */
+  // 전화번호
   initSplitInputs(['ph1', 'ph2', 'ph3'], { onChange: syncPhone });
   document.getElementById('ph1').addEventListener('input', syncPhone);
   document.getElementById('ph2').addEventListener('input', syncPhone);
@@ -208,7 +200,7 @@
     document.getElementById('hidden-phone').value = v;
   }
 
-  /* 이메일 → hidden 동기화 */
+  // hidden input 동기화
   function syncEmail() {
     const local = document.getElementById('email-local').value.trim();
     const domain = document.getElementById('email-domain').value.trim();
@@ -217,7 +209,7 @@
   document.getElementById('email-local').addEventListener('input', syncEmail);
   document.getElementById('email-domain').addEventListener('input', syncEmail);
 
-  /* ── 주 종목 체크박스 ───────────────────────────── */
+  // 주 종목
   const MAX_OPTIONS = 3;
   const optionGrid = document.getElementById('option-grid');
   const chips = optionGrid.querySelectorAll('.option-chip');

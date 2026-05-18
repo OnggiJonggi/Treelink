@@ -52,7 +52,6 @@
             <input type="text" id="bno3" class="split-input split-input--wide" maxlength="5" placeholder="00000"
               inputmode="numeric" autocomplete="off" aria-label="사업자번호 뒤 5자리">
           </div>
-          <p class="field-error" id="err-businessNo"></p>
         </div>
 
         <!-- 대표 이름 -->
@@ -72,7 +71,7 @@
             <i data-lucide="calendar" class="field-icon"></i>
             창립일 <span class="required">*</span>
           </label>
-          <div class="split-input-row" id="createdate-row">
+          <div class="split-input-row" id="createdOn-row">
             <input type="text" id="cd-year" class="split-input split-input--year" maxlength="4" placeholder="YYYY"
               inputmode="numeric" autocomplete="off" aria-label="창립일 연도">
             <span class="split-sep">년</span>
@@ -83,13 +82,14 @@
               autocomplete="off" aria-label="창립일 일">
             <span class="split-sep">일</span>
           </div>
-          <p class="field-error" id="err-createDate"></p>
+          <p class="field-error" id="err-createdOn"></p>
         </div>
 
       </div><!-- /.form-card__body -->
 
       <!-- 확인 버튼 / 확인 완료 영역 -->
       <div class="form-card__footer">
+        <p class="field-error" id="err-businessNo"></p>
         <div id="verify-pending">
           <button type="button" class="btn btn-primary btn--full" id="btn-verify">
             <i data-lucide="shield-check"></i>
@@ -124,7 +124,7 @@
         <!-- ── 1단계 데이터 hidden ────────────────────── -->
         <input type="hidden" id="hidden-businessNo" name="businessNo">
         <input type="hidden" id="hidden-representativeName" name="representativeName">
-        <input type="hidden" id="hidden-createDate" name="createDate">
+        <input type="hidden" id="hidden-createdOn" name="createdOn">
         <!-- ──────────────────────────────────────────── -->
 
         <div class="form-card__body">
@@ -135,8 +135,8 @@
               <i data-lucide="building" class="field-icon"></i>
               회사 이름 <span class="required">*</span>
             </label>
-            <input type="text" id="companyName" name="companyName" class="form-input" maxlength="100"
-              placeholder="회사 이름 입력" autocomplete="off" th:field="*{companyName}">
+            <input type="text" class="form-input" maxlength="100" placeholder="회사 이름 입력" autocomplete="off"
+              th:field="*{companyName}">
             <p class="field-error" id="err-companyName"></p>
           </div>
 

@@ -9,5 +9,5 @@ public class CompanyRegexp {
 	public static final String REPRESENTATIVE_NAME_REGEXP = "^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$";
 	public static final String PHONE_REGEXP = "^[0-9]{1,15}$";
 	public static final String EMAIL_REGEXP = "^(?=.{1,100}$)[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
- 	public static final String ETC_MEMO_REGEXP = "^{1,20}$";
+ 	public static final String ETC_MEMO_REGEXP = "^.{1,20}$";
 }
