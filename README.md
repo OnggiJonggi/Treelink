@@ -9,3 +9,14 @@
 db : oracle 26, mybatis 4.0.1(spring boot starter)
 
 스윀어 http://localhost:8080/swagger-ui.html
+
+----------------------------------------------------
+src/main/resources/config/key.properties
+
+#ABS-128 평문 키
+
+crypto.key= #16글자 암호화 키
+
+#공공API 국세청 사업자등록정보 진위확인
+
+public-data.key= #공공데이터 Encoding 인증키

@@ -131,7 +131,7 @@
 
     $.ajax({
       url: '/api/admin/company/check-businessno',
-      method: 'POST',
+      method: 'GET',
       data: {
         businessNo: bno,
         representativeName: rep,

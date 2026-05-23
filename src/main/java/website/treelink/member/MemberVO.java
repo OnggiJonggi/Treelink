@@ -5,7 +5,6 @@ import java.util.List;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -13,7 +12,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import website.treelink.global.regex.MemberRegexp;
 import website.treelink.global.security.CryptedNumberVO;
-@Builder
+
 public class MemberVO {
 	@NoArgsConstructor
 	@AllArgsConstructor

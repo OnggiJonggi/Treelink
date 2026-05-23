@@ -2,7 +2,7 @@ package website.treelink.member;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,7 +17,7 @@ public class MemberApiController {
 	 * @param member
 	 * @return 정상 200
 	 */
-	@PostMapping("/check-id")
+	@GetMapping("/check-id")
 	public ResponseEntity<Void> checkId(String userId) {
 		service.checkId(userId);
 		return ResponseEntity.ok().build();
@@ -28,7 +28,7 @@ public class MemberApiController {
 	 * @param nickname
 	 * @return 정상 200, 이상해요 500
 	 */
-	@PostMapping("/check-nickname")
+	@GetMapping("/check-nickname")
 	public ResponseEntity<Void> checkNickName(String nickname) {
 		service.checkNick(nickname);
 		return ResponseEntity.ok().build();

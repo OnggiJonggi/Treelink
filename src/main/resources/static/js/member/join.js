@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         $.ajax({
             url: '/api/member/check-id',
-            type: 'POST',
+            type: 'GET',
             data: { userId: val },
             success: function () {
                 checked.userId = true;
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         $.ajax({
             url: '/api/member/check-nickname',
-            type: 'POST',
+            type: 'GET',
             data: { 'check-nickname': val },
             success: function () {
                 checked.nickname = true;

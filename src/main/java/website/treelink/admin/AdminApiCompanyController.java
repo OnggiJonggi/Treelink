@@ -3,7 +3,7 @@ package website.treelink.admin;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,7 +22,7 @@ public class AdminApiCompanyController {
 	 * @param businessNoCheckRequest
 	 * @param bindingResult
 	 */
-	@PostMapping("/company/check-businessno")
+	@GetMapping("/company/check-businessno")
 	public ResponseEntity<String> checkBusinessNo(@Valid BusinessNoCheckVO.request businessNoCheckRequest
 			,BindingResult bindingResult){
 		
