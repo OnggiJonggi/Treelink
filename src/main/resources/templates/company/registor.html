@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>사업체 등록하기</title>
   <th:block th:replace="~{/common/fragment :: common}"></th:block>
-  <link rel="stylesheet" th:href="@{/css/admin/company/registor.css}">
+  <link rel="stylesheet" th:href="@{/css/company/registor.css}">
 </head>
 
 <body>
@@ -115,8 +115,7 @@
         <p class="form-card__desc">사업체 정보를 입력해 주세요.</p>
       </div>
 
-      <form id="main-form" th:action="@{/admin/company/registor}" method="post" th:object="${companyRegistor}"
-        novalidate>
+      <form id="main-form" th:action="@{/company/registor}" method="post" th:object="${companyRegistor}" novalidate>
 
         <!-- CSRF -->
         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -188,37 +187,22 @@
                 <input type="checkbox" class="option-check" value="1" name="option"> 벌초
               </label>
               <label class="option-chip" data-value="2">
-                <input type="checkbox" class="option-check" value="2" name="option"> 초화류 식재
+                <input type="checkbox" class="option-check" value="2" name="option"> 운동장 / 스포츠
               </label>
               <label class="option-chip" data-value="3">
-                <input type="checkbox" class="option-check" value="3" name="option"> 수목 식재
+                <input type="checkbox" class="option-check" value="3" name="option"> 공공기관 유지관리
               </label>
               <label class="option-chip" data-value="4">
-                <input type="checkbox" class="option-check" value="4" name="option"> 전정 및 가지치기
+                <input type="checkbox" class="option-check" value="4" name="option"> 정원
               </label>
               <label class="option-chip" data-value="5">
-                <input type="checkbox" class="option-check" value="5" name="option"> 예초 및 제초
+                <input type="checkbox" class="option-check" value="5" name="option"> 실내조경
               </label>
               <label class="option-chip" data-value="6">
-                <input type="checkbox" class="option-check" value="6" name="option"> 병해충 방제
+                <input type="checkbox" class="option-check" value="6" name="option"> 조경시설물
               </label>
-              <label class="option-chip" data-value="7">
-                <input type="checkbox" class="option-check" value="7" name="option"> 관수 관리
-              </label>
-              <label class="option-chip" data-value="8">
-                <input type="checkbox" class="option-check" value="8" name="option"> 잔디 관리
-              </label>
-              <label class="option-chip" data-value="9">
-                <input type="checkbox" class="option-check" value="9" name="option"> 하자 보수
-              </label>
-              <label class="option-chip" data-value="10">
-                <input type="checkbox" class="option-check" value="10" name="option"> 정기 유지관리
-              </label>
-              <label class="option-chip" data-value="11">
-                <input type="checkbox" class="option-check" value="11" name="option"> 조경시설물 관리
-              </label>
-              <label class="option-chip option-chip--etc" data-value="12">
-                <input type="checkbox" class="option-check" value="12" name="option" id="opt-etc"> 기타
+              <label class="option-chip option-chip--etc" data-value="99">
+                <input type="checkbox" class="option-check" value="99" name="option" id="opt-etc"> 기타
               </label>
             </div>
             <p class="field-error" id="err-option"></p>
@@ -245,7 +229,7 @@
 
   </main>
 
-  <script th:src="@{/js/admin/company/registor.js}"></script>
+  <script th:src="@{/js/company/registor.js}"></script>
   <script>lucide.createIcons();</script>
 </body>
 

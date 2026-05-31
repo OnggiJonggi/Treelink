@@ -130,7 +130,7 @@
     const dateStr = `${y}-${m}-${d}`;
 
     $.ajax({
-      url: '/api/admin/company/check-businessno',
+      url: '/api/company/check-businessno',
       method: 'GET',
       data: {
         businessNo: bno,

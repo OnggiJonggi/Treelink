@@ -3,18 +3,7 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="website.treelink.global.security.RoleMapper">
-
-	<select id="selectUrlIsAllowed" parameterType="RoleUrlAccessCheck" >
-		select IS_ALLOWED
-		from MEMBER M
-		left join MEMBER_ROLE MR on M.MEMBER_NO = MR.MEMBER_NO
-		left join ROLE_INFO R on MR.ROLE_NO = R.ROLE_NO
-		left join ROLE_RESOURCE RR on R.ROLE_NO = RR.ROLE_NO
-		left join URL_RESOURCE UR on RR.RESOURCE_NO = UR.RESOURCE_NO
-		where M.MEMBER_NO = #{userNO}
-		and #{url} LIKE UR.URL_PATTERN || '%'
-	</select>
+<mapper namespace="com.tl.global.security.RoleMapper">
 	
 	<select id="selectMemberRole" parameterType="_int" resultType="string">
 		select RI.NAME

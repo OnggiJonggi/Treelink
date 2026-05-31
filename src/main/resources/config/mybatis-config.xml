@@ -18,14 +18,17 @@
         <typeAlias type="com.tl.member.MemberVO$Detail" alias="MemberDetail"/>
         <typeAlias type="com.tl.member.MemberVO$Join" alias="MemberJoin"/>
         
-        <!-- Role -->
-        <typeAlias type="com.tl.global.security.RoleVO$UrlAccessCheck" alias="RoleUrlAccessCheck"/>
-        
         <!-- Company -->
         <typeAlias type="com.tl.company.CompanyVO$Registor" alias="CompanyRegistor"/>
         <typeAlias type="com.tl.company.CompanyVO$Detail" alias="CompanyDetail"/>
         
-        
+        <!-- FileInfo -->
+        <typeAlias type="com.tl.global.file.FileInfoVO$Registor" alias="FileInfoRegistor"/>
+        <typeAlias type="com.tl.global.file.FileInfoVO$Detail" alias="FileInfoDetail"/>
+        <typeAlias type="com.tl.global.file.FileInfoVO$GetFile" alias="FileInfoGetFile"/>
+        <typeAlias type="com.tl.global.file.FileInfoVO$UpdateStatus" alias="FileInfoUpdateStatus"/>
+        <typeAlias type="com.tl.global.file.FileInfoVO$InsertHistory" alias="FileInfoInsertHistory"/>
+
         <!-- 전역 설정 -->
         <package name="com.tl"/>
     </typeAliases>

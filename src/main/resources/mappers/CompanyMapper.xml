@@ -2,14 +2,31 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="website.treelink.company.CompanyMapper">
+<mapper namespace="com.tl.company.CompanyMapper">
+  <resultMap id="companyDetailMap" type="CompanyDetail" autoMapping="true">
+    <id column="COMPANY_NO"/>
+    <result property="companyUuid" column="COMPANY_UUID"/>
+    <result property="businessNo" column="BUSINESS_NO"/>
+    <result property="companyName" column="COMPANY_NAME"/>
+    <result property="representativeName" column="REPRESENTATIVE_NAME"/>
+    <result property="phone" column="PHONE"/>
+    <result property="email" column="EMAIL"/>
+    <result property="createdOn" column="CREATED_ON"/>
+    <result property="status" column="STATUS"/>
+    <result property="etcMemo" column="MEMO"/>
 
-  <insert id="insertCompany" parameterType="CompanyRegistor" >
-    <selectKey keyProperty="companyNo" resultType="_int" order="BEFORE">
-      SELECT SEQ_COMPANY.nextval FROM DUAL
-    </selectKey>
+    <collection property="option" ofType="string">
+      <result column="FIELD"/>
+    </collection>
+  </resultMap>
+
+  <insert id="insertCompany" parameterType="CompanyRegistor"
+    useGeneratedKeys="true"
+    keyProperty="companyNo"
+    keyColumn="COMPANY_NO">
+
     insert into COMPANY (
-      COMPANY_NO
+      COMPANY_UUID
       ,BUSINESS_NO
       ,COMPANY_NAME
       ,REPRESENTATIVE_NAME
@@ -17,7 +34,7 @@
       ,EMAIL
       ,CREATED_ON
     ) VALUES(
-      #{companyNo}
+      #{companyUuid}
       ,#{businessNo}
       ,#{companyName}
       ,#{representativeName}
@@ -35,11 +52,71 @@
         #{companyNo},
         #{specialtyNo},
 		<choose>
-		  <when test="specialtyNo == 12">#{etcMemo}</when>
+		  <when test="specialtyNo == 99">#{etcMemo}</when>
 		  <otherwise>NULL</otherwise>
 		</choose>
       )
     </foreach>
     SELECT * FROM DUAL
   </insert>
+
+  <select id="selectCompanyDetail" parameterType="string" resultMap="companyDetailMap">
+    select
+      C.COMPANY_NO
+      ,C.COMPANY_UUID
+      ,C.BUSINESS_NO
+      ,C.COMPANY_NAME
+      ,C.REPRESENTATIVE_NAME
+      ,C.PHONE
+      ,C.EMAIL
+      ,C.CREATED_ON
+      ,C.STATUS
+      ,CS.MEMO
+      ,S.FIELD
+    from COMPANY C
+    left join COMPANY_SPECIALTY CS on(CS.COMPANY_NO = C.COMPANY_NO)
+    left join SPECIALTY S on(S.SPECIALTY_NO = CS.SPECIALTY_NO)
+    where C.COMPANY_UUID = #{companyUuid}
+  </select>
+
+  <update id="updateCompany" parameterType="CompanyRegistor">
+    <selectKey keyProperty="companyNo" resultType="_int" order="BEFORE">
+      select COMPANY_NO
+      from COMPANY
+      where COMPANY_UUID = #{companyUuid}
+    </selectKey>
+    update COMPANY
+    set
+      BUSINESS_NO = #{businessNo}
+      ,COMPANY_NAME = #{companyName}
+      ,REPRESENTATIVE_NAME = #{representativeName}
+      ,PHONE = #{phone}
+      ,EMAIL = #{email}
+      ,CREATED_ON = #{createdOn}
+      ,STATUS = #{status}
+    where COMPANY_UUID = #{companyUuid}
+  </update>
+
+  <insert id="updateCompanySpecialty">
+    delete from COMPANY_SPECIALTY
+    where COMPANY_NO = #{companyNo}
+  
+    <if test="option != null and option.size() > 0">
+      INSERT ALL
+      <foreach collection="option" item="specialtyNo">
+        INTO COMPANY_SPECIALTY (COMPANY_NO, SPECIALTY_NO, MEMO)
+        VALUES (
+          #{companyNo},
+          #{specialtyNo},
+      <choose>
+        <when test="specialtyNo == 99">#{etcMemo}</when>
+        <otherwise>NULL</otherwise>
+      </choose>
+        )
+      </foreach>
+      SELECT * FROM DUAL
+    </if>
+  </insert>
+
+
 </mapper>

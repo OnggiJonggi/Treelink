@@ -1,6 +1,9 @@
 # 키 파일
 src/main/resources/config/key.properties
 
+# 설정 파일
+src/main/resources/config/application-prod.properties
+
 ### Eclipse ###
 .metadata
 bin/

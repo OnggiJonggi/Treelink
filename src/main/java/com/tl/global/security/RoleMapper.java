@@ -6,7 +6,5 @@ import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
 public interface RoleMapper {
-	public int selectUrlIsAllowed(RoleVO.UrlAccessCheck userNoUrl);
-
 	public List<String> selectMemberRole(int number);
 }

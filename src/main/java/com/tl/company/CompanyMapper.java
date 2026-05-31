@@ -15,6 +15,13 @@ public interface CompanyMapper {
 			,@Param("option") List<Integer> option
 			,@Param("etcMemo") String etcMemo);
 	
-	public CompanyVO.Detail selectCompanyDetail(int companyNo);
+	public CompanyVO.Detail selectCompanyDetail(String companyUuid);
+
+	public void updateCompany(CompanyVO.Registor company);
+
+	public void updateCompanySpecialty(
+			@Param("companyNo") int companyNo
+			,@Param("option") List<Integer> option
+			,@Param("etcMemo") String etcMemo);
 
 }

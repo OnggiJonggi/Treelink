@@ -2,16 +2,14 @@ package com.tl.member;
 
 import java.util.List;
 
-import com.tl.global.security.CryptedNumberVO;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
 
 public class MemberVO {
 	@NoArgsConstructor
@@ -25,9 +23,12 @@ public class MemberVO {
 	@NoArgsConstructor
 	@AllArgsConstructor
 	@Data
-	@ToString(callSuper = true)
-	@EqualsAndHashCode(callSuper = true)
-	public static class Detail extends CryptedNumberVO{
+	public static class Detail{
+		
+		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+		private int memberNo;
+		
+		private String encryptedMemberNo;
 		private String userId;
 		private String userPwd;
 		private String name;
@@ -39,6 +40,8 @@ public class MemberVO {
 	@AllArgsConstructor
 	@Data
 	public static class Join{
+		
+		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 		private int memberNo;
 		
 		@NotBlank(message="아이디를 입력해라.")

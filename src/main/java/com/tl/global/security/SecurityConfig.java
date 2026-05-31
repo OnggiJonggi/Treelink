@@ -14,29 +14,22 @@ public class SecurityConfig {
 
 	// 비밀번호 해싱
 	@Bean
-    public PasswordEncoder passwordEncoder() {
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     // filterChain : CSRF방어(th:action 사용 시), 세션/로그인/http요청 관리
     // 타임리프는 <form th:action>으로 토큰 자동 생성
 	@Bean
-    public SecurityFilterChain filterChain(HttpSecurity http
-    		,CustomDynamicAuthorizationManager customAuthManager) throws Exception {
-
-        // http요청 관리
-        http.authorizeHttpRequests(auth -> auth
-            .requestMatchers("/", "/member/join", "/member/login").permitAll()
-            .anyRequest().permitAll()
-//            .anyRequest().access(customAuthManager) // 커스텀한 클래스에서 결정
-        );
-        // requestMatchers(url경로) : 해당 경로
-        // permitAll() : 접근 제한 없음
-        // hasRole(권한) : 관계자 왜 출입금지?
-        // anyRequest() : 그 외 모든 요청
-        // authenticated(): 로그인된 사람만 (기본값)
-
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         
+		// 경로 허용 설정
+		// 개별 컨트롤러에 @PreAuthorize만 둬서 관리할 거에요 
+		http.authorizeHttpRequests(auth -> auth
+	            .anyRequest().permitAll()
+	        );
+		
+		
         // 로그인 페이지 연결
         http.formLogin(form -> form
             .loginPage("/member/login") // 로그인 페이지, 컨트롤러 필수(get)

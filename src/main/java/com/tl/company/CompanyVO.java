@@ -5,6 +5,8 @@ import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -24,11 +26,15 @@ public class CompanyVO {
 	@AllArgsConstructor
 	@Data
 	public static class Registor {
+		
+		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 		private int companyNo;
+		
+		private String companyUuid; // 뷰페이지 노출용 식별번호
 		
 		@NotBlank(message = "사업자 번호가 뭔가요")
 		@Pattern(regexp = CompanyRegexp.BUSINESS_NO_REGEXP, message = "사업자 번호가 이상해요")
-		private String businessNo;
+		private String businessNo; // 사업자 등록번호. 하이픈 없이 숫자만.
 
 		@NotBlank(message = "회사 이름이 뭐에요")
 		@Pattern(regexp = CompanyRegexp.COMPANY_NAME_REGEXP, message = "회사 이름이 이상해요")
@@ -51,10 +57,12 @@ public class CompanyVO {
 		private LocalDate createdOn;
 
 		@Size(max = 3, message = "3개까지. 4개부터는 떽! 이야")
-		private List<@Min(1) @Max(12) Integer> option;
+		private List<@Min(1) @Max(99) Integer> option;
 
 		@Pattern(regexp = CompanyRegexp.ETC_MEMO_REGEXP, message = "기타 메모가 이상해요")
 		private String etcMemo;
+		
+		private CompanyStatusEnum status;
 	}
 	
 	@NoArgsConstructor
@@ -62,16 +70,15 @@ public class CompanyVO {
 	@Getter
 	@ToString
 	public static class Detail {
-		private int companyNo;
-		private String businessNo;
+		private String companyUuid; // 뷰페이지 노출용 식별번호
+		private String businessNo; // 사업자 등록번호. 하이픈 없이 숫자만.
 		private String companyName;
 		private String representativeName;
 		private String phone;
 		private String email;
 		private LocalDate createdOn;
+		private String status;
 		private List<String> option;
 		private String etcMemo;
 	}
-	
-	
 }

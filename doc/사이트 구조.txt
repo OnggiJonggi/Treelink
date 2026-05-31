@@ -20,22 +20,30 @@
   폼 제출(post, /member/login)
 
 관리자 페이지(/admin/main)
-  업체 추가(get, /admin/company/registor)
-  평가 추가(get, /evaluator/evaluation/registor)
-  평가 검색(get, /admin/evaluation/list)
-  회원 검색(get, /admin/member/list)
+  업체 추가(get, /company/registor)
+  평가 추가(get, /evaluation/registor)
+  평가 검색(get, /evaluation/list)
+  회원 검색(get, /member/list)
 
-업체 추가(/admin/company/registor)
-  사업자등록번호 확인(get, /api/admin/company/check-businessno)
-  폼 제출(post, /admin/company/registor)
+업체 추가(/company/registor)
+  사업자등록번호 확인(get, /api/company/check-businessno)
+  폼 제출(post, /company/registor)
 
-업체 세부 뷰(/company/{companyNo})
-  위치 보기(get, /company/{companyNo}/location)
-  평가 보기(get, /evaluation/{companyNo})
+업체 세부 뷰(/company/{companyUuid})
+  목록으로(get, /company)
+네비 바
+  기본 정보(get, /company/{companyUuid})
+  평가 보기(get, /evaluation/{companyUuid})
+  위치 보기(get, /company/{companyUuid}/location)
+  작업 현황(get, /company/{companyUuid}/dashboard)
+기본 정보
   권한 - ADMIN
-    업체 수정 페이지(get, /admin/company/{companyNo}/update)
-    업체 
+    업체 수정(put, /api/company/{companyUuid})
+    업체 서류 등록(post, /api/company/{companyUuid}/doc)
+    업체 서류 보기(get, /api/company/{companyUuid}/doc/{encryptedDocNo})
+    업체 서류 삭제(delete, /api/company/{companyUuid}/doc/{encryptedDocNo})
+    -실제 파일 삭제 로직 구현 필요해요!!
 
-업체 수정(/admin/company/{companyNo}/update)
+업체 수정(/company/{companyUuid}/update)
   업체 수정
   업체 삭제

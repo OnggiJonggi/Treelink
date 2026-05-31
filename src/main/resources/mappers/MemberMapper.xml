@@ -3,10 +3,8 @@
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="MemberMapper">
-	<resultMap id="CryptedNumberMap" type="CryptedNumberVO">
-			<result property="number" column="MEMBER_NO"/>
-	</resultMap>
-	<resultMap id="MemberDetailMap" type="MemberDetail" extends="CryptedNumberMap">
+	<resultMap id="MemberDetailMap" type="MemberDetail">
+	    <result property="memberNo" column="MEMBER_NO"/>
 	    <result property="userId" column="ID"/>
 	    <result property="userPwd" column="PWD"/>
 	    <result property="name" column="NAME"/>
@@ -38,20 +36,19 @@
 		where NICKNAME = #{nickname}
 	</select>
 	
-	<insert id="insertJoin" parameterType="MemberJoin" >
-		<selectKey keyProperty="memberNo" resultType="_int" order="BEFORE">
-			SELECT SEQ_MEMBER.nextval FROM DUAL
-		</selectKey>
+	<insert id="insertJoin" parameterType="MemberJoin"
+		useGeneratedKeys="true"
+    keyProperty="memberNo"
+    keyColumn="MEMBER_NO">
+
 		insert into MEMBER (
-			MEMBER_NO
-			,ID
+			ID
 			,PWD
 			,NAME
 			,NICKNAME
 		)
 		values(
-			#{memberNo}
-			,#{userId}
+			#{userId}
 			,#{userPwd}
 			,#{name}
 			,#{nickname}
