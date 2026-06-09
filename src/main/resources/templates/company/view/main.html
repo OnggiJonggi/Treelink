@@ -4,324 +4,372 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title th:text="'트리링크 - ' + ${companyDetail.companyName}">트리링크 - 회사명</title>
+  <title th:text="'트리링크 - ' + ${companyDetail.companyName}">트리링크 - 업체 정보</title>
   <th:block th:replace="~{/common/fragment :: common}"></th:block>
   <link rel="stylesheet" th:href="@{/css/company/view/main.css}">
 </head>
 
 <body>
 
-  <!-- 페이지 헤더 : 회사 이름 -->
-  <div id="basic-page-header">
-    <h1 id="basic-company-name" th:text="${companyDetail.companyName}">회사 이름</h1>
-  </div>
+  <div class="cv-page-wrapper">
 
-  <!-- 네비 바 -->
-  <nav id="basic-company-nav" aria-label="업체 상세 메뉴">
-    <div id="basic-nav-inner">
-      <a id="basic-nav-basic" th:href="@{/company/{uuid}(uuid=${companyDetail.companyUuid})}" class="basic-nav-item"
-        th:classappend="${companyMenu == 'basic'} ? ' is-active' : ''">
-        <i data-lucide="building-2"></i>
-        기본 정보
-      </a>
-      <a id="basic-nav-evaluation" href="javascript:void(0)" class="basic-nav-item"
-        th:classappend="${companyMenu == 'evaluation'} ? ' is-active' : ''"
-        th:data-url="@{/evaluation/{uuid}(uuid=${companyDetail.companyUuid})}" data-target="basic-content-area"
-        onclick="basicLoadFragment(this)">
-        <i data-lucide="star"></i>
-        평가 보기
-      </a>
-      <a id="basic-nav-location" href="javascript:void(0)" class="basic-nav-item"
-        th:classappend="${companyMenu == 'location'} ? ' is-active' : ''"
-        th:data-url="@{/company/{uuid}/location(uuid=${companyDetail.companyUuid})}" data-target="basic-content-area"
-        onclick="basicLoadFragment(this)">
-        <i data-lucide="map-pin"></i>
-        위치 보기
-      </a>
-      <a id="basic-nav-dashboard" href="javascript:void(0)" class="basic-nav-item"
-        th:classappend="${companyMenu == 'dashboard'} ? ' is-active' : ''"
-        th:data-url="@{/company/{uuid}/dashboard(uuid=${companyDetail.companyUuid})}" data-target="basic-content-area"
-        onclick="basicLoadFragment(this)">
-        <i data-lucide="layout-dashboard"></i>
-        작업 현황
-      </a>
-    </div>
-  </nav>
+    <!-- ============================
+         상단 고정 영역: 로고 + 로고 업로드
+         ============================ -->
+    <div class="cv-header-area">
+      <div class="cv-logo-wrap">
+        <img id="cv-company-logo" th:attr="data-logo-url=@{/file/company/{no}/logo(no=${companyDetail.encryptedCompanyNo})},
+                      data-fallback-url=@{/img/main-logo.png}" src="/img/main-logo.png" alt="업체 로고"
+          class="cv-company-logo">
 
-  <!-- 네비 하단 콘텐츠 영역 -->
-  <main id="basic-content-area">
-
-    <!-- 기본 정보 섹션 -->
-    <section id="basic-info-section">
-      <div id="basic-info-fields">
-
-        <!-- 사업자 등록번호 -->
-        <div id="basic-field-businessNo" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="hash"></i>
-            사업자 등록번호
-          </span>
-          <span id="basic-val-businessNo" class="basic-field-value" th:text="${#strings.substring(companyDetail.businessNo,0,3) + '-'
-                          + #strings.substring(companyDetail.businessNo,3,5) + '-'
-                          + #strings.substring(companyDetail.businessNo,5,10)}">
-            000-00-00000
-          </span>
-          <input id="basic-inp-businessNo" type="text" class="basic-edit-input" style="display:none" maxlength="10"
-            placeholder="숫자 10자리" th:value="${companyDetail.businessNo}" autocomplete="off">
-          <p class="basic-field-error" id="basic-err-businessNo"></p>
-        </div>
-
-        <!-- 대표 이름 -->
-        <div id="basic-field-representativeName" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="user"></i>
-            대표 이름
-          </span>
-          <span id="basic-val-representativeName" class="basic-field-value"
-            th:text="${companyDetail.representativeName}">홍길동</span>
-          <input id="basic-inp-representativeName" type="text" class="basic-edit-input" style="display:none"
-            maxlength="10" placeholder="대표 이름" th:value="${companyDetail.representativeName}" autocomplete="off">
-          <p class="basic-field-error" id="basic-err-representativeName"></p>
-        </div>
-
-        <!-- 대표 연락처 -->
-        <div id="basic-field-phone" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="phone"></i>
-            대표 연락처
-          </span>
-          <span id="basic-val-phone" class="basic-field-value" th:text="${companyDetail.phone}">01000000000</span>
-          <input id="basic-inp-phone" type="text" class="basic-edit-input" style="display:none" maxlength="15"
-            placeholder="숫자만 입력" th:value="${companyDetail.phone}" autocomplete="off">
-          <p class="basic-field-error" id="basic-err-phone"></p>
-        </div>
-
-        <!-- 이메일 -->
-        <div id="basic-field-email" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="mail"></i>
-            이메일
-          </span>
-          <span id="basic-val-email" class="basic-field-value"
-            th:text="${companyDetail.email != null ? companyDetail.email : '-'}">-</span>
-          <input id="basic-inp-email" type="text" class="basic-edit-input" style="display:none" maxlength="100"
-            placeholder="이메일 (선택)" th:value="${companyDetail.email}" autocomplete="off">
-          <p class="basic-field-error" id="basic-err-email"></p>
-        </div>
-
-        <!-- 회사 창립일 -->
-        <div id="basic-field-createdOn" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="calendar"></i>
-            회사 창립일
-          </span>
-          <span id="basic-val-createdOn" class="basic-field-value"
-            th:text="${#temporals.format(companyDetail.createdOn, 'yyyy년 MM월 dd일')}">
-            2020년 01월 01일
-          </span>
-          <input id="basic-inp-createdOn" type="date" class="basic-edit-input" style="display:none"
-            th:value="${#temporals.format(companyDetail.createdOn, 'yyyy-MM-dd')}">
-          <p class="basic-field-error" id="basic-err-createdOn"></p>
-        </div>
-
-        <!-- 주 종목 -->
-        <div id="basic-field-option" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="list-checks"></i>
-            주 종목
-          </span>
-          <!-- 표시 모드 -->
-          <div id="basic-val-option" class="basic-option-chips">
-            <th:block th:each="opt : ${companyDetail.option}">
-              <span class="basic-option-chip" th:if="${opt == '기타'}"
-                th:text="${'기타' + (companyDetail.etcMemo != null ? ' - ' + companyDetail.etcMemo : '')}">기타</span>
-              <span class="basic-option-chip" th:unless="${opt == '기타'}" th:text="${opt}">종목</span>
-            </th:block>
-          </div>
-          <!-- 수정 모드 -->
-          <div id="basic-edit-option" class="basic-edit-option-wrap" style="display:none">
-            <div class="basic-option-grid" id="basic-option-grid">
-              <label class="basic-option-chip-edit" data-value="1">
-                <input type="checkbox" class="basic-option-check" value="1"> 벌초
-              </label>
-              <label class="basic-option-chip-edit" data-value="2">
-                <input type="checkbox" class="basic-option-check" value="2"> 운동장 / 스포츠
-              </label>
-              <label class="basic-option-chip-edit" data-value="3">
-                <input type="checkbox" class="basic-option-check" value="3"> 공공기관 유지관리
-              </label>
-              <label class="basic-option-chip-edit" data-value="4">
-                <input type="checkbox" class="basic-option-check" value="4"> 정원
-              </label>
-              <label class="basic-option-chip-edit" data-value="5">
-                <input type="checkbox" class="basic-option-check" value="5"> 실내조경
-              </label>
-              <label class="basic-option-chip-edit" data-value="6">
-                <input type="checkbox" class="basic-option-check" value="6"> 조경시설물
-              </label>
-              <label class="basic-option-chip-edit basic-option-chip-etc" data-value="99">
-                <input type="checkbox" class="basic-option-check" value="99" id="basic-opt-etc"> 기타
-              </label>
-            </div>
-            <p class="basic-field-error" id="basic-err-option"></p>
-            <div id="basic-etc-memo-wrap" style="display:none">
-              <input type="text" id="basic-inp-etcMemo" class="basic-edit-input" maxlength="20"
-                placeholder="기타 종목을 입력하세요 (최대 20자)" autocomplete="off" th:value="${companyDetail.etcMemo}">
-              <p class="basic-field-error" id="basic-err-etcMemo"></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 상태 (ADMIN only) -->
-        <div sec:authorize="hasRole('ADMIN')" id="basic-field-status" class="basic-field-row">
-          <span class="basic-field-label">
-            <i data-lucide="activity"></i>
-            상태
-          </span>
-          <span id="basic-val-status" class="basic-status-badge" th:classappend="${companyDetail.status == 'ACTIVE'} ? ' status-active'
-                               : (${companyDetail.status == 'SUSPENDED'} ? ' status-suspended' : ' status-terminated')"
-            th:text="${companyDetail.status == 'ACTIVE'} ? '정상'
-                         : (${companyDetail.status == 'SUSPENDED'} ? '정지' : '종료')">정상</span>
-          <select id="basic-inp-status" class="basic-edit-input basic-edit-select" style="display:none">
-            <option value="ACTIVE" th:selected="${companyDetail.status == 'ACTIVE'}">정상 (ACTIVE)</option>
-            <option value="SUSPENDED" th:selected="${companyDetail.status == 'SUSPENDED'}">정지 (SUSPENDED)</option>
-            <option value="TERMINATED" th:selected="${companyDetail.status == 'TERMINATED'}">종료 (TERMINATED)</option>
-          </select>
-        </div>
-
-        <!-- 수정 / 저장 / 취소 버튼 (ADMIN only) -->
-        <div sec:authorize="hasRole('ADMIN')" id="basic-edit-action-area">
-          <button id="basic-btn-edit" class="basic-icon-btn" type="button" onclick="basicEnterEditMode()">
-            <i data-lucide="pencil"></i>
-            수정
+        <!-- ADMIN 전용: 로고 업로드 버튼 -->
+        <div sec:authorize="hasRole('ADMIN')" class="cv-logo-upload-wrap">
+          <button type="button" class="cv-btn cv-btn-outline cv-btn-sm" id="cv-logo-upload-btn">
+            <i data-lucide="upload"></i>
+            로고 업로드
           </button>
-          <div id="basic-edit-controls" style="display:none">
-            <button id="basic-btn-save" class="basic-btn basic-btn-primary" type="button" onclick="basicSaveEdit()">
-              <i data-lucide="save"></i>
-              저장
+          <!-- 숨겨진 파일 입력 -->
+          <input type="file" id="cv-logo-file-input" accept="image/jpeg,image/png,image/gif,image/webp"
+            style="display:none">
+          <!-- 업로드 확인 영역 (파일 선택 후 표시) -->
+          <div id="cv-logo-confirm-area" style="display:none" class="cv-logo-confirm-area">
+            <span id="cv-logo-file-name" class="cv-text-muted cv-text-sm"></span>
+            <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="cv-logo-confirm-btn"
+              th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+              업로드 확인
             </button>
-            <button id="basic-btn-cancel" class="basic-btn basic-btn-outline" type="button" onclick="basicCancelEdit()">
-              <i data-lucide="x"></i>
-              취소
+            <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="cv-logo-cancel-btn">취소</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================
+           네비 바
+           ============================ -->
+      <nav class="cv-nav">
+        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'basic'} ? ' active' : ''"
+          th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}" id="cv-nav-basic">
+          <i data-lucide="info"></i>
+          기본 정보
+        </button>
+        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'intro'} ? ' active' : ''"
+          th:attr="data-url=@{/company/{no}/intro(no=${companyDetail.encryptedCompanyNo})}" data-menu="intro">
+          <i data-lucide="file-text"></i>
+          업체 소개
+        </button>
+        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'evaluation'} ? ' active' : ''"
+          th:attr="data-url=@{/evaluation/{no}(no=${companyDetail.encryptedCompanyNo})}" data-menu="evaluation">
+          <i data-lucide="star"></i>
+          평가 보기
+        </button>
+        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'location'} ? ' active' : ''"
+          th:attr="data-url=@{/company/{no}/location(no=${companyDetail.encryptedCompanyNo})}" data-menu="location">
+          <i data-lucide="map-pin"></i>
+          위치 보기
+        </button>
+        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'dashboard'} ? ' active' : ''"
+          th:attr="data-url=@{/company/{no}/dashboard(no=${companyDetail.encryptedCompanyNo})}" data-menu="dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          작업 현황
+        </button>
+      </nav>
+    </div>
+
+    <!-- ============================
+         네비 바 아래 조각 영역
+         ============================ -->
+    <div id="cv-content-area">
+
+      <!-- ========================================
+           기본 정보 조각 (인라인 삽입)
+           ======================================== -->
+      <div id="main-basic-info">
+
+        <!-- 기본 정보 카드 -->
+        <div class="cv-info-card">
+          <div class="cv-card-header">
+            <h2 class="cv-card-title">
+              <i data-lucide="building-2"></i>
+              업체 기본 정보
+            </h2>
+
+            <!-- ADMIN: 수정하기 버튼 -->
+            <button sec:authorize="hasRole('ADMIN')" type="button" class="cv-btn cv-btn-primary cv-btn-sm"
+              id="cv-edit-open-btn">
+              <i data-lucide="pencil"></i>
+              수정하기
             </button>
           </div>
-          <p class="basic-field-error" id="basic-err-save"></p>
-        </div>
 
-      </div>
-    </section>
+          <dl class="cv-info-list">
+            <!-- 업체명 -->
+            <div class="cv-info-row">
+              <dt class="cv-info-label">업체명</dt>
+              <dd class="cv-info-value" th:text="${companyDetail.companyName}">—</dd>
+            </div>
+            <!-- 사업자 등록번호 -->
+            <div class="cv-info-row">
+              <dt class="cv-info-label">사업자 등록번호</dt>
+              <dd class="cv-info-value" th:text="${#strings.substring(companyDetail.businessNo,0,3) + '-'
+                           + #strings.substring(companyDetail.businessNo,3,5) + '-'
+                           + #strings.substring(companyDetail.businessNo,5)}">—</dd>
+            </div>
+            <!-- 대표 이름 -->
+            <div class="cv-info-row">
+              <dt class="cv-info-label">대표 이름</dt>
+              <dd class="cv-info-value" th:text="${companyDetail.representativeName}">—</dd>
+            </div>
+            <!-- 연락처 -->
+            <div class="cv-info-row">
+              <dt class="cv-info-label">연락처</dt>
+              <dd class="cv-info-value" th:text="${companyDetail.phone}">—</dd>
+            </div>
+            <!-- 이메일 -->
+            <div class="cv-info-row">
+              <dt class="cv-info-label">이메일</dt>
+              <dd class="cv-info-value" th:text="${companyDetail.email}">—</dd>
+            </div>
+            <!-- 창립일 -->
+            <div class="cv-info-row">
+              <dt class="cv-info-label">창립일</dt>
+              <dd class="cv-info-value" th:text="${#temporals.format(companyDetail.createdOn, 'yyyy년 MM월 dd일')}">—</dd>
+            </div>
+            <!-- 주 종목 -->
+            <div class="cv-info-row cv-info-row--top">
+              <dt class="cv-info-label">주 종목</dt>
+              <dd class="cv-info-value">
+                <div class="cv-option-list">
+                  <th:block th:each="opt : ${companyDetail.option}">
+                    <span class="cv-option-tag" th:text="${opt == '기타' and companyDetail.etcMemo != null}
+                                    ? '기타 - ' + ${companyDetail.etcMemo}
+                                    : ${opt}">
+                    </span>
+                  </th:block>
+                  <span th:if="${companyDetail.option == null or #lists.isEmpty(companyDetail.option)}"
+                    class="cv-text-muted cv-text-sm">없음</span>
+                </div>
+              </dd>
+            </div>
+            <!-- ADMIN 전용: 상태 -->
+            <div sec:authorize="hasRole('ADMIN')" class="cv-info-row">
+              <dt class="cv-info-label">상태</dt>
+              <dd class="cv-info-value">
+                <span class="cv-status-badge" th:classappend="${companyDetail.status.name() == 'ACTIVE'} ? ' status-active'
+                  : (${companyDetail.status.name() == 'SUSPENDED'} ? ' status-suspended'
+                  : ' status-terminated')" th:text="${companyDetail.status.name() == 'ACTIVE'} ? '정상'
+                  : (${companyDetail.status.name() == 'SUSPENDED'} ? '정지' : '종료')">
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </div><!-- /.cv-info-card -->
 
-    <!-- 업체 서류 영역 (ADMIN only) -->
-    <section sec:authorize="hasRole('ADMIN')" id="basic-docs-section">
-      <div id="basic-docs-header">
-        <h2 id="basic-docs-title">
-          <i data-lucide="folder-open"></i>
-          업체 서류
-        </h2>
-        <button id="basic-btn-new-doc" class="basic-btn basic-btn-primary" type="button"
-          onclick="basicToggleDocUpload()">
-          <i data-lucide="plus"></i>
-          새로운 서류 등록
+        <!-- ========================================
+             ADMIN: 서류 등록 + 서류 목록
+             ======================================== -->
+        <div sec:authorize="hasRole('ADMIN')" class="cv-doc-section">
+
+          <!-- 서류 등록 버튼 -->
+          <button type="button" class="cv-btn cv-btn-outline cv-btn-sm" id="cv-doc-register-btn">
+            <i data-lucide="file-plus"></i>
+            서류 등록
+          </button>
+
+          <!-- 서류 등록 폼 (숨김) -->
+          <div id="cv-doc-form-area" style="display:none" class="cv-doc-form-area">
+            <div class="cv-doc-form-inner">
+              <div class="cv-form-group">
+                <label class="cv-form-label">첨부 파일 <span class="cv-required">*</span></label>
+                <input type="file" id="cv-doc-file-input" class="cv-form-control">
+              </div>
+              <div class="cv-form-group">
+                <label class="cv-form-label" for="cv-doc-type-input">서류 종류 <span class="cv-required">*</span></label>
+                <input type="text" id="cv-doc-type-input" class="cv-form-control" placeholder="20자 이내" maxlength="20">
+              </div>
+              <div class="cv-form-group">
+                <label class="cv-form-label" for="cv-doc-expire-input">만료일 <span
+                    class="cv-text-muted">(선택)</span></label>
+                <input type="text" id="cv-doc-expire-input" class="cv-form-control" placeholder="예) 2025년 12월 31일">
+              </div>
+              <div class="cv-form-btns">
+                <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="cv-doc-upload-btn"
+                  th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+                  업로드
+                </button>
+                <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="cv-doc-cancel-btn">취소</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 서류 목록 -->
+          <div class="cv-doc-list-wrap" th:if="${companyDocs != null and not #lists.isEmpty(companyDocs)}">
+            <h3 class="cv-section-title">서류 목록</h3>
+            <div class="cv-doc-list">
+              <div class="cv-doc-item" th:each="doc : ${companyDocs}" th:attr="data-encrypted-file-no=${doc.encryptedFileNo},
+                            data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+                <div class="cv-doc-item-info">
+                  <div class="cv-doc-name">
+                    <i data-lucide="file"></i>
+                    <span th:text="${doc.originalName}">파일명</span>
+                  </div>
+                  <div class="cv-doc-meta">
+                    <span class="cv-doc-type-badge" th:text="${doc.docType}">종류</span>
+                    <span class="cv-text-muted cv-text-sm"
+                      th:text="${#numbers.formatDecimal(doc.fileSize / 1024.0, 1, 'COMMA', 1, 'POINT')} + ' KB'">
+                    </span>
+                    <span class="cv-text-muted cv-text-sm" th:if="${doc.expireOn != null}"
+                      th:text="'만료: ' + ${#temporals.format(doc.expireOn, 'yyyy년 MM월 dd일')}">
+                    </span>
+                  </div>
+                </div>
+                <button type="button" class="cv-btn cv-btn-danger cv-btn-xs cv-doc-delete-btn" th:attr="data-encrypted-file-no=${doc.encryptedFileNo},
+                                 data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+                  <i data-lucide="trash-2"></i>
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+          <div th:if="${companyDocs == null or #lists.isEmpty(companyDocs)}"
+            class="cv-empty-state cv-text-muted cv-text-sm">
+            등록된 서류가 없습니다.
+          </div>
+        </div><!-- /.cv-doc-section -->
+
+      </div><!-- /#main-basic-info -->
+
+    </div><!-- /#cv-content-area -->
+  </div><!-- /.cv-page-wrapper -->
+
+
+  <!-- ========================================
+       ADMIN: 업체 정보 수정 모달
+       ======================================== -->
+  <div sec:authorize="hasRole('ADMIN')" id="cv-edit-modal" class="cv-modal-backdrop" style="display:none" role="dialog"
+    aria-modal="true" aria-labelledby="cv-edit-modal-title">
+    <div class="cv-modal">
+      <div class="cv-modal-header">
+        <h3 class="cv-modal-title" id="cv-edit-modal-title">업체 정보 수정</h3>
+        <button type="button" class="cv-modal-close" id="cv-edit-modal-close">
+          <i data-lucide="x"></i>
         </button>
       </div>
+      <div class="cv-modal-body">
+        <form id="cv-edit-form" th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
 
-      <!-- 서류 업로드 폼 -->
-      <div id="basic-doc-upload-form" style="display:none">
-        <div id="basic-doc-upload-inner">
-          <div class="basic-field-row">
-            <label class="basic-field-label" for="basic-doc-type-input">
-              <i data-lucide="tag"></i>
-              서류 종류 <span class="basic-required">*</span>
-            </label>
-            <input type="text" id="basic-doc-type-input" class="basic-edit-input" maxlength="20"
-              placeholder="서류 종류 입력 (최대 20자)" autocomplete="off">
-            <p class="basic-field-error" id="basic-err-docType"></p>
+          <!-- 업체명 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="cv-edit-companyName">업체명 <span class="cv-required">*</span></label>
+            <input type="text" id="cv-edit-companyName" name="companyName" class="cv-form-control"
+              th:value="${companyDetail.companyName}" placeholder="업체명">
+            <div class="cv-form-error" id="cv-err-companyName"></div>
           </div>
-          <div class="basic-field-row">
-            <label class="basic-field-label" for="basic-doc-expire-input">
-              <i data-lucide="calendar-x"></i>
-              만료일 <span class="basic-optional">(선택)</span>
-            </label>
-            <input type="date" id="basic-doc-expire-input" class="basic-edit-input">
-            <p class="basic-field-error" id="basic-err-docExpire"></p>
-          </div>
-          <div class="basic-field-row">
-            <label class="basic-field-label" for="basic-doc-file-input">
-              <i data-lucide="paperclip"></i>
-              파일 <span class="basic-required">*</span>
-            </label>
-            <input type="file" id="basic-doc-file-input" class="basic-edit-input basic-file-input"
-              onchange="basicOnFileSelected()">
-          </div>
-          <div id="basic-doc-upload-btn-area" style="display:none">
-            <button id="basic-btn-upload-doc" class="basic-btn basic-btn-primary" type="button"
-              onclick="basicUploadDoc()">
-              <i data-lucide="upload"></i>
-              업로드
-            </button>
-          </div>
-          <p class="basic-field-error" id="basic-err-upload"></p>
-        </div>
-      </div>
 
-      <!-- 서류 목록 -->
-      <div id="basic-docs-list">
-        <th:block th:if="${docs != null and !#lists.isEmpty(docs)}">
-          <div class="basic-doc-card" th:each="doc : ${docs}"
-            th:attr="data-encrypted-no=${doc.encryptedFileNo}, data-company-uuid=${companyDetail.companyUuid}">
-            <div class="basic-doc-card-meta">
-              <div class="basic-doc-badge" th:text="${doc.docType}">서류 유형</div>
-              <div class="basic-doc-info-row">
-                <span class="basic-doc-info-label"><i data-lucide="file-text"></i></span>
-                <span class="basic-doc-info-value" th:text="${doc.originalName}">파일명.pdf</span>
-              </div>
-              <div class="basic-doc-info-row">
-                <span class="basic-doc-info-label"><i data-lucide="hard-drive"></i></span>
-                <span class="basic-doc-info-value"
-                  th:text="${#numbers.formatDecimal(doc.fileSize / 1024.0, 1, 1) + ' KB'}">0 KB</span>
-              </div>
-              <div class="basic-doc-info-row">
-                <span class="basic-doc-info-label"><i data-lucide="clock"></i></span>
-                <span class="basic-doc-info-value"
-                  th:text="${#temporals.format(doc.savedAt, 'yyyy년 MM월 dd일 hh:mm:ss')}">
-                  2024년 01월 01일 12:00:00
-                </span>
-              </div>
-              <div class="basic-doc-info-row" th:if="${doc.expireOn != null}">
-                <span class="basic-doc-info-label"><i data-lucide="calendar-x"></i></span>
-                <span class="basic-doc-info-value" th:text="${#temporals.format(doc.expireOn, 'yyyy년 MM월 dd일')}">
-                  2025년 12월 31일
-                </span>
-              </div>
+          <!-- 사업자 등록번호 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="cv-edit-businessNo">사업자 등록번호 <span class="cv-required">*</span></label>
+            <input type="text" id="cv-edit-businessNo" name="businessNo" class="cv-form-control"
+              th:value="${companyDetail.businessNo}" placeholder="숫자 10자리">
+            <div class="cv-form-error" id="cv-err-businessNo"></div>
+          </div>
+
+          <!-- 대표 이름 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="cv-edit-representativeName">대표 이름 <span
+                class="cv-required">*</span></label>
+            <input type="text" id="cv-edit-representativeName" name="representativeName" class="cv-form-control"
+              th:value="${companyDetail.representativeName}" placeholder="대표 이름">
+            <div class="cv-form-error" id="cv-err-representativeName"></div>
+          </div>
+
+          <!-- 연락처 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="cv-edit-phone">연락처 <span class="cv-required">*</span></label>
+            <input type="text" id="cv-edit-phone" name="phone" class="cv-form-control" th:value="${companyDetail.phone}"
+              placeholder="숫자만">
+            <div class="cv-form-error" id="cv-err-phone"></div>
+          </div>
+
+          <!-- 이메일 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="cv-edit-email">이메일</label>
+            <input type="text" id="cv-edit-email" name="email" class="cv-form-control" th:value="${companyDetail.email}"
+              placeholder="example@email.com">
+            <div class="cv-form-error" id="cv-err-email"></div>
+          </div>
+
+          <!-- 창립일 (year / month / day 분리) -->
+          <div class="cv-form-group">
+            <label class="cv-form-label">창립일 <span class="cv-required">*</span></label>
+            <div class="cv-date-row">
+              <input type="number" id="cv-edit-year" class="cv-form-control cv-date-part" placeholder="YYYY"
+                th:value="${#temporals.year(companyDetail.createdOn)}" min="1900" max="2099">
+              <span class="cv-date-sep">년</span>
+              <input type="number" id="cv-edit-month" class="cv-form-control cv-date-part" placeholder="MM"
+                th:value="${#temporals.month(companyDetail.createdOn)}" min="1" max="12">
+              <span class="cv-date-sep">월</span>
+              <input type="number" id="cv-edit-day" class="cv-form-control cv-date-part" placeholder="DD"
+                th:value="${#temporals.day(companyDetail.createdOn)}" min="1" max="31">
+              <span class="cv-date-sep">일</span>
             </div>
-            <div class="basic-doc-card-actions">
-              <button class="basic-btn basic-btn-outline basic-btn-sm" type="button" onclick="basicViewDoc(this)">
-                <i data-lucide="eye"></i>
-                서류 보기
-              </button>
-              <button class="basic-btn basic-btn-danger basic-btn-sm" type="button" onclick="basicDeleteDoc(this)">
-                <i data-lucide="trash-2"></i>
-                서류 삭제
-              </button>
-            </div>
+            <div class="cv-form-error" id="cv-err-createdOn"></div>
           </div>
-        </th:block>
-        <div id="basic-docs-empty" th:if="${docs == null or #lists.isEmpty(docs)}" class="basic-empty-state">
-          <i data-lucide="folder-open"></i>
-          <p>등록된 서류가 없습니다.</p>
-        </div>
+
+          <!-- 주 종목 (체크박스) -->
+          <div class="cv-form-group">
+            <label class="cv-form-label">주 종목 <span class="cv-text-muted">(최대 3개)</span></label>
+            <div class="cv-specialty-list">
+              <label class="cv-specialty-item" th:each="spec : ${ {
+                  {no: 1,  field: '벌초'},
+                  {no: 2,  field: '운동장 / 스포츠'},
+                  {no: 3,  field: '공공기관 유지관리'},
+                  {no: 4,  field: '정원'},
+                  {no: 5,  field: '실내조경'},
+                  {no: 6,  field: '조경시설물'},
+                  {no: 99, field: '기타'}
+              } }">
+                <input type="checkbox" name="option" class="cv-specialty-check" th:value="${spec.no}"
+                  th:checked="${companyDetail.option != null and #lists.contains(companyDetail.option, spec.field)}"
+                  th:attr="data-field=${spec.field}">
+                <span th:text="${spec.field}">종목</span>
+              </label>
+            </div>
+            <div class="cv-form-error" id="cv-err-option"></div>
+          </div>
+
+          <!-- 기타 메모 (기타 선택 시 표시) -->
+          <div class="cv-form-group" id="cv-edit-etcMemo-wrap"
+            th:style="${companyDetail.option != null and #lists.contains(companyDetail.option, '기타')} ? '' : 'display:none'">
+            <label class="cv-form-label" for="cv-edit-etcMemo">기타 내용 <span class="cv-required">*</span></label>
+            <input type="text" id="cv-edit-etcMemo" name="etcMemo" class="cv-form-control"
+              th:value="${companyDetail.etcMemo}" placeholder="20자 이내" maxlength="20">
+            <div class="cv-form-error" id="cv-err-etcMemo"></div>
+          </div>
+
+          <!-- 상태 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="cv-edit-status">상태 <span class="cv-required">*</span></label>
+            <select id="cv-edit-status" name="status" class="cv-form-control">
+              <option value="ACTIVE" th:selected="${companyDetail.status.name() == 'ACTIVE'}">정상</option>
+              <option value="SUSPENDED" th:selected="${companyDetail.status.name() == 'SUSPENDED'}">정지</option>
+              <option value="TERMINATED" th:selected="${companyDetail.status.name() == 'TERMINATED'}">종료</option>
+            </select>
+          </div>
+
+        </form>
       </div>
-    </section>
+      <div class="cv-modal-footer">
+        <button type="button" class="cv-btn cv-btn-ghost" id="cv-edit-cancel-btn">취소</button>
+        <button type="button" class="cv-btn cv-btn-primary" id="cv-edit-submit-btn">수정 확인</button>
+      </div>
+    </div>
+  </div><!-- /#cv-edit-modal -->
 
-    <!-- hidden 값들 (JS용) -->
-    <input type="hidden" id="basic-hidden-companyUuid" th:value="${companyDetail.companyUuid}">
-    <input type="hidden" id="basic-hidden-options"
-      th:value="${companyDetail.option != null ? #strings.listJoin(companyDetail.option, ',') : ''}">
 
-  </main>
-
+  <script>
+    lucide.createIcons();
+  </script>
   <script th:src="@{/js/company/view/main.js}"></script>
-  <script>lucide.createIcons();</script>
 </body>
 
 </html>

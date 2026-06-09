@@ -1,4 +1,4 @@
-package com.tl.global.file;
+package com.tl.global.file.component;
 
 import java.time.LocalDate;
 import java.util.regex.Pattern;
@@ -24,7 +24,7 @@ public class FileValidateComponent {
 		
 		// 파일 비었으면 가세요라
 		if (file == null || file.isEmpty())
-			throw new CustomException(ErrorCodeEnum.FILE_NAME_FORBIDDEN);
+			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 
 		// 파일 이름 내놔
 		String originalName = file.getOriginalFilename();
@@ -33,7 +33,7 @@ public class FileValidateComponent {
 		if (originalName == null 
 				|| originalName.isBlank()
 				|| !Pattern.matches(FileRegexp.ORIGINAL_NAME_NO_REGEXP, originalName)
-				) throw new CustomException(ErrorCodeEnum.FILE_NAME_FORBIDDEN);
+				) throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// 서류 타입 이상하면 가세요라
 		if(docType == null

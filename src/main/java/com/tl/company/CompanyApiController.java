@@ -1,38 +1,31 @@
 package com.tl.company;
 
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriUtils;
 
 import com.tl.global.api.BusinessNoCheckService;
 import com.tl.global.api.BusinessNoCheckVO;
-import com.tl.global.file.FileInfoVO;
-import com.tl.global.file.FileValidateComponent;
+import com.tl.global.common.SearchResultVO;
+import com.tl.global.file.CompanyDocService;
+import com.tl.global.file.component.FileValidateComponent;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
+import com.tl.global.security.RoleEnum;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/company")
 @RequiredArgsConstructor
+@Slf4j
 public class CompanyApiController {
 	public final BusinessNoCheckService businessNoCheckService;
 	public final CompanyService companyService;
@@ -47,7 +40,8 @@ public class CompanyApiController {
 	 * @param bindingResult
 	 */
 	@GetMapping("/check-businessno")
-	public ResponseEntity<String> checkBusinessNo(@Valid BusinessNoCheckVO.request businessNoCheckRequest
+	public ResponseEntity<String> checkBusinessNo(
+			@Valid BusinessNoCheckVO.request businessNoCheckRequest
 			,BindingResult bindingResult){
 		
 		if(bindingResult.hasErrors())
@@ -59,97 +53,50 @@ public class CompanyApiController {
 	}
 	
 	/**
-	 * 회사 수정
-	 * 관리자
-	 * @param companyNo
+	 * 업체 목록
 	 */
-	@PutMapping("{companyUuid}")
-	public ResponseEntity<Void> updateCompany(
-			@PathVariable String companyUuid,
-			@Valid CompanyVO.Registor company){
+	@GetMapping("")
+	public ResponseEntity<SearchResultVO<CompanyVO.Detail>> goCompanyList(CompanyVO.Search companySearch,
+			@AuthenticationPrincipal CustomUserDetails userDetails
+			) throws Exception{
 		
-		/*
-		 * thymeleaf는 url에 접근이 어려워서
-		 * 프론트에서 companyUuid를 알려면 웹 서버에서 model로 건네줘야 해요
-		 * 아래처럼 하면 매우 쉬운데 그죠???
-		 */
-		company.setCompanyUuid(companyUuid);
+		// 관리자 권한에 따라 조회 범위가 달라요
+		if(userDetails == null ||
+				!userDetails.getAuthorities().stream()
+				.anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
+			
+			// 권한 없으면 활성화된 상태만 조회 가능해요
+			companySearch.setStatus(CompanyStatusEnum.ACTIVE);
+		}
+		
+		SearchResultVO<CompanyVO.Detail> result = companyService.getCompanyList(companySearch);
+		
+		// 식별번호 암호화
+		for(CompanyVO.Detail company : result.getList()) {
+			company.setEncryptedCompanyNo(cryptoComponent.encrypt(String.valueOf(company.getCompanyNo())));
+			company.setCompanyNo(0);
+		}
+		
+		return ResponseEntity.ok(result);
+	}
+	
+	/**
+	 * 업체 수정
+	 * 관리자
+	 */
+	@PutMapping("{encryptedCompanyNo}")
+	public ResponseEntity<Void> updateCompany(
+			@PathVariable String encryptedCompanyNo,
+			@Valid CompanyVO.Registor company) throws Exception{
+		
+		// 회사 식별번호 복호화
+		company.setCompanyNo(Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo)));
 		
 		companyService.updateCompany(company);
 		
 		return ResponseEntity.ok().build();
 	}
-	
-	/**
-	 * 업체 서류 등록
-	 * 관리자
-	 * @param companyNo
-	 * @param file
-	 */
-	@PostMapping("/{companyUuid}/doc")
-	public ResponseEntity<Void> docRegistration(
-			@PathVariable String companyUuid, MultipartFile file, String docType,
-			@RequestParam(required = false) LocalDate expireOn) throws Exception{
-		
-		// 파일 이름, 서류 종류 유효성 검사
-		fileValidateComponent.isValid(file, docType, expireOn);
-		
-		companyDocService.registor(companyUuid, docType, expireOn, file);
-		
-		return ResponseEntity.ok().build();
-	}
-	
-	/**
-	 * 업체 서류 조회
-	 * @param encryptedDocNo
-	 */
-	@GetMapping("{companyUuid}/doc/{encryptedDocNo}")
-	public ResponseEntity<Resource> getDoc(
-			@PathVariable String CompanyUuid,
-			@PathVariable String encryptedDocNo) throws Exception{
-		
-		int docNo = Integer.valueOf(cryptoComponent.decrypt(encryptedDocNo));
-		
-		FileInfoVO.FileResult result = companyDocService.getFile(CompanyUuid, docNo);
-		
-		// Content-Disposition 구성
-		String encodedName = UriUtils.encode(result.getOriginalName(), StandardCharsets.UTF_8);
-		String disposition = (result.isInline() ? "inline" : "attachment") + "; filename=\"" + encodedName + "\"";
 
-		// MIME 타입 -> Content-Type 변환
-		MediaType mediaType;
-		try {
-			mediaType = MediaType.parseMediaType(result.getMimeType());
-		} catch (Exception e) {
-			// octet-stream : 뭔지 모르는 바이너리 데이터
-			mediaType = MediaType.APPLICATION_OCTET_STREAM;
-		}
-
-		return ResponseEntity.ok()
-				.header(HttpHeaders.CONTENT_DISPOSITION, disposition)
-				.contentType(mediaType)
-				.body(result.getResource());
-	}
-	
-	/**
-	 * 파일 삭제 요청
-	 * @param CompanyUuid
-	 * @param encryptedDocNo
-	 * @return 204
-	 */
-	@DeleteMapping("{companyUuid}/doc/{encryptedDocNo}")
-	public ResponseEntity<Void> deleteDoc(
-			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable String CompanyUuid,
-			@PathVariable String encryptedDocNo) throws Exception{
-		
-		int docNo = Integer.valueOf(cryptoComponent.decrypt(encryptedDocNo));
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
-		
-		companyDocService.deleteDoc(CompanyUuid, docNo, memberNo);
-		
-		return ResponseEntity.noContent().build();
-	}
 	
 	
 }

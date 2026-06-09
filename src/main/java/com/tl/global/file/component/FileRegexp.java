@@ -1,4 +1,4 @@
-package com.tl.global.file;
+package com.tl.global.file.component;
 
 public class FileRegexp {
 	private FileRegexp() {};

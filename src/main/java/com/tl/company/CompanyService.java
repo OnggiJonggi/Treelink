@@ -1,11 +1,16 @@
 package com.tl.company;
 
-import java.util.UUID;
+import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.tl.company.CompanyVO.Search;
+import com.tl.global.common.SearchResultVO;
 import com.tl.global.exception.CustomException;
+import com.tl.global.exception.ErrorCodeEnum;
 
 import lombok.RequiredArgsConstructor;
 
@@ -13,26 +18,53 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CompanyService {
 	private final CompanyMapper companyMapper;
+
+	/**
+	 * 업체 조회
+	 */
+	public SearchResultVO<CompanyVO.Detail> getCompanyList(Search companySearch) {
+		
+		// 목록 조회
+		List<CompanyVO.Detail> result = companyMapper.selectList(companySearch);
+		
+		// 검색 수
+		int totalCount = companyMapper.selectListTotalCount(companySearch);
+		
+		// searchResult로 감싸기
+		SearchResultVO<CompanyVO.Detail> searchResult = new SearchResultVO<CompanyVO.Detail>(
+				result, totalCount, companySearch.getPage());
+		
+		return searchResult;
+	}
+
 	
+	/**
+	 * 업체 등록
+	 */
 	@Transactional
-	public String companyRegistor(CompanyVO.Registor companyRegistor) {
+	public int companyRegistor(CompanyVO.Registor companyRegistor) {
+		// 업체 등록
+		int result1 = companyMapper.insertCompany(companyRegistor);
 		
-		// 회사 식별 Uuid생성
-		String uuid = UUID.randomUUID().toString();
-		companyRegistor.setCompanyUuid(uuid);
+		// 오류!
+		if(result1 == 0)
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		
-		// 회사 등록
-		companyMapper.insertCompany(companyRegistor);
 		
 		// 주 종목 등록
-		if(companyRegistor.getOption() != null) {
-			companyMapper.insertCompanySpecialty(
+		if(companyRegistor.getOption() != null && !companyRegistor.getOption().isEmpty()) {
+			
+			int result2 = companyMapper.insertCompanySpecialty(
 					companyRegistor.getCompanyNo()
 					,companyRegistor.getOption()
 					,companyRegistor.getEtcMemo());
+			
+			if(result2 == 0)
+				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
-		return uuid;
+		// 업체 식별번호 반환
+		return companyRegistor.getCompanyNo();
 	}
 
 	/**
@@ -40,11 +72,11 @@ public class CompanyService {
 	 * @param companyNo
 	 * @return 회사 기본 정보
 	 */
-	public CompanyVO.Detail getCompanyBasicInfo(String companyUuid) {
+	public CompanyVO.Detail getCompanyBasicInfo(int companyNo) {
 		
-		CompanyVO.Detail result = companyMapper.selectCompanyDetail(companyUuid);
+		CompanyVO.Detail result = companyMapper.selectCompanyDetail(companyNo);
 		
-		if(result == null) throw new CustomException(null);
+		if(result==null) throw new CustomException(ErrorCodeEnum.COMPANY_NOT_FOUND);
 		
 		return result;
 	}
@@ -52,19 +84,34 @@ public class CompanyService {
 
 	/**
 	 * 회사 기본정보 업데이트
-	 * 트랜잭션 안 할꺼에요
 	 * @param company
 	 */
+	@Transactional
 	public void updateCompany(CompanyVO.Registor company) {
 		
 		// 기본정보 업데이트 및 회사 식별번호 추출
-		companyMapper.updateCompany(company);
+		int result1 = companyMapper.updateCompany(company);
 		
-		// 주 종목 업데이트
-		companyMapper.updateCompanySpecialty(
-				company.getCompanyNo(),
-				company.getOption(),
-				company.getEtcMemo());
+		// 오류!
+		if(result1 == 0)
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		
+		// 주 종목 삭제
+		companyMapper.deleteCompanySpecialty(company.getCompanyNo());
+		
+		// 갈아치울 주 종목이 있으면 갈아버려
+		if(company.getOption()!=null && !company.getOption().isEmpty()) {
+			
+			// 주 종목 새로 삽입
+			int result3 = companyMapper.insertCompanySpecialty(
+					company.getCompanyNo(),
+					company.getOption(),
+					company.getEtcMemo());
+			
+			// 오류!
+			if(result3 == 0)
+				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 }

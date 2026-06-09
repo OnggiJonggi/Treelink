@@ -1,325 +1,511 @@
-(function () {
-  'use strict';
+/* =============================================
+   상수
+============================================= */
+const SPECIALTY_MAP = [
+  { no: 1, field: '벌초' },
+  { no: 2, field: '운동장 / 스포츠' },
+  { no: 3, field: '공공기관 유지관리' },
+  { no: 4, field: '정원' },
+  { no: 5, field: '실내조경' },
+  { no: 6, field: '조경시설물' },
+  { no: 99, field: '기타' },
+];
 
-  /* ── 정규식 ─────────────────────────────────── */
-  const REG = {
-    BUSINESS_NO: /^[0-9]{10}$/,
-    COMPANY_NAME: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,100}$/,
-    REPRESENTATIVE_NAME: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$/,
-    PHONE: /^[0-9]{1,15}$/,
-    EMAIL: /^(?=.{1,100}$)[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/,
-    ETC_MEMO: /^.{1,20}$/,
-    DOC_TYPE: /^[^&<>"';]{1,20}$/,
-  };
+const REGEXP = {
+  businessNo: /^[0-9]{10}$/,
+  companyName: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,100}$/,
+  representativeName: /^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1,10}$/,
+  phone: /^[0-9]{1,15}$/,
+  email: /^(?=.{1,100}$)[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/,
+  etcMemo: /^.{1,20}$/,
+};
 
-  /* ── OPTION 라벨 <-> 숫자 매핑 ─────────────── */
-  const OPTION_MAP = {
-    '벌초': 1, '운동장 / 스포츠': 2, '공공기관 유지관리': 3,
-    '정원': 4, '실내조경': 5, '조경시설물': 6, '기타': 99,
-  };
+/* =============================================
+   페이지 초기화
+============================================= */
+document.addEventListener('DOMContentLoaded', function () {
+  loadCompanyLogo();
+  initNavBar();
+  initLogoUpload();
+  initEditModal();
+  initDocRegister();
+  initDocList();
+  lucide.createIcons();
+});
 
-  /* ── CSRF ────────────────────────────────────── */
-  function getCsrfHeader() {
-    const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-    const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-    if (token && header) return { [header]: token };
-    return {};
-  }
+/* =============================================
+   업체 로고 로드
+============================================= */
+function loadCompanyLogo() {
+  const img = document.getElementById('cv-company-logo');
+  if (!img) return;
 
-  /* ── 에러 헬퍼 ──────────────────────────────── */
-  function showError(id, msg) { const el = document.getElementById(id); if (el) el.textContent = msg || ''; }
-  function clearError(id) { showError(id, ''); }
-  function markInvalid(el, errId, msg) { el.classList.add('is-invalid'); showError(errId, msg); }
-  function markValid(el, errId) { el.classList.remove('is-invalid'); clearError(errId); }
+  const logoUrl = img.getAttribute('data-logo-url');
+  const fallbackUrl = img.getAttribute('data-fallback-url');
 
-  /* ── 네비 조각 로드 ─────────────────────────── */
-  window.basicLoadFragment = function (anchor) {
-    const url = anchor.getAttribute('data-url');
-    const target = document.getElementById(anchor.getAttribute('data-target'));
-    if (!url || !target) return;
-    document.querySelectorAll('.basic-nav-item').forEach(a => a.classList.remove('is-active'));
-    anchor.classList.add('is-active');
-    $.ajax({
-      url, method: 'GET',
-      success: function (html) { target.innerHTML = html; lucide.createIcons(); },
-      error: function () { target.innerHTML = '<p style="padding:2rem;color:#a12c2c;">콘텐츠를 불러오지 못했습니다.</p>'; }
+  fetch(logoUrl)
+    .then(function (res) {
+      if (!res.ok) throw new Error('not found');
+      return res.blob();
+    })
+    .then(function (blob) {
+      img.src = URL.createObjectURL(blob);
+    })
+    .catch(function () {
+      img.src = fallbackUrl;
     });
-  };
+}
 
-  /* ============================================================
-     수정 모드
-  ============================================================ */
-  window.basicEnterEditMode = function () {
-    ['businessNo', 'representativeName', 'phone', 'email', 'createdOn'].forEach(id => {
-      document.getElementById('basic-val-' + id).style.display = 'none';
-      document.getElementById('basic-inp-' + id).style.display = '';
-    });
-    const statusVal = document.getElementById('basic-val-status');
-    const statusInp = document.getElementById('basic-inp-status');
-    if (statusVal) statusVal.style.display = 'none';
-    if (statusInp) statusInp.style.display = '';
-    document.getElementById('basic-val-option').style.display = 'none';
-    document.getElementById('basic-edit-option').style.display = '';
-    initOptionCheckboxes();
-    document.getElementById('basic-btn-edit').style.display = 'none';
-    document.getElementById('basic-edit-controls').style.display = '';
-  };
-
-  window.basicCancelEdit = function () { exitEditMode(); };
-
-  function exitEditMode() {
-    ['businessNo', 'representativeName', 'phone', 'email', 'createdOn'].forEach(id => {
-      document.getElementById('basic-val-' + id).style.display = '';
-      const inp = document.getElementById('basic-inp-' + id);
-      inp.style.display = 'none'; inp.classList.remove('is-invalid');
-      clearError('basic-err-' + id);
-    });
-    const statusVal = document.getElementById('basic-val-status');
-    const statusInp = document.getElementById('basic-inp-status');
-    if (statusVal) statusVal.style.display = '';
-    if (statusInp) { statusInp.style.display = 'none'; statusInp.classList.remove('is-invalid'); }
-    document.getElementById('basic-val-option').style.display = '';
-    document.getElementById('basic-edit-option').style.display = 'none';
-    document.getElementById('basic-btn-edit').style.display = '';
-    document.getElementById('basic-edit-controls').style.display = 'none';
-    ['basic-err-option', 'basic-err-etcMemo', 'basic-err-save'].forEach(clearError);
-  }
-
-  function initOptionCheckboxes() {
-    const hiddenOpts = document.getElementById('basic-hidden-options');
-    const currentLabels = hiddenOpts ? hiddenOpts.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-    const currentNums = currentLabels.map(label => OPTION_MAP[label]).filter(Boolean);
-    document.querySelectorAll('.basic-option-check').forEach(cb => {
-      const checked = currentNums.includes(parseInt(cb.value));
-      cb.checked = checked;
-      cb.closest('.basic-option-chip-edit')?.classList.toggle('is-selected', checked);
-    });
-    const etcChecked = document.getElementById('basic-opt-etc')?.checked;
-    const etcWrap = document.getElementById('basic-etc-memo-wrap');
-    const etcInp = document.getElementById('basic-inp-etcMemo');
-    if (etcWrap) etcWrap.style.display = etcChecked ? '' : 'none';
-    if (etcInp) etcInp.disabled = !etcChecked;
-    refreshChipDisabledState();
-  }
-
-  function getCheckedCount() { return document.querySelectorAll('.basic-option-check:checked').length; }
-
-  function refreshChipDisabledState() {
-    const count = getCheckedCount();
-    document.querySelectorAll('.basic-option-chip-edit').forEach(chip => {
-      const cb = chip.querySelector('.basic-option-check');
-      if (!cb.checked) chip.classList.toggle('is-disabled', count >= 3);
+/* =============================================
+   네비 바
+============================================= */
+function initNavBar() {
+  const basicBtn = document.getElementById('cv-nav-basic');
+  if (basicBtn) {
+    basicBtn.addEventListener('click', function () {
+      location.reload();
     });
   }
 
-  document.addEventListener('click', function (e) {
-    const chip = e.target.closest('.basic-option-chip-edit');
-    if (!chip) return;
-    const cb = chip.querySelector('.basic-option-check');
-    if (!cb) return;
-    if (!cb.checked && getCheckedCount() >= 3) {
-      e.preventDefault();
-      showError('basic-err-option', '주 종목은 최대 3개까지 선택할 수 있어요');
+  document.querySelectorAll('.cv-nav-item[data-url]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.getAttribute('data-url');
+      fetchFragment(url);
+    });
+  });
+}
+
+function fetchFragment(url) {
+  $.ajax({
+    url: url,
+    type: 'GET',
+    success: function (html) {
+      document.getElementById('cv-content-area').innerHTML = html;
+      lucide.createIcons();
+    },
+    error: function (xhr) {
+      alert('페이지를 불러오지 못했습니다. (' + xhr.status + ')');
     }
   });
+}
 
-  document.addEventListener('change', function (e) {
-    if (!e.target.classList.contains('basic-option-check')) return;
-    e.target.closest('.basic-option-chip-edit')?.classList.toggle('is-selected', e.target.checked);
-    clearError('basic-err-option');
-    refreshChipDisabledState();
-    const etcChecked = document.getElementById('basic-opt-etc')?.checked;
-    const etcWrap = document.getElementById('basic-etc-memo-wrap');
-    const etcInp = document.getElementById('basic-inp-etcMemo');
-    if (etcWrap) etcWrap.style.display = etcChecked ? '' : 'none';
-    if (etcInp) {
-      etcInp.disabled = !etcChecked;
-      if (!etcChecked) { etcInp.value = ''; clearError('basic-err-etcMemo'); }
-      else etcInp.focus();
-    }
+/* =============================================
+   로고 업로드 (ADMIN)
+============================================= */
+function initLogoUpload() {
+  const uploadBtn = document.getElementById('cv-logo-upload-btn');
+  const fileInput = document.getElementById('cv-logo-file-input');
+  const confirmArea = document.getElementById('cv-logo-confirm-area');
+  const fileNameSpan = document.getElementById('cv-logo-file-name');
+  const confirmBtn = document.getElementById('cv-logo-confirm-btn');
+  const cancelBtn = document.getElementById('cv-logo-cancel-btn');
+
+  if (!uploadBtn) return;
+
+  uploadBtn.addEventListener('click', function () {
+    fileInput.click();
   });
 
-  function validateEditForm() {
-    let ok = true;
-    const checks = [
-      { id: 'basic-inp-businessNo', errId: 'basic-err-businessNo', reg: REG.BUSINESS_NO, msg: '사업자 번호는 숫자 10자리여야 해요' },
-      { id: 'basic-inp-representativeName', errId: 'basic-err-representativeName', reg: REG.REPRESENTATIVE_NAME, msg: '대표 이름은 한글·영문·숫자 1~10자여야 해요' },
-      { id: 'basic-inp-phone', errId: 'basic-err-phone', reg: REG.PHONE, msg: '전화번호는 숫자 1~15자여야 해요' },
-    ];
-    checks.forEach(({ id, errId, reg, msg }) => {
-      const el = document.getElementById(id);
-      if (!el || el.style.display === 'none') return;
-      if (!reg.test(el.value.trim())) { markInvalid(el, errId, msg); ok = false; }
-      else markValid(el, errId);
-    });
-    const emailEl = document.getElementById('basic-inp-email');
-    if (emailEl && emailEl.style.display !== 'none') {
-      const v = emailEl.value.trim();
-      if (v && !REG.EMAIL.test(v)) { markInvalid(emailEl, 'basic-err-email', '이메일 형식이 올바르지 않아요'); ok = false; }
-      else markValid(emailEl, 'basic-err-email');
-    }
-    const dateEl = document.getElementById('basic-inp-createdOn');
-    if (dateEl && dateEl.style.display !== 'none') {
-      if (!dateEl.value || new Date(dateEl.value) >= new Date()) {
-        markInvalid(dateEl, 'basic-err-createdOn', '유효한 과거 날짜를 선택해 주세요'); ok = false;
-      } else markValid(dateEl, 'basic-err-createdOn');
-    }
-    const etcChecked = document.getElementById('basic-opt-etc')?.checked;
-    const etcInp = document.getElementById('basic-inp-etcMemo');
-    if (etcChecked && etcInp) {
-      if (!REG.ETC_MEMO.test(etcInp.value.trim())) { markInvalid(etcInp, 'basic-err-etcMemo', '기타 종목은 1~20자여야 해요'); ok = false; }
-      else markValid(etcInp, 'basic-err-etcMemo');
-    }
-    return ok;
-  }
+  fileInput.addEventListener('change', function () {
+    const file = fileInput.files[0];
+    if (!file) return;
 
-  window.basicSaveEdit = function () {
-    clearError('basic-err-save');
-    if (!validateEditForm()) return;
-    const companyUuid = document.getElementById('basic-hidden-companyUuid').value;
-    const checkedNums = [...document.querySelectorAll('.basic-option-check:checked')].map(cb => parseInt(cb.value));
-    const etcChecked = document.getElementById('basic-opt-etc')?.checked;
-    const etcMemo = etcChecked ? (document.getElementById('basic-inp-etcMemo')?.value.trim() || '') : '';
-    const emailVal = document.getElementById('basic-inp-email')?.value.trim() || null;
-    const payload = {
-      companyUuid,
-      businessNo: document.getElementById('basic-inp-businessNo')?.value.trim() || '',
-      representativeName: document.getElementById('basic-inp-representativeName')?.value.trim() || '',
-      phone: document.getElementById('basic-inp-phone')?.value.trim() || '',
-      email: emailVal || null,
-      createdOn: document.getElementById('basic-inp-createdOn')?.value || '',
-      option: checkedNums,
-      etcMemo: etcMemo || null,
-      status: document.getElementById('basic-inp-status')?.value || '',
-    };
-    $.ajax({
-      url: '/api/company/' + companyUuid, method: 'PUT',
-      contentType: 'application/json', data: JSON.stringify(payload),
-      headers: getCsrfHeader(),
-      success: function () {
-        const hiddenOpts = document.getElementById('basic-hidden-options');
-        if (hiddenOpts) {
-          const reverseMap = {};
-          Object.entries(OPTION_MAP).forEach(([k, v]) => { reverseMap[v] = k; });
-          hiddenOpts.value = checkedNums.map(n => reverseMap[n] || '').filter(Boolean).join(',');
-        }
-        refreshDisplayValues();
-        exitEditMode();
-      },
-      error: function () { showError('basic-err-save', '수정에 실패했습니다'); }
-    });
-  };
+    const allowedMime = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const allowedExt = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const ext = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    const maxSize = 10 * 1024 * 1024;
 
-  function refreshDisplayValues() {
-    [['businessNo', v => v.length === 10 ? v.slice(0, 3) + '-' + v.slice(3, 5) + '-' + v.slice(5) : v],
-    ['representativeName', v => v], ['phone', v => v],
-    ['email', v => v || '-'],
-    ['createdOn', v => {
-      if (!v) return v; const d = new Date(v);
-      return d.getFullYear() + '년 ' + String(d.getMonth() + 1).padStart(2, '0') + '월 ' + String(d.getDate()).padStart(2, '0') + '일';
-    }]
-    ].forEach(([id, fmt]) => {
-      const inp = document.getElementById('basic-inp-' + id);
-      const val = document.getElementById('basic-val-' + id);
-      if (inp && val) val.textContent = fmt(inp.value.trim());
-    });
-    const reverseMap = {};
-    Object.entries(OPTION_MAP).forEach(([k, v]) => { reverseMap[v] = k; });
-    const checkedNums = [...document.querySelectorAll('.basic-option-check:checked')].map(cb => parseInt(cb.value));
-    const etcChecked = document.getElementById('basic-opt-etc')?.checked;
-    const etcMemo = etcChecked ? (document.getElementById('basic-inp-etcMemo')?.value.trim() || '') : '';
-    const valOpt = document.getElementById('basic-val-option');
-    if (valOpt) {
-      valOpt.innerHTML = '';
-      checkedNums.forEach(num => {
-        const label = reverseMap[num] || '';
-        const chip = document.createElement('span');
-        chip.className = 'basic-option-chip';
-        chip.textContent = label === '기타' ? (etcMemo ? '기타 - ' + etcMemo : '기타') : label;
-        valOpt.appendChild(chip);
-      });
+    if (!allowedMime.includes(file.type) && !allowedExt.includes(ext)) {
+      alert('jpeg, png, gif, webp 형식의 이미지만 업로드할 수 있습니다.');
+      fileInput.value = '';
+      return;
     }
-    const statusInp = document.getElementById('basic-inp-status');
-    const statusVal = document.getElementById('basic-val-status');
-    if (statusInp && statusVal) {
-      const s = statusInp.value;
-      statusVal.className = 'basic-status-badge';
-      if (s === 'ACTIVE') { statusVal.classList.add('status-active'); statusVal.textContent = '정상'; }
-      else if (s === 'SUSPENDED') { statusVal.classList.add('status-suspended'); statusVal.textContent = '정지'; }
-      else { statusVal.classList.add('status-terminated'); statusVal.textContent = '종료'; }
+    if (file.size > maxSize) {
+      alert('10MB 이하의 파일만 업로드할 수 있습니다.');
+      fileInput.value = '';
+      return;
     }
-  }
 
-  /* ============================================================
-     서류 관련
-  ============================================================ */
-  window.basicToggleDocUpload = function () {
-    const form = document.getElementById('basic-doc-upload-form');
-    if (!form) return;
-    form.style.display = (form.style.display === 'none' || !form.style.display) ? '' : 'none';
-    lucide.createIcons();
-  };
+    fileNameSpan.textContent = file.name;
+    confirmArea.style.display = 'flex';
+  });
 
-  window.basicOnFileSelected = function () {
-    const fi = document.getElementById('basic-doc-file-input');
-    const ba = document.getElementById('basic-doc-upload-btn-area');
-    if (fi && ba) ba.style.display = fi.files.length > 0 ? '' : 'none';
-  };
+  cancelBtn.addEventListener('click', function () {
+    fileInput.value = '';
+    confirmArea.style.display = 'none';
+    fileNameSpan.textContent = '';
+  });
 
-  window.basicUploadDoc = function () {
-    ['basic-err-docType', 'basic-err-docExpire', 'basic-err-upload'].forEach(clearError);
-    const companyUuid = document.getElementById('basic-hidden-companyUuid').value;
-    const docTypeInput = document.getElementById('basic-doc-type-input');
-    const expireInput = document.getElementById('basic-doc-expire-input');
-    const fileInput = document.getElementById('basic-doc-file-input');
-    let valid = true;
-    if (!REG.DOC_TYPE.test(docTypeInput.value.trim())) {
-      markInvalid(docTypeInput, 'basic-err-docType', '서류 종류는 1~20자, 특수문자(&<>"\'';) 제외'); valid = false;
-    } else markValid(docTypeInput, 'basic-err-docType');
-    if (expireInput.value) {
-      const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1); tomorrow.setHours(0, 0, 0, 0);
-      if (new Date(expireInput.value) < tomorrow) {
-        markInvalid(expireInput, 'basic-err-docExpire', '만료일은 내일 이후여야 해요'); valid = false;
-      } else markValid(expireInput, 'basic-err-docExpire');
-    }
-    if (!fileInput.files[0]) { showError('basic-err-upload', '파일을 선택해 주세요'); valid = false; }
-    if (!valid) return;
+  confirmBtn.addEventListener('click', function () {
+    const file = fileInput.files[0];
+    if (!file) return;
+
+    const encryptedNo = confirmBtn.getAttribute('data-encrypted-no');
     const formData = new FormData();
-    formData.append('docType', docTypeInput.value.trim());
-    formData.append('file', fileInput.files[0]);
-    if (expireInput.value) formData.append('expireOn', expireInput.value);
+    formData.append('file', file);
+
     $.ajax({
-      url: '/api/company/' + companyUuid + '/doc', method: 'POST',
-      data: formData, processData: false, contentType: false, headers: getCsrfHeader(),
-      success: function () { location.href = '/company/' + companyUuid; },
+      url: '/file/company/' + encryptedNo + '/logo',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function () {
+        location.reload();
+      },
       error: function (xhr) {
-        showError('basic-err-upload', xhr.status === 403 ? '파일 혹은 서류 종류가 잘못되었습니다' : '업로드에 실패했습니다');
+        alert('로고 업로드에 실패했습니다. (' + xhr.status + ')');
       }
     });
-  };
+  });
+}
 
-  window.basicViewDoc = function (btn) {
-    const card = btn.closest('.basic-doc-card');
-    const encryptedNo = card.dataset.encryptedNo, companyUuid = card.dataset.companyUuid;
-    if (!encryptedNo || !companyUuid) return;
-    window.open('/api/company/' + companyUuid + '/doc/' + encryptedNo
-      + '?companyUuid=' + encodeURIComponent(companyUuid)
-      + '&encryptedDocNo=' + encodeURIComponent(encryptedNo), '_blank');
-  };
+/* =============================================
+   업체 정보 수정 모달 (ADMIN)
+============================================= */
+function initEditModal() {
+  const modal = document.getElementById('cv-edit-modal');
+  const openBtn = document.getElementById('cv-edit-open-btn');
+  const closeBtn = document.getElementById('cv-edit-modal-close');
+  const cancelBtn = document.getElementById('cv-edit-cancel-btn');
+  const submitBtn = document.getElementById('cv-edit-submit-btn');
+  const form = document.getElementById('cv-edit-form');
 
-  window.basicDeleteDoc = function (btn) {
-    if (!confirm('이 서류를 삭제하시겠습니까?')) return;
-    const card = btn.closest('.basic-doc-card');
-    const encryptedNo = card.dataset.encryptedNo, companyUuid = card.dataset.companyUuid;
-    if (!encryptedNo || !companyUuid) return;
+  if (!modal) return;
+
+  openBtn.addEventListener('click', function () {
+    modal.style.display = 'flex';
+  });
+
+  function closeModal() {
+    modal.style.display = 'none';
+  }
+
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) {
+    if (e.target === modal) closeModal();
+  });
+
+  // 기타 체크 시 etcMemo 표시
+  document.querySelectorAll('.cv-specialty-check').forEach(function (chk) {
+    chk.addEventListener('change', function () {
+      handleSpecialtyChange();
+    });
+  });
+
+  function handleSpecialtyChange() {
+    const checked = document.querySelectorAll('.cv-specialty-check:checked');
+
+    // 최대 3개 제한
+    if (checked.length > 3) {
+      this.checked = false;
+      alert('주 종목은 최대 3개까지 선택할 수 있습니다.');
+      return;
+    }
+
+    const etcWrap = document.getElementById('cv-edit-etcMemo-wrap');
+    const hasEtc = Array.from(document.querySelectorAll('.cv-specialty-check:checked'))
+      .some(function (c) { return c.getAttribute('data-field') === '기타'; });
+    etcWrap.style.display = hasEtc ? '' : 'none';
+    if (!hasEtc) {
+      document.getElementById('cv-edit-etcMemo').value = '';
+    }
+  }
+
+  // 3개 초과 방지를 이벤트마다 처리 (handleSpecialtyChange에서 this 문제 방지)
+  document.querySelectorAll('.cv-specialty-check').forEach(function (chk) {
+    chk.addEventListener('change', function () {
+      const allChecked = document.querySelectorAll('.cv-specialty-check:checked');
+      if (allChecked.length > 3) {
+        chk.checked = false;
+        alert('주 종목은 최대 3개까지 선택할 수 있습니다.');
+      }
+      const etcWrap = document.getElementById('cv-edit-etcMemo-wrap');
+      const hasEtc = Array.from(document.querySelectorAll('.cv-specialty-check:checked'))
+        .some(function (c) { return c.getAttribute('data-field') === '기타'; });
+      etcWrap.style.display = hasEtc ? '' : 'none';
+      if (!hasEtc) {
+        document.getElementById('cv-edit-etcMemo').value = '';
+      }
+    });
+  });
+
+  submitBtn.addEventListener('click', function () {
+    if (!validateEditForm()) return;
+
+    const encryptedNo = form.getAttribute('data-encrypted-no');
+
+    const year = document.getElementById('cv-edit-year').value.padStart(4, '0');
+    const month = String(document.getElementById('cv-edit-month').value).padStart(2, '0');
+    const day = String(document.getElementById('cv-edit-day').value).padStart(2, '0');
+    const createdOn = year + '-' + month + '-' + day;
+
+    const selectedOptions = Array.from(document.querySelectorAll('.cv-specialty-check:checked'))
+      .map(function (c) { return c.value; });
+
+    const params = new URLSearchParams();
+    params.append('companyName', document.getElementById('cv-edit-companyName').value.trim());
+    params.append('businessNo', document.getElementById('cv-edit-businessNo').value.trim());
+    params.append('representativeName', document.getElementById('cv-edit-representativeName').value.trim());
+    params.append('phone', document.getElementById('cv-edit-phone').value.trim());
+    params.append('email', document.getElementById('cv-edit-email').value.trim());
+    params.append('createdOn', createdOn);
+    params.append('status', document.getElementById('cv-edit-status').value);
+    selectedOptions.forEach(function (opt) {
+      params.append('option', opt);
+    });
+
+    const etcMemoWrap = document.getElementById('cv-edit-etcMemo-wrap');
+    if (etcMemoWrap.style.display !== 'none') {
+      params.append('etcMemo', document.getElementById('cv-edit-etcMemo').value.trim());
+    }
+
     $.ajax({
-      url: '/api/company/' + companyUuid + '/doc/' + encryptedNo, method: 'DELETE',
-      data: { companyUuid, encryptedDocNo: encryptedNo }, headers: getCsrfHeader(),
-      complete: function (xhr) {
-        if (xhr.status === 204) location.href = '/company/' + companyUuid;
-        else alert('서류 삭제에 실패했습니다.');
+      url: '/api/company/' + encryptedNo,
+      type: 'PUT',
+      data: params.toString(),
+      contentType: 'application/x-www-form-urlencoded',
+      success: function () {
+        location.reload();
+      },
+      error: function (xhr) {
+        alert('수정에 실패했습니다. (' + xhr.status + ')');
       }
     });
-  };
+  });
+}
 
-})();
+function validateEditForm() {
+  let valid = true;
+
+  function setError(id, msg) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = msg;
+  }
+
+  function clearErrors() {
+    ['cv-err-companyName', 'cv-err-businessNo', 'cv-err-representativeName',
+      'cv-err-phone', 'cv-err-email', 'cv-err-createdOn', 'cv-err-option', 'cv-err-etcMemo']
+      .forEach(function (id) { setError(id, ''); });
+    document.querySelectorAll('.cv-form-control.is-invalid')
+      .forEach(function (el) { el.classList.remove('is-invalid'); });
+  }
+
+  function markInvalid(inputId, errId, msg) {
+    const input = document.getElementById(inputId);
+    if (input) input.classList.add('is-invalid');
+    setError(errId, msg);
+    valid = false;
+  }
+
+  clearErrors();
+
+  const companyName = document.getElementById('cv-edit-companyName').value.trim();
+  const businessNo = document.getElementById('cv-edit-businessNo').value.trim();
+  const repName = document.getElementById('cv-edit-representativeName').value.trim();
+  const phone = document.getElementById('cv-edit-phone').value.trim();
+  const email = document.getElementById('cv-edit-email').value.trim();
+  const year = document.getElementById('cv-edit-year').value;
+  const month = document.getElementById('cv-edit-month').value;
+  const day = document.getElementById('cv-edit-day').value;
+
+  if (!REGEXP.companyName.test(companyName))
+    markInvalid('cv-edit-companyName', 'cv-err-companyName', '업체명은 한글, 영문, 숫자 1~100자여야 합니다.');
+  if (!REGEXP.businessNo.test(businessNo))
+    markInvalid('cv-edit-businessNo', 'cv-err-businessNo', '사업자 등록번호는 숫자 10자리여야 합니다.');
+  if (!REGEXP.representativeName.test(repName))
+    markInvalid('cv-edit-representativeName', 'cv-err-representativeName', '대표 이름은 한글, 영문, 숫자 1~10자여야 합니다.');
+  if (!REGEXP.phone.test(phone))
+    markInvalid('cv-edit-phone', 'cv-err-phone', '연락처는 숫자 1~15자리여야 합니다.');
+  if (email && !REGEXP.email.test(email))
+    markInvalid('cv-edit-email', 'cv-err-email', '올바른 이메일 형식이 아닙니다.');
+
+  // 창립일 검증
+  const dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+  const dateObj = new Date(dateStr);
+  if (!year || !month || !day || isNaN(dateObj.getTime()) || dateObj >= new Date()) {
+    setError('cv-err-createdOn', '올바른 과거 날짜를 입력해주세요.');
+    valid = false;
+  }
+
+  // 기타 메모
+  const etcMemoWrap = document.getElementById('cv-edit-etcMemo-wrap');
+  if (etcMemoWrap.style.display !== 'none') {
+    const etcMemo = document.getElementById('cv-edit-etcMemo').value.trim();
+    if (!REGEXP.etcMemo.test(etcMemo))
+      markInvalid('cv-edit-etcMemo', 'cv-err-etcMemo', '기타 내용은 1~20자여야 합니다.');
+  }
+
+  return valid;
+}
+
+/* =============================================
+   서류 등록 (ADMIN)
+============================================= */
+function initDocRegister() {
+  const registerBtn = document.getElementById('cv-doc-register-btn');
+  const formArea = document.getElementById('cv-doc-form-area');
+  const uploadBtn = document.getElementById('cv-doc-upload-btn');
+  const cancelBtn = document.getElementById('cv-doc-cancel-btn');
+
+  if (!registerBtn) return;
+
+  registerBtn.addEventListener('click', function () {
+    formArea.style.display = formArea.style.display === 'none' ? '' : 'none';
+  });
+
+  cancelBtn.addEventListener('click', function () {
+    formArea.style.display = 'none';
+    resetDocForm();
+  });
+
+  uploadBtn.addEventListener('click', function () {
+    const fileInput = document.getElementById('cv-doc-file-input');
+    const docTypeInput = document.getElementById('cv-doc-type-input');
+    const expireInput = document.getElementById('cv-doc-expire-input');
+
+    const file = fileInput.files[0];
+    const docType = docTypeInput.value.trim();
+    const expireRaw = expireInput.value.trim();
+
+    if (!file) {
+      alert('파일을 선택해주세요.');
+      return;
+    }
+    if (!docType) {
+      alert('서류 종류를 입력해주세요.');
+      return;
+    }
+    if (docType.length > 20) {
+      alert('서류 종류는 20자 이내로 입력해주세요.');
+      return;
+    }
+
+    const encryptedNo = uploadBtn.getAttribute('data-encrypted-no');
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('docType', docType);
+
+    // 만료일 파싱 (yyyy년 MM월 dd일 → yyyy-MM-dd)
+    if (expireRaw) {
+      const parsedExpire = parseKoreanDate(expireRaw);
+      if (!parsedExpire) {
+        alert("만료일 형식을 확인해주세요. 예) 2025년 12월 31일");
+        return;
+      }
+      formData.append('expireOn', parsedExpire);
+    }
+
+    $.ajax({
+      url: '/file/company/' + encryptedNo + '/doc',
+      type: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      success: function () {
+        location.reload();
+      },
+      error: function (xhr) {
+        alert('서류 업로드에 실패했습니다. (' + xhr.status + ')');
+      }
+    });
+  });
+}
+
+function parseKoreanDate(str) {
+  const match = str.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+  if (!match) return null;
+  const y = match[1];
+  const m = String(match[2]).padStart(2, '0');
+  const d = String(match[3]).padStart(2, '0');
+  const date = new Date(y + '-' + m + '-' + d);
+  if (isNaN(date.getTime())) return null;
+  return y + '-' + m + '-' + d;
+}
+
+function resetDocForm() {
+  const fileInput = document.getElementById('cv-doc-file-input');
+  const docTypeInput = document.getElementById('cv-doc-type-input');
+  const expireInput = document.getElementById('cv-doc-expire-input');
+  if (fileInput) fileInput.value = '';
+  if (docTypeInput) docTypeInput.value = '';
+  if (expireInput) expireInput.value = '';
+}
+
+/* =============================================
+   서류 목록 (클릭 → 열기/다운로드, 삭제)
+============================================= */
+function initDocList() {
+  // 서류 항목 클릭 (아이템 영역 클릭 시 파일 열기/다운로드)
+  document.querySelectorAll('.cv-doc-item').forEach(function (item) {
+    item.addEventListener('click', function (e) {
+      // 삭제 버튼 클릭은 이 이벤트가 처리하지 않음
+      if (e.target.closest('.cv-doc-delete-btn')) return;
+
+      const encryptedFileNo = item.getAttribute('data-encrypted-file-no');
+      const encryptedNo = item.getAttribute('data-encrypted-no');
+      openOrDownloadDoc(encryptedNo, encryptedFileNo);
+    });
+  });
+
+  // 삭제 버튼
+  document.querySelectorAll('.cv-doc-delete-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const encryptedFileNo = btn.getAttribute('data-encrypted-file-no');
+      const encryptedNo = btn.getAttribute('data-encrypted-no');
+
+      if (!confirm('이 서류를 삭제하시겠습니까?')) return;
+
+      $.ajax({
+        url: '/file/company/' + encryptedNo + '/doc/' + encryptedFileNo,
+        type: 'DELETE',
+        success: function () {
+          location.reload();
+        },
+        error: function (xhr) {
+          alert('서류 삭제에 실패했습니다. (' + xhr.status + ')');
+        }
+      });
+    });
+  });
+}
+
+function openOrDownloadDoc(encryptedNo, encryptedFileNo) {
+  fetch('/file/company/' + encryptedNo + '/doc/' + encryptedFileNo)
+    .then(function (res) {
+      if (!res.ok) throw new Error('request failed');
+
+      const disposition = res.headers.get('Content-Disposition') || '';
+      const contentType = res.headers.get('Content-Type') || '';
+      const isAttachment = disposition.toLowerCase().includes('attachment');
+
+      return res.blob().then(function (blob) {
+        const blobUrl = URL.createObjectURL(new Blob([blob], { type: contentType }));
+
+        if (isAttachment) {
+          // 다운로드
+          let filename = 'download';
+          const fnMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i);
+          if (fnMatch) {
+            filename = decodeURIComponent(fnMatch[1].replace(/['"]/g, '').trim());
+          }
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        } else {
+          // 새창 열기
+          window.open(blobUrl, '_blank');
+        }
+
+        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 10000);
+      });
+    })
+    .catch(function () {
+      alert('파일을 불러오지 못했습니다.');
+    });
+}

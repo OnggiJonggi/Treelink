@@ -2,26 +2,33 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="MemberMapper">
+<mapper namespace="com.tl.member.MemberMapper">
 	<resultMap id="MemberDetailMap" type="MemberDetail">
-	    <result property="memberNo" column="MEMBER_NO"/>
+	    <id property="memberNo" column="MEMBER_NO"/>
 	    <result property="userId" column="ID"/>
 	    <result property="userPwd" column="PWD"/>
 	    <result property="name" column="NAME"/>
 	    <result property="nickname" column="NICKNAME"/>
-	</resultMap>
-	<resultMap id="MemberJoinMap" type="MemberJoin">
-	    <result property="memberNo" column="MEMBER_NO"/>
-	    <result property="userId" column="ID"/>
-	    <result property="userPwd" column="PWD"/>
-	    <result property="name" column="NAME"/>
-	    <result property="nickname" column="NICKNAME"/>
+	    <result property="phone" column="PHONE"/>
+	    <result property="status" column="STATUS"/>
+			<collection property="role" ofType="string">
+				<result column="ROLE"/>
+    	</collection>
 	</resultMap>
 	
 	<select id="selectMemberById" parameterType="MemberLogin" resultMap="MemberDetailMap" >
-		select MEMBER_NO, ID, PWD, NAME, NICKNAME
-		from MEMBER
-		where ID = #{userId}
+		select
+			M.MEMBER_NO
+			,M.ID
+			,M.PWD
+			,M.NAME
+			,M.NICKNAME
+			,RI.NAME as ROLE
+		from MEMBER M
+		left join MEMBER_ROLE MR on(MR.MEMBER_NO = M.MEMBER_NO)
+		left join ROLE_INFO RI on(RI.ROLE_NO = MR.ROLE_NO)
+		where M.ID = #{userId}
+		and M.STATUS = 'ACTIVE'
 	</select>
 	
 	<select id="selectCheckId" parameterType="string" resultType="_int" >
@@ -56,4 +63,161 @@
 	</insert>
 	
 
+		<select id="selectMemberList" parameterType="MemberSearch" resultMap="MemberDetailMap">
+		select
+			C.MEMBER_NO
+			,C.ID
+			,C.NAME
+			,C.NICKNAME
+			,C.PHONE
+			,C.STATUS
+			,RI.NAME as ROLE
+		from(
+			select *
+			from(
+				select ROWNUM RN, A.*
+				from(
+					select
+						MEMBER_NO
+						,ID
+						,NAME
+						,NICKNAME
+						,PHONE
+						,STATUS
+					from MEMBER
+					<where>
+						<if test="userId!=null and userId!='' ">
+							and ID like  '%' || #{userId} || '%'
+						</if>
+						<if test="name!=null and name!='' ">
+							and NAME like '%' || #{name} || '%'
+						</if>
+						<if test="nickname!=null and nickname!='' ">
+							and NICKNAME like '%' || #{nickname} || '%'
+						</if>
+						<if test="phone!=null and phone!='' ">
+							and PHONE like '%' || #{phone} || '%'
+						</if>
+						<if test="status!=null and status.name()!='' ">
+							and STATUS = #{status}
+						</if>
+						<if test="role!=null and role.name()!='' ">
+							and exists(
+								select 1
+								form ROLE_INFO RI2
+								inner join MEMBER_ROLE MR2 on (RI2.ROLE_NO = MR2.ROLE_NO)
+								where MR2.MEMBER_NO = MEMBER.MEMBER_NO
+								and RI2.NAME = #{role}
+							)
+						</if>
+					</where>
+					order by MEMBER_NO desc
+				) A
+				where ROWNUM &lt;= #{endRow}
+			) B
+			where RN &gt;= #{startRow}
+		) C
+		left join MEMBER_ROLE MR on (MR.MEMBER_NO = C.MEMBER_NO)
+		left join ROLE_INFO RI on (RI.ROLE_NO = MR.ROLE_NO)
+	</select>
+
+
+	<select id="selectMemberListTotalCount" parameterType="MemberSearch" resultType="_int">
+		select count(*)
+		from MEMBER M
+		<where>
+			<if test="userId!=null and userId!='' ">
+				and M.ID like '%' || #{userId} || '%'
+			</if>
+			<if test="name!=null and name!='' ">
+				and M.NAME like '%' || #{name} || '%'
+			</if>
+			<if test="nickname!=null and nickname!='' ">
+				and M.NICKNAME like '%' || #{nickname} || '%'
+			</if>
+			<if test="phone!=null and phone!='' ">
+				and M.PHONE like '%' || #{phone} || '%'
+			</if>
+			<if test="status!=null and status.name()!='' ">
+				and M.STATUS = #{status}
+			</if>
+			<if test="role!=null and role.name()!='' ">
+				and exists(
+					select 1
+					form ROLE_INFO RI2
+					inner join MEMBER_ROLE MR2 on (RI2.ROLE_NO = MR2.ROLE_NO)
+					where MR2.MEMBER_NO = MEMBER.MEMBER_NO
+					and RI2.NAME = #{role}
+				)
+			</if>
+		</where>
+	</select>
+	
+	
+	<select id="selectMember" parameterType="_int" resultMap="MemberDetailMap">
+		select
+			M.MEMBER_NO
+			,M.ID
+			,M.PWD
+			,M.NAME
+			,M.NICKNAME
+			,M.PHONE
+			,M.STATUS
+			,RI.NAME as ROLE
+		from MEMBER M
+		left join MEMBER_ROLE MR on (MR.MEMBER_NO = M.MEMBER_NO)
+		left join ROLE_INFO RI on (RI.ROLE_NO = MR.ROLE_NO)
+		where M.MEMBER_NO = #{memberNo}
+	</select>
+
+	<update id="updateMember" parameterType="MemberUpdate">
+		update MEMBER
+		set
+			NAME = #{name}
+			,NICKNAME = #{nickname}
+			,PHONE = #{phone}
+			<if test="userPwd!=null and userPwd!=''">
+				,PWD = #{userPwd}
+			</if>
+		where MEMBER_NO = #{memberNo}
+	</update>
+
+
+	<update id="updateRole">
+		update MEMBER_ROLE
+		set ROLE_NO = (
+			select ROLE_NO
+			from ROLE_INFO
+			where NAME = 'ROLE_' || #{role}
+		)
+		where MEMBER_NO = #{memberNo}
+		and not exists (
+			select 1
+			from MEMBER_ROLE MR
+			join ROLE_INFO RI on RI.ROLE_NO = MR.ROLE_NO
+			where RI.NAME = 'ROLE_SUPER_ADMIN'
+			and MR.MEMBER_NO = #{memberNo}
+		) --최고 관리자 권한 수정 불가
+	</update>
+
+
+	<update id="updateStatus">
+		update MEMBER
+		set STATUS = #{status}
+		where MEMBER_NO = #{memberNo}
+		and not exists (
+			select 1
+			from MEMBER_ROLE MR
+			join ROLE_INFO RI on RI.ROLE_NO = MR.ROLE_NO
+			where RI.NAME = 'ROLE_SUPER_ADMIN'
+			and MR.MEMBER_NO = #{memberNo}
+		) --최고 관리자 상태 수정 불가
+	</update>
+
+	<select id="selectUpdatedNickname" resultType="_int">
+		select count(*)
+		from MEMBER
+		where NICKNAME = #{nickname}
+		and MEMBER_NO != #{memberNo}
+	</select>
 </mapper>

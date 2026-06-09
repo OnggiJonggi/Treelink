@@ -4,8 +4,7 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tl.company.CompanyMapper">
   <resultMap id="companyDetailMap" type="CompanyDetail" autoMapping="true">
-    <id column="COMPANY_NO"/>
-    <result property="companyUuid" column="COMPANY_UUID"/>
+    <id property="companyNo" column="COMPANY_NO"/>
     <result property="businessNo" column="BUSINESS_NO"/>
     <result property="companyName" column="COMPANY_NAME"/>
     <result property="representativeName" column="REPRESENTATIVE_NAME"/>
@@ -20,22 +19,116 @@
     </collection>
   </resultMap>
 
+
+  <select id="selectList" parameterType="companySearch" resultMap="companyDetailMap">
+    select
+      C.COMPANY_NO
+      ,C.BUSINESS_NO
+      ,C.COMPANY_NAME
+      ,C.REPRESENTATIVE_NAME
+      ,C.PHONE
+      ,C.EMAIL
+      ,C.CREATED_ON
+      ,C.STATUS
+      ,CS.MEMO
+      ,S.FIELD
+    from(
+      select *
+      from(
+        select ROWNUM RN, A.*
+        from(
+          select
+            COM.COMPANY_NO
+            ,COM.BUSINESS_NO
+            ,COM.COMPANY_NAME
+            ,COM.REPRESENTATIVE_NAME
+            ,COM.PHONE
+            ,COM.EMAIL
+            ,COM.CREATED_ON
+            ,COM.STATUS
+          from COMPANY COM
+          <where>
+            <if test="businessNo!=null and businessNo!=''">
+              and COM.BUSINESS_NO like '%' || #{businessNo} || '%'
+            </if>
+            <if test="companyName!=null and companyName!=''">
+              and COM.COMPANY_NAME like '%' || #{companyName} || '%'
+            </if>
+            <if test="representativeName!=null and representativeName!=''">
+              and COM.REPRESENTATIVE_NAME like '%' || #{representativeName} || '%'
+            </if>
+            <if test="status!=null">
+              and COM.STATUS = #{status}
+            </if>
+            <if test="option!=null and option!=''">
+              and exists (
+                select 1
+                from COMPANY_SPECIALTY CS2
+                inner join SPECIALTY S2 on S2.SPECIALTY_NO = CS2.SPECIALTY_NO
+                where CS2.COMPANY_NO = COM.COMPANY_NO
+                and S2.FIELD = #{option}
+                <if test = "option == '기타' and etcMemo!=null and etcMemo!=''">
+                  and CS2.MEMO like '%' || #{etcMemo} || '%'
+                </if>
+              )
+            </if>
+          </where>
+          order by COM.COMPANY_NO desc
+        ) A
+        where ROWNUM &lt;= #{endRow}
+      ) B
+      where B.RN &gt;= #{startRow}
+    ) C
+    left join COMPANY_SPECIALTY CS on(CS.COMPANY_NO = C.COMPANY_NO)
+    left join SPECIALTY S on(S.SPECIALTY_NO = CS.SPECIALTY_NO)
+  </select>
+
+
+  <select id="selectListTotalCount" parameterType="companySearch" resultType="_int">
+    select count(*)
+    from COMPANY COM
+    <where>
+      <if test="businessNo!=null and businessNo!=''">
+        and COM.BUSINESS_NO like '%' || #{businessNo} || '%'
+      </if>
+      <if test="companyName!=null and companyName!=''">
+        and COM.COMPANY_NAME like '%' || #{companyName} || '%'
+      </if>
+      <if test="representativeName!=null and representativeName!=''">
+        and COM.REPRESENTATIVE_NAME like '%' || #{representativeName} || '%'
+      </if>
+      <if test="status!=null">
+        and COM.STATUS = #{status}
+      </if>
+      <if test="option!=null and option!=''">
+        and exists (
+          select 1
+          from COMPANY_SPECIALTY CS2
+          inner join SPECIALTY S2 on S2.SPECIALTY_NO = CS2.SPECIALTY_NO
+          where CS2.COMPANY_NO = COM.COMPANY_NO
+          and S2.FIELD = #{option}
+          <if test = "option == '기타' and etcMemo!=null and etcMemo!=''">
+            and CS2.MEMO like '%' || #{etcMemo} || '%'
+          </if>
+        )
+      </if>
+    </where>
+  </select>
+
   <insert id="insertCompany" parameterType="CompanyRegistor"
     useGeneratedKeys="true"
     keyProperty="companyNo"
     keyColumn="COMPANY_NO">
 
     insert into COMPANY (
-      COMPANY_UUID
-      ,BUSINESS_NO
+      BUSINESS_NO
       ,COMPANY_NAME
       ,REPRESENTATIVE_NAME
       ,PHONE
       ,EMAIL
       ,CREATED_ON
     ) VALUES(
-      #{companyUuid}
-      ,#{businessNo}
+      #{businessNo}
       ,#{companyName}
       ,#{representativeName}
       ,#{phone}
@@ -60,10 +153,9 @@
     SELECT * FROM DUAL
   </insert>
 
-  <select id="selectCompanyDetail" parameterType="string" resultMap="companyDetailMap">
+  <select id="selectCompanyDetail" parameterType="_int" resultMap="companyDetailMap">
     select
       C.COMPANY_NO
-      ,C.COMPANY_UUID
       ,C.BUSINESS_NO
       ,C.COMPANY_NAME
       ,C.REPRESENTATIVE_NAME
@@ -76,15 +168,10 @@
     from COMPANY C
     left join COMPANY_SPECIALTY CS on(CS.COMPANY_NO = C.COMPANY_NO)
     left join SPECIALTY S on(S.SPECIALTY_NO = CS.SPECIALTY_NO)
-    where C.COMPANY_UUID = #{companyUuid}
+    where C.COMPANY_NO = #{companyNo}
   </select>
 
   <update id="updateCompany" parameterType="CompanyRegistor">
-    <selectKey keyProperty="companyNo" resultType="_int" order="BEFORE">
-      select COMPANY_NO
-      from COMPANY
-      where COMPANY_UUID = #{companyUuid}
-    </selectKey>
     update COMPANY
     set
       BUSINESS_NO = #{businessNo}
@@ -94,29 +181,13 @@
       ,EMAIL = #{email}
       ,CREATED_ON = #{createdOn}
       ,STATUS = #{status}
-    where COMPANY_UUID = #{companyUuid}
+    where COMPANY_NO = #{companyNo}
   </update>
 
-  <insert id="updateCompanySpecialty">
+  <delete id="deleteCompanySpecialty" parameterType="_int">
     delete from COMPANY_SPECIALTY
     where COMPANY_NO = #{companyNo}
-  
-    <if test="option != null and option.size() > 0">
-      INSERT ALL
-      <foreach collection="option" item="specialtyNo">
-        INTO COMPANY_SPECIALTY (COMPANY_NO, SPECIALTY_NO, MEMO)
-        VALUES (
-          #{companyNo},
-          #{specialtyNo},
-      <choose>
-        <when test="specialtyNo == 99">#{etcMemo}</when>
-        <otherwise>NULL</otherwise>
-      </choose>
-        )
-      </foreach>
-      SELECT * FROM DUAL
-    </if>
-  </insert>
+  </delete>
 
 
 </mapper>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TreeLink - 업체 목록</title>
+  <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/company/list.css}">
+</head>
+
+<body>
+
+  <th:block th:with="isAdmin=${#authorization.expression('hasRole(''ADMIN'')')}">
+
+    <!-- ADMIN 여부를 JS에도 전달 -->
+    <div id="isAdminFlag" th:attr="data-admin=${isAdmin}" style="display:none;"></div>
+
+    <div class="page-wrapper">
+
+      <div class="logo-area">
+        <a th:href="@{/}">
+          <img th:src="@{/img/main-logo.png}" alt="TreeLink 로고">
+        </a>
+      </div>
+
+      <div class="content-layout">
+
+        <aside class="filter-panel">
+          <div class="filter-header">
+            <i data-lucide="sliders-horizontal"></i>
+            <span>검색 필터</span>
+          </div>
+
+          <form id="searchForm" class="filter-form">
+
+            <div class="filter-group">
+              <label for="businessNo">사업자 등록번호</label>
+              <input type="text" id="businessNo" name="businessNo" th:value="${companySearch.businessNo}"
+                placeholder="사업자 등록번호 입력">
+            </div>
+
+            <div class="filter-group">
+              <label for="companyName">업체명</label>
+              <input type="text" id="companyName" name="companyName" th:value="${companySearch.companyName}"
+                placeholder="업체명 입력">
+            </div>
+
+            <div class="filter-group">
+              <label for="representativeName">대표명</label>
+              <input type="text" id="representativeName" name="representativeName"
+                th:value="${companySearch.representativeName}" placeholder="대표명 입력">
+            </div>
+
+            <!-- 상태 필터: isAdmin 변수 재활용 -->
+            <div class="filter-group" th:if="${isAdmin}">
+              <label>상태</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="status" value="" th:checked="${companySearch.status == null}">
+                  <span>전체</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="status" value="ACTIVE"
+                    th:checked="${companySearch.status != null and companySearch.status.name() == 'ACTIVE'}">
+                  <span class="badge badge-active">정상</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="status" value="SUSPENDED"
+                    th:checked="${companySearch.status != null and companySearch.status.name() == 'SUSPENDED'}">
+                  <span class="badge badge-suspended">정지</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="status" value="TERMINATED"
+                    th:checked="${companySearch.status != null and companySearch.status.name() == 'TERMINATED'}">
+                  <span class="badge badge-terminated">종료</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 주 종목 필터 -->
+            <div class="filter-group">
+              <label>주 종목</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="option" value="" th:checked="${companySearch.option == null}">
+                  <span>전체</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="벌초" th:checked="${companySearch.option == '벌초'}">
+                  <span>벌초</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="운동장 / 스포츠"
+                    th:checked="${companySearch.option == '운동장 / 스포츠'}">
+                  <span>운동장 / 스포츠</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="공공기관 유지관리"
+                    th:checked="${companySearch.option == '공공기관 유지관리'}">
+                  <span>공공기관 유지관리</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="정원" th:checked="${companySearch.option == '정원'}">
+                  <span>정원</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="실내조경" th:checked="${companySearch.option == '실내조경'}">
+                  <span>실내조경</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="조경시설물" th:checked="${companySearch.option == '조경시설물'}">
+                  <span>조경시설물</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="option" value="기타" th:checked="${companySearch.option == '기타'}">
+                  <span>기타</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="filter-group" id="etcMemoGroup" style="display:none;">
+              <label for="etcMemo">기타 내용</label>
+              <input type="text" id="etcMemo" name="etcMemo" th:value="${companySearch.etcMemo}" placeholder="기타 내용 입력">
+            </div>
+
+            <input type="hidden" id="pageInput" name="page" value="1">
+
+            <button type="submit" class="btn-search">
+              <i data-lucide="search"></i>
+              검색
+            </button>
+
+          </form>
+        </aside>
+
+        <section class="result-panel">
+
+          <div class="result-header">
+            <span class="result-count">
+              전체 <strong th:text="${companyList.totalCount}">0</strong>개
+            </span>
+          </div>
+
+          <div class="company-grid" id="companyGrid">
+
+            <th:block th:each="company : ${companyList.list}">
+              <div class="company-card" th:data-enc="${company.encryptedCompanyNo}" onclick="goToDetail(this)">
+
+                <div class="company-card-top">
+                  <div class="company-avatar">
+                    <i data-lucide="building-2"></i>
+                  </div>
+                  <div class="company-info">
+                    <span class="company-name" th:text="${company.companyName}">업체명</span>
+                    <span class="company-rep">
+                      <i data-lucide="user" style="width:12px;height:12px;"></i>
+                      <th:block th:text="${company.representativeName}">대표명</th:block>
+                    </span>
+                    <span class="company-bizno" th:text="${company.businessNo}">사업자번호</span>
+                  </div>
+                  <!-- isAdmin 변수 재활용 → sec:authorize 제거 -->
+                  <div class="company-status" th:if="${isAdmin}">
+                    <span th:if="${company.status == 'ACTIVE'}" class="badge badge-active">정상</span>
+                    <span th:if="${company.status == 'SUSPENDED'}" class="badge badge-suspended">정지</span>
+                    <span th:if="${company.status == 'TERMINATED'}" class="badge badge-terminated">종료</span>
+                  </div>
+                </div>
+
+                <div class="company-card-mid">
+                  <div class="company-meta-item">
+                    <i data-lucide="phone"></i>
+                    <span
+                      th:text="${company.phone != null and !#strings.isEmpty(company.phone)} ? ${company.phone} : '-'">-</span>
+                  </div>
+                  <div class="company-meta-item">
+                    <i data-lucide="mail"></i>
+                    <span
+                      th:text="${company.email != null and !#strings.isEmpty(company.email)} ? ${company.email} : '-'">-</span>
+                  </div>
+                  <div class="company-meta-item">
+                    <i data-lucide="calendar"></i>
+                    <span th:if="${company.createdOn != null}"
+                      th:text="${#temporals.format(company.createdOn, 'yyyy년 MM월 dd일')}">-</span>
+                    <span th:unless="${company.createdOn != null}">-</span>
+                  </div>
+                </div>
+
+                <div class="company-card-bottom">
+                  <th:block th:if="${company.option != null and !#lists.isEmpty(company.option)}">
+                    <th:block th:each="opt, iterStat : ${company.option}" th:if="${iterStat.index < 3}">
+                      <span class="option-badge" th:text="${opt == '기타' and company.etcMemo != null and !#strings.isEmpty(company.etcMemo)}
+                                    ? '기타 - ' + ${company.etcMemo} : ${opt}">
+                      </span>
+                    </th:block>
+                  </th:block>
+                  <span th:if="${company.option == null or #lists.isEmpty(company.option)}"
+                    class="option-badge option-badge-empty">종목 없음</span>
+                </div>
+
+              </div>
+            </th:block>
+
+            <div th:if="${companyList.list == null or #lists.isEmpty(companyList.list)}" class="empty-state">
+              <i data-lucide="building-2"></i>
+              <p>검색 결과가 없습니다.</p>
+            </div>
+
+          </div>
+
+          <nav class="pagination" id="pagination" th:if="${companyList.totalPage > 0}">
+            <button class="page-btn page-nav" th:disabled="${!companyList.hasPrev}"
+              th:onclick="|movePage(${companyList.startPage - 1})|">
+              <i data-lucide="chevron-left"></i>
+            </button>
+            <th:block th:each="i : ${#numbers.sequence(companyList.startPage, companyList.endPage)}">
+              <button class="page-btn" th:classappend="${i == companySearch.page} ? ' active' : ''" th:text="${i}"
+                th:onclick="|movePage(${i})|">
+              </button>
+            </th:block>
+            <button class="page-btn page-nav" th:disabled="${!companyList.hasNext}"
+              th:onclick="|movePage(${companyList.endPage + 1})|">
+              <i data-lucide="chevron-right"></i>
+            </button>
+          </nav>
+
+        </section>
+      </div>
+
+    </div>
+
+  </th:block>
+
+  <script>
+    lucide.createIcons();
+  </script>
+  <script th:src="@{/js/company/list.js}"></script>
+</body>
+
+</html>

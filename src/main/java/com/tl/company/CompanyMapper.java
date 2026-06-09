@@ -8,20 +8,21 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface CompanyMapper {
 
+	public List<CompanyVO.Detail> selectList(CompanyVO.Search companySearch);
+	
+	public int selectListTotalCount(CompanyVO.Search companySearch);
+	
 	public int insertCompany(CompanyVO.Registor companyRegistor);
 
-	public void insertCompanySpecialty(
+	public int insertCompanySpecialty(
 			@Param("companyNo") int companyNo
 			,@Param("option") List<Integer> option
 			,@Param("etcMemo") String etcMemo);
 	
-	public CompanyVO.Detail selectCompanyDetail(String companyUuid);
+	public CompanyVO.Detail selectCompanyDetail(int companyNo);
 
-	public void updateCompany(CompanyVO.Registor company);
+	public int updateCompany(CompanyVO.Registor company);
 
-	public void updateCompanySpecialty(
-			@Param("companyNo") int companyNo
-			,@Param("option") List<Integer> option
-			,@Param("etcMemo") String etcMemo);
+	public void deleteCompanySpecialty(int companyNo);
 
 }

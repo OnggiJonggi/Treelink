@@ -1,13 +1,11 @@
-package com.tl.global.file;
+package com.tl.global.file.component;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 브라우저에서 바로 열람이 가능한 파일 형식
  */
 @Getter
-@RequiredArgsConstructor
 public enum InlineMimeTypeEnum {
 
 	    // PDF
@@ -51,4 +49,9 @@ public enum InlineMimeTypeEnum {
 	        }
 	        return false;
 	    }
+
+	    
+		private InlineMimeTypeEnum(String mimeType) {
+			this.mimeType = mimeType;
+		}
 }

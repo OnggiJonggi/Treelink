@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TreeLink - 회원 정보</title>
+  <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/member/basicinfo.css}">
+</head>
+
+<body>
+  <!-- encryptedMemberNo를 JS에서 사용하기 위한 hidden 값 -->
+  <input type="hidden" id="encryptedMemberNo" th:value="${memberDetail.encryptedMemberNo}">
+
+  <main class="info-wrapper">
+
+    <!-- 1. 로고 -->
+    <div class="logo-area">
+      <a th:href="@{/}">
+        <img th:src="@{/img/main-logo.png}" alt="TreeLink 로고" loading="eager">
+      </a>
+    </div>
+
+    <!-- 2. 회원 정보 카드 -->
+    <div class="info-card">
+
+      <!-- 카드 헤더 -->
+      <div class="info-card-header">
+        <div class="card-icon">
+          <i data-lucide="circle-user-round"></i>
+        </div>
+        <h2 class="card-title">회원 기본 정보</h2>
+      </div>
+
+      <!-- 정보 목록 -->
+      <div class="info-list">
+
+        <!-- 아이디 -->
+        <div class="info-row">
+          <span class="info-label">
+            <i data-lucide="at-sign"></i> 아이디
+          </span>
+          <span class="info-value" th:text="${memberDetail.userId}"></span>
+        </div>
+
+        <!-- 이름 -->
+        <div class="info-row">
+          <span class="info-label">
+            <i data-lucide="user"></i> 이름
+          </span>
+          <span class="info-value" th:text="${memberDetail.name}"></span>
+        </div>
+
+        <!-- 별명 -->
+        <div class="info-row">
+          <span class="info-label">
+            <i data-lucide="smile"></i> 별명
+          </span>
+          <span class="info-value" th:text="${memberDetail.nickname}"></span>
+        </div>
+
+        <!-- 연락처 -->
+        <div class="info-row">
+          <span class="info-label">
+            <i data-lucide="phone"></i> 연락처
+          </span>
+          <span class="info-value" th:text="${memberDetail.phone}"></span>
+        </div>
+
+        <!-- 상태 (ADMIN 권한 보유자에게만 표시) -->
+        <div sec:authorize="hasRole('ADMIN')" class="info-row">
+          <span class="info-label">
+            <i data-lucide="activity"></i> 상태
+          </span>
+          <div class="info-value status-area">
+            <span class="status-badge"
+              th:classappend="${memberDetail.status.name() == 'ACTIVE'} ? 'status-active' :
+                                             (${memberDetail.status.name() == 'DELETED'} ? 'status-deleted' : 'status-suspended')" th:text="${memberDetail.status.name() == 'ACTIVE'} ? '정상' :
+                                       (${memberDetail.status.name() == 'DELETED'} ? '탈퇴' : '중단')">
+            </span>
+            <!-- 상태 변경 버튼 (ADMIN 전용) -->
+            <button type="button" class="btn-icon-sm" id="btnOpenStatusModal" title="상태 변경">
+              <i data-lucide="pencil"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 권한 -->
+        <div class="info-row info-row-col">
+          <span class="info-label">
+            <i data-lucide="shield"></i> 권한
+          </span>
+          <div class="role-list">
+            <th:block th:each="r : ${memberDetail.role}">
+              <span class="role-badge" th:classappend="${r == 'ROLE_SUPER_ADMIN'} ? 'role-super' :
+                                                 (${r == 'ROLE_ADMIN'} ? 'role-admin' :
+                                                 (${r == 'ROLE_EVALUATOR'} ? 'role-evaluator' : 'role-viewer'))"
+                th:text="${r == 'ROLE_SUPER_ADMIN'} ? '최고 관리자' :
+                                           (${r == 'ROLE_ADMIN'} ? '관리자' :
+                                           (${r == 'ROLE_EVALUATOR'} ? '평가자' : '일반'))">
+              </span>
+            </th:block>
+
+            <!-- 권한 변경 버튼 (ADMIN 전용) -->
+            <div sec:authorize="hasRole('ADMIN')">
+              <button type="button" class="btn-icon-sm" id="btnOpenRoleModal" title="권한 변경">
+                <i data-lucide="pencil"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /.info-list -->
+
+      <!-- 하단 버튼 영역 -->
+      <div class="action-area">
+        <button type="button" class="btn btn-primary" id="btnOpenUpdateModal">
+          <i data-lucide="edit-3"></i> 정보 수정하기
+        </button>
+
+        <!-- 회원 탈퇴 버튼 (ADMIN 권한 없는 경우) -->
+        <div sec:authorize="!hasRole('ADMIN')">
+          <form th:action="@{/member/delete}" method="post" id="deleteForm">
+            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
+            <button type="button" class="btn btn-danger" id="btnDeleteAccount">
+              <i data-lucide="user-x"></i> 회원 탈퇴
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div><!-- /.info-card -->
+
+  </main>
+
+
+  <!-- ===================== 정보 수정 모달 ===================== -->
+  <div class="modal-backdrop" id="updateModal" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>정보 수정</h3>
+        <button type="button" class="btn-close-modal" id="btnCloseUpdateModal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="updateForm" novalidate>
+
+          <!-- 비밀번호 -->
+          <div class="form-group">
+            <label class="form-label">새 비밀번호</label>
+            <input type="password" class="form-control" id="newPwd" name="userPwd" placeholder="변경하지 않으면 비워두세요">
+          </div>
+          <div class="form-group">
+            <label class="form-label">비밀번호 확인</label>
+            <input type="password" class="form-control" id="newPwdConfirm" placeholder="비밀번호를 다시 입력하세요">
+            <span class="form-feedback" id="pwdFeedback"></span>
+          </div>
+
+          <!-- 이름 -->
+          <div class="form-group">
+            <label class="form-label">이름</label>
+            <input type="text" class="form-control" id="inputName" name="name" th:value="${memberDetail.name}">
+            <span class="form-feedback" id="nameFeedback"></span>
+          </div>
+
+          <!-- 별명 -->
+          <div class="form-group">
+            <label class="form-label">별명</label>
+            <div class="input-with-btn">
+              <input type="text" class="form-control" id="inputNickname" name="nickname"
+                th:value="${memberDetail.nickname}">
+              <button type="button" class="btn btn-outline btn-sm" id="btnCheckNickname">중복 확인</button>
+            </div>
+            <span class="form-feedback" id="nicknameFeedback"></span>
+          </div>
+
+          <!-- 연락처 -->
+          <div class="form-group">
+            <label class="form-label">연락처</label>
+            <div class="phone-group">
+              <input type="text" class="form-control phone-part" id="phone1" maxlength="4" inputmode="numeric"
+                placeholder="010">
+              <span class="phone-sep">-</span>
+              <input type="text" class="form-control phone-part" id="phone2" maxlength="4" inputmode="numeric"
+                placeholder="0000">
+              <span class="phone-sep">-</span>
+              <input type="text" class="form-control phone-part" id="phone3" maxlength="4" inputmode="numeric"
+                placeholder="0000">
+            </div>
+            <span class="form-feedback" id="phoneFeedback"></span>
+          </div>
+
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="btnCancelUpdate">취소</button>
+        <button type="button" class="btn btn-primary" id="btnSubmitUpdate">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== 상태 변경 모달 (ADMIN 전용) ===================== -->
+  <div sec:authorize="hasRole('ADMIN')">
+    <div class="modal-backdrop" id="statusModal" style="display:none;">
+      <div class="modal-box modal-sm">
+        <div class="modal-header">
+          <h3>상태 변경</h3>
+          <button type="button" class="btn-close-modal" id="btnCloseStatusModal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="statusRadio" value="ACTIVE"> 정상
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="statusRadio" value="SUSPENDED"> 중단
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="statusRadio" value="DELETED"> 탈퇴
+            </label>
+          </div>
+          <span class="form-feedback" id="statusFeedback"></span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btnCancelStatus">취소</button>
+          <button type="button" class="btn btn-primary" id="btnSubmitStatus">변경 완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===================== 권한 변경 모달 (ADMIN 전용) ===================== -->
+  <div sec:authorize="hasRole('ADMIN')">
+    <div class="modal-backdrop" id="roleModal" style="display:none;">
+      <div class="modal-box modal-sm">
+        <div class="modal-header">
+          <h3>권한 변경</h3>
+          <button type="button" class="btn-close-modal" id="btnCloseRoleModal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="radio-group">
+            <!-- SUPER_ADMIN인 경우에만 ADMIN 항목 노출 -->
+            <div sec:authorize="hasRole('SUPER_ADMIN')">
+              <label class="radio-item">
+                <input type="radio" name="roleRadio" value="ADMIN"> 관리자
+              </label>
+            </div>
+            <label class="radio-item">
+              <input type="radio" name="roleRadio" value="EVALUATOR"> 평가자
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="roleRadio" value="VIEWER"> 일반
+            </label>
+          </div>
+          <span class="form-feedback" id="roleFeedback"></span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" id="btnCancelRole">취소</button>
+          <button type="button" class="btn btn-primary" id="btnSubmitRole">변경 완료</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    lucide.createIcons();
+  </script>
+  <script th:src="@{/js/member/basicinfo.js}"></script>
+</body>
+
+</html>

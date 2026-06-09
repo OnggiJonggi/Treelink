@@ -11,8 +11,8 @@ import lombok.Getter;
 public enum ErrorCodeEnum {
 	CANNOT_LOGIN(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-001", "로그인이 안 되는데요"),
 	CANNOT_CREATE_MEMBER(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-002", "새로운 회원을 생성할 수 없습니다."),
-	ID_IS_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-003", "이미 사용된 아이디입니다."),
-	NICKNAME_IS_DUPLICATED(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-004", "이미 사용된 닉네임입니다"),
+	ID_IS_DUPLICATED(HttpStatus.BAD_REQUEST, "MEMBER-003", "이미 사용된 아이디입니다."),
+	NICKNAME_IS_DUPLICATED(HttpStatus.BAD_REQUEST, "MEMBER-004", "이미 사용된 닉네임입니다"),
 	
 	CANNOT_GRANT_ROLE(HttpStatus.INTERNAL_SERVER_ERROR, "MEMBER-101", "권한을 부여할 수 없습니다"),
 	
@@ -23,7 +23,7 @@ public enum ErrorCodeEnum {
 	
 	FILE_INFO_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-101", "파일 메타데이터가 없어요"),
 	FILE_NOT_FOUND(HttpStatus.NOT_FOUND, "FILE-102", "그런 파일 없어요"),
-	FILE_NAME_FORBIDDEN(HttpStatus.BAD_REQUEST, "FILE-103", "파일 이름이 이상해요"),
+	FILE_FORBIDDEN(HttpStatus.BAD_REQUEST, "FILE-103", "잘못된 파일이에요"),
 	DOC_TYPE_FORBIDDEN(HttpStatus.BAD_REQUEST, "FILE-104", "서류 타입이 이상해요"),
 	FILE_EXPIRE_ON_FORBIDDEN(HttpStatus.BAD_REQUEST, "FILE-105", "파일 만료일이 이상해요");
 	

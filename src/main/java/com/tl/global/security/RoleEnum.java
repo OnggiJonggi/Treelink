@@ -1,6 +1,7 @@
 package com.tl.global.security;
 
 public enum RoleEnum {
+	SUPER_ADMIN,
 	ADMIN,
 	EVALUATOR,
 	VIEWER

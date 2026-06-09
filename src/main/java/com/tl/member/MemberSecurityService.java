@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
-import com.tl.global.security.RoleMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,22 +17,18 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor // final이 사용된 필드의 생성자@autowired 자동 생성
 public class MemberSecurityService implements UserDetailsService{
-	private final MemberDao memberDao;
+	private final MemberMapper memberMapper;
 	private final CryptoComponent cryptoComponent;
-	private final RoleMapper roleMapper;
 
 	// 로그인
 	@Override
 	public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
         
 		// id로 회원 추출
-		MemberVO.Detail memberDetail = memberDao.selectMemberById(userId);
+		MemberVO.Detail memberDetail = memberMapper.selectMemberById(userId);
         
         if (memberDetail == null)
         	throw new UsernameNotFoundException("그런 사람 없다는데요");
-        
-        // 권한 확인
-        memberDetail.setRole(roleMapper.selectMemberRole(memberDetail.getMemberNo()));
         
         // memberNo암호화
         try {

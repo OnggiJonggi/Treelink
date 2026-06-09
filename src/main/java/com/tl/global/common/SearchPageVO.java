@@ -6,6 +6,8 @@ package com.tl.global.common;
  */
 public class SearchPageVO {
     private int page = 1;
+    // int startRow;
+    // int endRow;
 
     public int getPage() {
     	return page;

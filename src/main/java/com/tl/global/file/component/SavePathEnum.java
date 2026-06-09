@@ -1,0 +1,20 @@
+package com.tl.global.file.component;
+
+import lombok.Getter;
+
+// 파일 저장 경로 저장
+@Getter
+public enum SavePathEnum {
+	COMPANY("company/"),
+	COMPANY_LOGO("image/company-logo/")
+	
+	;
+	
+	private final String folder;
+
+	
+	// 이넘 생성자는 직접 작성이 관례
+	private SavePathEnum(String folder) {
+		this.folder = folder;
+	}
+}

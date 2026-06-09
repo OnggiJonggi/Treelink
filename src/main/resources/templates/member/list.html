@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TreeLink - 회원 목록</title>
+  <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <link rel="stylesheet" th:href="@{/css/member/list.css}">
+</head>
+
+<body>
+
+  <div class="page-wrapper">
+
+    <!-- 로고 -->
+    <div class="logo-area">
+      <a th:href="@{/}">
+        <img th:src="@{/img/main-logo.png}" alt="TreeLink 로고">
+      </a>
+    </div>
+
+    <!-- 콘텐츠 영역 -->
+    <div class="content-layout">
+
+      <!-- ===== 왼쪽: 검색 필터 ===== -->
+      <aside class="filter-panel">
+        <div class="filter-header">
+          <i data-lucide="sliders-horizontal"></i>
+          <span>검색 필터</span>
+        </div>
+
+        <form id="searchForm" class="filter-form">
+
+          <div class="filter-group">
+            <label for="userId">아이디</label>
+            <input type="text" id="userId" name="userId" th:value="${memberSearch.userId}" placeholder="아이디 입력">
+          </div>
+
+          <div class="filter-group">
+            <label for="name">이름</label>
+            <input type="text" id="name" name="name" th:value="${memberSearch.name}" placeholder="이름 입력">
+          </div>
+
+          <div class="filter-group">
+            <label for="nickname">별명</label>
+            <input type="text" id="nickname" name="nickname" th:value="${memberSearch.nickname}" placeholder="별명 입력">
+          </div>
+
+          <div class="filter-group">
+            <label for="phone">연락처</label>
+            <input type="text" id="phone" name="phone" th:value="${memberSearch.phone}" placeholder="연락처 입력">
+          </div>
+
+          <div class="filter-group">
+            <label>상태</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="status" value="" th:checked="${memberSearch.status == null}">
+                <span>전체</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="status" value="ACTIVE"
+                  th:checked="${memberSearch.status != null and memberSearch.status.name() == 'ACTIVE'}">
+                <span class="badge badge-active">정상</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="status" value="SUSPENDED"
+                  th:checked="${memberSearch.status != null and memberSearch.status.name() == 'SUSPENDED'}">
+                <span class="badge badge-suspended">정지</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="status" value="DELETED"
+                  th:checked="${memberSearch.status != null and memberSearch.status.name() == 'DELETED'}">
+                <span class="badge badge-deleted">탈퇴</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>권한</label>
+            <div class="radio-group">
+              <label class="radio-label">
+                <input type="radio" name="role" value="" th:checked="${memberSearch.role == null}">
+                <span>전체</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="role" value="SUPER_ADMIN"
+                  th:checked="${memberSearch.role != null and memberSearch.role.name() == 'ROLE_SUPER_ADMIN'}">
+                <span>SUPER_ADMIN</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="role" value="ADMIN"
+                  th:checked="${memberSearch.role != null and memberSearch.role.name() == 'ROLE_ADMIN'}">
+                <span>ADMIN</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="role" value="EVALUATOR"
+                  th:checked="${memberSearch.role != null and memberSearch.role.name() == 'ROLE_EVALUATOR'}">
+                <span>EVALUATOR</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="role" value="VIEWER"
+                  th:checked="${memberSearch.role != null and memberSearch.role.name() == 'ROLE_VIEWER'}">
+                <span>VIEWER</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 숨겨진 page 필드 -->
+          <input type="hidden" id="pageInput" name="page" value="1">
+
+          <button type="submit" class="btn-search">
+            <i data-lucide="search"></i>
+            검색
+          </button>
+
+        </form>
+      </aside>
+
+      <!-- ===== 오른쪽: 검색 결과 ===== -->
+      <section class="result-panel">
+
+        <!-- 결과 헤더 -->
+        <div class="result-header">
+          <span class="result-count">
+            전체 <strong th:text="${memberList.totalCount}">0</strong>명
+          </span>
+        </div>
+
+        <!-- 회원 카드 목록 -->
+        <div class="member-grid" id="memberGrid">
+          <div th:each="member : ${memberList.list}" class="member-card" th:data-enc="${member.encryptedMemberNo}"
+            onclick="goToDetail(this)">
+
+            <div class="member-card-top">
+              <div class="member-avatar">
+                <i data-lucide="user"></i>
+              </div>
+              <div class="member-info">
+                <span class="member-userid" th:text="${member.userId}">userId</span>
+                <span class="member-name" th:text="${member.name}">이름</span>
+                <span class="member-nickname" th:text="'@' + ${member.nickname}">@별명</span>
+              </div>
+              <!-- 상태 뱃지 -->
+              <div class="member-status">
+                <span th:if="${member.status != null and member.status.name() == 'ACTIVE'}"
+                  class="badge badge-active">정상</span>
+                <span th:if="${member.status != null and member.status.name() == 'SUSPENDED'}"
+                  class="badge badge-suspended">정지</span>
+                <span th:if="${member.status != null and member.status.name() == 'DELETED'}"
+                  class="badge badge-deleted">탈퇴</span>
+              </div>
+            </div>
+
+            <div class="member-card-bottom">
+              <div class="member-phone">
+                <i data-lucide="phone"></i>
+                <span
+                  th:text="${member.phone != null and !#strings.isEmpty(member.phone)} ? ${member.phone} : '-'">-</span>
+              </div>
+              <div class="member-roles">
+                <span th:each="r : ${member.role}" class="role-badge"
+                  th:text="${#strings.replace(r, 'ROLE_', '')}">ROLE</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 결과 없음 -->
+          <div th:if="${memberList.list == null or #lists.isEmpty(memberList.list)}" class="empty-state">
+            <i data-lucide="users"></i>
+            <p>검색 결과가 없습니다.</p>
+          </div>
+        </div>
+
+        <!-- 페이징 바 -->
+        <nav class="pagination" id="pagination" th:if="${memberList.totalPage > 0}">
+
+          <!-- 이전 블록 -->
+          <button class="page-btn page-nav" th:disabled="${!memberList.hasPrev}"
+            th:onclick="|movePage(${memberList.startPage - 1})|">
+            <i data-lucide="chevron-left"></i>
+          </button>
+
+          <!-- 페이지 번호 -->
+          <th:block th:each="i : ${#numbers.sequence(memberList.startPage, memberList.endPage)}">
+            <button class="page-btn" th:classappend="${i == memberSearch.page} ? ' active' : ''" th:text="${i}"
+              th:onclick="|movePage(${i})|">
+            </button>
+          </th:block>
+
+          <!-- 다음 블록 -->
+          <button class="page-btn page-nav" th:disabled="${!memberList.hasNext}"
+            th:onclick="|movePage(${memberList.endPage + 1})|">
+            <i data-lucide="chevron-right"></i>
+          </button>
+
+        </nav>
+
+      </section>
+    </div><!-- /.content-layout -->
+  </div><!-- /.page-wrapper -->
+
+  <script>
+    lucide.createIcons();
+  </script>
+  <script th:src="@{/js/member/list.js}"></script>
+</body>
+
+</html>
