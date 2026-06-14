@@ -39,7 +39,7 @@ public class FileInfoVO {
 		
 		private int companyNo;
 		
-		private String docType;
+		private String docType; // 서류 종류, 식별 아이디 등등
 	}
 	
 	
@@ -47,6 +47,7 @@ public class FileInfoVO {
 	@AllArgsConstructor
 	@Data
 	@Builder
+	@ToString
 	public static class Detail{
 		
 		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -67,6 +68,7 @@ public class FileInfoVO {
 	@Getter
 	public static class GetFile{
 		private String originalName;
+		private String changedName;
 		private String mime;
 		private String savePath;
 	}
@@ -90,9 +92,10 @@ public class FileInfoVO {
 	public static class History {
 		
 		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-		private int fileNo;
+		private Integer fileNo; // 파일 삭제할 때 null (fk참조 안 함)
 		
 		private String originalName;
+		private String changedName;
 		private String savePath;
 		private LocalDateTime actionAt;
 		private FileStatusEnum action;
@@ -107,7 +110,13 @@ public class FileInfoVO {
 	@Getter
 	@ToString
 	public static class SavePath{
-		private String savePath;
+		private String changedName;
 		private String mime;
+		private String savePath;
+		
+		
+		public void setSavePath(String savePath) {
+			this.savePath = savePath;
+		}
 	}
 }

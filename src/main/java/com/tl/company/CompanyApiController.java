@@ -7,13 +7,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tl.global.api.BusinessNoCheckService;
 import com.tl.global.api.BusinessNoCheckVO;
 import com.tl.global.common.SearchResultVO;
-import com.tl.global.file.CompanyDocService;
-import com.tl.global.file.component.FileValidateComponent;
+import com.tl.global.file.CompanyFileService;
+import com.tl.global.file.component.FileComponent;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
 import com.tl.global.security.RoleEnum;
@@ -29,9 +30,9 @@ import lombok.extern.slf4j.Slf4j;
 public class CompanyApiController {
 	public final BusinessNoCheckService businessNoCheckService;
 	public final CompanyService companyService;
-	public final CompanyDocService companyDocService;
+	public final CompanyFileService companyDocService;
 	public final CryptoComponent cryptoComponent;
-	public final FileValidateComponent fileValidateComponent;
+	public final FileComponent fileValidateComponent;
 	
 	/**
 	 * 사업자 등록번호 진위확인
@@ -84,7 +85,7 @@ public class CompanyApiController {
 	 * 업체 수정
 	 * 관리자
 	 */
-	@PutMapping("{encryptedCompanyNo}")
+	@PutMapping("/{encryptedCompanyNo}")
 	public ResponseEntity<Void> updateCompany(
 			@PathVariable String encryptedCompanyNo,
 			@Valid CompanyVO.Registor company) throws Exception{
@@ -98,5 +99,20 @@ public class CompanyApiController {
 	}
 
 	
+	/**
+	 * 회사 소개 생성/수정
+	 * 관리자
+	 */
+	@PutMapping("/{encryptedCompanyNo}/intro")
+	public ResponseEntity<Void> insertIntro(
+			@PathVariable String encryptedCompanyNo,
+			@RequestParam String intro) throws Exception{
+		
+		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		
+		companyService.updateIntro(companyNo, intro);
+		
+		return ResponseEntity.ok().build();
+	}
 	
 }

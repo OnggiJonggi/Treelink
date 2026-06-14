@@ -8,16 +8,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.company.CompanyVO.Search;
+import com.tl.global.common.SanitizeComponent;
 import com.tl.global.common.SearchResultVO;
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompanyService {
 	private final CompanyMapper companyMapper;
+	private final SanitizeComponent sanitizeComponent;
 
 	/**
 	 * 업체 조회
@@ -112,6 +116,30 @@ public class CompanyService {
 			if(result3 == 0)
 				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
+	}
+
+
+	/**
+	 * 회사 소개문 보기
+	 * @param status 
+	 */
+	public String getIntro(int companyNo, CompanyStatusEnum status) {
+		return companyMapper.selectIntro(companyNo, status);
+	}
+
+
+	/**
+	 * 회사 소개문 생성/수정
+	 * @param companyNo
+	 * @param intro 
+	 */
+	public void updateIntro(int companyNo, String intro) {
+		
+		// 나쁜 태그 대롱대롱 하지요
+		intro = sanitizeComponent.sanitize(intro);
+		
+		int result = companyMapper.updateIntro(companyNo, intro);
+		if(result==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 }

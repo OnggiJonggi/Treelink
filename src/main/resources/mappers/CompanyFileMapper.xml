@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tl.global.file.CompanyFileMapper">
+  <select id="selectInfo" parameterType="_int" resultType="FileInfoDetail">
+    select
+      F.FILE_NO
+      ,F.ORIGINAL_NAME
+      ,F.FILE_SIZE
+      ,F.EXPIRE_ON
+      ,CD.DOC_TYPE
+    from FILE_INFO F
+    right join COMPANY_DOC CD on(CD.FILE_NO = F.FILE_NO)
+    where CD.COMPANY_NO = #{companyNo}
+    and CD.DOC_TYPE != 'LOGO'
+    order by F.FILE_NO desc
+  </select>
+
+  <insert id="insertInfo" parameterType="FileInfoRegistor"
+    useGeneratedKeys="true"
+    keyProperty="fileNo"
+    keyColumn="FILE_NO">
+    insert into FILE_INFO(
+        ORIGINAL_NAME
+        ,CHANGED_NAME
+        ,MIME
+        ,FILE_SIZE
+        ,SAVE_PATH
+        ,EXPIRE_ON
+      ) values(
+        #{originalName}
+        ,#{changedName}
+        ,#{mime}
+        ,#{fileSize}
+        ,#{savePath}
+        ,#{expireOn}
+      )
+  </insert>
+
+  <delete id="deleteLogoInfo" parameterType="_int">
+    delete from FILE_INFO
+    where FILE_NO = (
+      select FILE_NO
+      from COMPANY_DOC
+      where COMPANY_NO = #{companyNo}
+      and DOC_TYPE = 'LOGO'
+    )
+  </delete>
+
+  
+  <insert id="insertCompanyDoc" parameterType="FileInfoRegistor">
+      insert into COMPANY_DOC(
+        COMPANY_NO
+        ,FILE_NO
+        ,DOC_TYPE
+      ) values(
+        #{companyNo}
+        ,#{fileNo}
+        ,#{docType}
+      )
+  </insert>
+
+
+  <select id="selectGetFile" resultType="FileInfoGetFile">
+    select
+      F.ORIGINAL_NAME
+      ,F.CHANGED_NAME
+      ,F.MIME
+      ,F.SAVE_PATH
+    from FILE_INFO F
+    inner join COMPANY_DOC CD on (CD.FILE_NO = F.FILE_NO)
+    where F.FILE_NO = #{docNo}
+    and CD.COMPANY_NO = #{companyNo}
+  </select>
+
+  <delete id="deleteDoc" parameterType="_int">
+    delete from FILE_INFO
+    where FILE_NO = #{fileNo}
+  </delete>
+
+  <select id="selectInfoForHistory" parameterType="_int" resultType="FileInfoHistory">
+    select
+      FILE_NO
+      ,ORIGINAL_NAME
+      ,CHANGED_NAME
+      ,SAVE_PATH
+    from FILE_INFO
+    where FILE_NO = #{fileNo}
+  </select>
+
+  <select id="selectLogoSavePath" resultType="FileInfoSavePath">
+    select 
+      FI.MIME
+      ,FI.SAVE_PATH
+      ,FI.CHANGED_NAME
+    from FILE_INFO FI
+    inner join COMPANY_DOC CD on (FI.FILE_NO = CD.FILE_NO)
+    <if test="isAdmin==false">
+      inner join COMPANY C on(C.COMPANY_NO = CD.COMPANY_NO)
+    </if>
+    where CD.COMPANY_NO = #{companyNo}
+    and CD.DOC_TYPE = 'LOGO'
+    <if test="isAdmin==false">
+      and C.STATUS = 'ACTIVE'
+    </if>
+  </select>
+
+  <select id="selectInfoForLogoHistory" parameterType="_int" resultType="FileInfoHistory">
+    select
+      FILE_NO
+      ,ORIGINAL_NAME
+      ,CHANGED_NAME
+      ,SAVE_PATH
+    from FILE_INFO
+    where FILE_NO = (
+      select FILE_NO
+      from COMPANY_DOC
+      where COMPANY_NO =#{companyNo}
+      and DOC_TYPE = 'LOGO'
+    )
+  </select>
+
+  <delete id="deleteLogo" parameterType="_int">
+    delete from FILE_INFO
+    where FILE_NO = (
+      select FILE_NO
+      from COMPANY_DOC
+      where DOC_TYPE = 'LOGO'
+      and FILE_NO = #{fileNo}
+    )
+  </delete>
+
+  <select id="selectIntroImage" resultType="FileInfoGetFile">
+    select 
+      FI.ORIGINAL_NAME
+      ,FI.CHANGED_NAME
+      ,FI.MIME
+      ,FI.SAVE_PATH
+    from FILE_INFO FI
+    inner join COMPANY_DOC CD on (CD.FILE_NO = FI.FILE_NO)
+    <if test="status!=null">
+      inner join COMPANY C on (CD.COMPANY_NO = C.COMPANY_NO)
+    </if>
+    where CD.COMPANY_NO = #{companyNo}
+    and FI.CHANGED_NAME = #{changedName}
+    and CD.DOC_TYPE = 'INTRO'
+    <if test="status!=null">
+      and C.STATUS = #{status}
+    </if>
+  </select>
+
+</mapper>

@@ -5,9 +5,9 @@ import lombok.Getter;
 // 파일 저장 경로 저장
 @Getter
 public enum SavePathEnum {
-	COMPANY("company/"),
-	COMPANY_LOGO("image/company-logo/")
-	
+	COMPANY_DOC("company-doc/"),
+	COMPANY_LOGO("image/company-logo/"),
+	COMPANY_INTRO("image/company-intro/"),
 	;
 	
 	private final String folder;

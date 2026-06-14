@@ -16,7 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.global.api.BusinessNoCheckVO;
 import com.tl.global.common.SearchResultVO;
-import com.tl.global.file.CompanyDocService;
+import com.tl.global.file.CompanyFileService;
 import com.tl.global.file.FileInfoVO;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CompanyController {
 	private final CompanyService companyService;
-	private final CompanyDocService companyDocService;
+	private final CompanyFileService companyDocService;
 	private final CryptoComponent cryptoComponent;
 	
 	/**
@@ -109,8 +109,10 @@ public class CompanyController {
 	 * 관리자(서류 열람, 중단/종료된 사업체 상세 조회)
 	 */
 	@GetMapping("/{encryptedCompanyNo}")
-	public String goView(@PathVariable String encryptedCompanyNo, Model model
-			,@AuthenticationPrincipal UserDetails userDetails) throws Exception {
+	public String goView(
+			@PathVariable String encryptedCompanyNo,
+			@AuthenticationPrincipal UserDetails userDetails,
+			Model model) throws Exception {
 		
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		
@@ -131,7 +133,7 @@ public class CompanyController {
 				userDetails.getAuthorities().stream()
 	            .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
 			
-			List<FileInfoVO.Detail> docs = companyDocService.getInfo(detail.getCompanyNo());
+			List<FileInfoVO.Detail> docs = companyDocService.getInfo(companyNo);
 			
 			// 파일 식별번호 암호화
 			for(FileInfoVO.Detail doc : docs) {
@@ -155,9 +157,34 @@ public class CompanyController {
 	
 	/**
 	 * 업체 소개 페이지 조각
+	 * 관리자 : 비활성 업체 조회 가능
 	 */
 	@GetMapping("/{encryptedCompanyNo}/intro")
-	public String getIntro(@PathVariable String encryptedCompanyNo) {
+	public String getIntro(
+			@PathVariable String encryptedCompanyNo,
+			@AuthenticationPrincipal UserDetails userDetails,
+			Model model) throws Exception {
+		
+		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		
+		// 네비 바에게 여기가 어디고 나는 누구인지 알려줌
+		model.addAttribute("companyMenu", "intro");
+		model.addAttribute("encryptedCompanyNo", encryptedCompanyNo);
+		
+		// 소개문 조회
+		String intro;
+		
+		if(userDetails != null &&
+				userDetails.getAuthorities().stream()
+	            .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
+			
+			// 관리자 권한 : 전체 조회
+			intro = companyService.getIntro(companyNo, null);
+			
+			// 권한 없으면 손가락이나 빠쇼
+		}else intro = companyService.getIntro(companyNo, CompanyStatusEnum.ACTIVE);
+			
+		model.addAttribute("companyIntro", intro);
 		
 		return "company/view/intro :: content";
 	}

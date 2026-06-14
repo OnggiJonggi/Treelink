@@ -7,10 +7,4 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class FileService {
-	private final FileMapper fileMapper;
-
-	public FileInfoVO.SavePath getSavePath(int companyNo, boolean isAdmin) {
-		return fileMapper.selectLogoSavePath(companyNo, isAdmin);
-	}
-
 }

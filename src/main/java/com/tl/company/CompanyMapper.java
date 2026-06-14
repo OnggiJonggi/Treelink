@@ -25,4 +25,10 @@ public interface CompanyMapper {
 
 	public void deleteCompanySpecialty(int companyNo);
 
+	public String selectIntro(
+			@Param("companyNo") int companyNo,
+			@Param("status") CompanyStatusEnum status);
+
+	public int updateIntro(int companyNo, String intro);
+
 }

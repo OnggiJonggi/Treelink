@@ -1,5 +1,6 @@
 package com.tl.global.file.component;
 
+import java.io.File;
 import java.time.LocalDate;
 import java.util.regex.Pattern;
 
@@ -10,7 +11,7 @@ import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
 
 @Component
-public class FileValidateComponent {
+public class FileComponent {
 	
 	/**
 	 * 파일 유효성 검사
@@ -53,5 +54,16 @@ public class FileValidateComponent {
 		
 		// 파일명 이스케이프
 		return FileNameEscapeEnum.escapeAll(originalName);
+	}
+	
+	/**
+	 * 폴더 디렉토리와 파일 이름으로 진짜 경로 만들기
+	 * 
+	 * @param savePath
+	 * @param changedName
+	 * @return 진짜 파일 경로
+	 */
+	public String createPath(String savePath, String changedName) {
+		return savePath + File.separator + changedName;
 	}
 }

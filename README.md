@@ -1,22 +1,34 @@
-트리링크 웹사이트
+# 트리링크
 
+## 🛠 기술 스택
 
-----------------------------------------------------
-프론트 : thymeleaf(+ extras spring security6), bootstrap 5.3.3
+| 영역 | 기술 |
+|------|------|
+| 프론트 | Thymeleaf (+ Extras Spring Security 6), Bootstrap 5.3.3 |
+| 백엔드 | Java 17, Spring Boot 4.0.6, Maven |
+| DB | Oracle 26, MyBatis 4.0.1 (Spring Boot Starter) |
 
-웹 : java 17, spring boot 4.0.6, maven
+## 📄 API 문서
 
-db : oracle 26, mybatis 4.0.1(spring boot starter)
+Swagger UI : http://localhost:8080/swagger-ui.html
 
-스윀어 http://localhost:8080/swagger-ui.html
+전체 요청 경로 : doc\요청 주소록.txt
 
-----------------------------------------------------
-src/main/resources/config/key.properties
+## 🗃️ DB
 
-#ABS-128 평문 키
+doc/sql 경로 파일들 순서대로 실행
 
-crypto.key= #16글자 암호화 키
+---
 
-#공공API 국세청 사업자등록정보 진위확인
+## ⚙️ 환경 설정
 
-public-data.key= #공공데이터 Encoding 인증키
+### `src/main/resources/config/key.properties`
+
+```properties
+# AES-128 평문 키 (16자리 암호화 키)
+crypto.key=
+
+# 공공데이터포털 API 키 (Encoding 인증키)
+# https://www.data.go.kr/data/15107737/standard.do
+public-data.key=
+```

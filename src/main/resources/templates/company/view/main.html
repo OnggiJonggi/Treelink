@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title th:text="'트리링크 - ' + ${companyDetail.companyName}">트리링크 - 업체 정보</title>
   <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <th:block th:if="${companyMenu == 'intro'}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@latest/dist/summernote-bs5.min.css">
+  </th:block>
   <link rel="stylesheet" th:href="@{/css/company/view/main.css}">
 </head>
 
@@ -183,14 +186,29 @@
                 <input type="file" id="cv-doc-file-input" class="cv-form-control">
               </div>
               <div class="cv-form-group">
-                <label class="cv-form-label" for="cv-doc-type-input">서류 종류 <span class="cv-required">*</span></label>
-                <input type="text" id="cv-doc-type-input" class="cv-form-control" placeholder="20자 이내" maxlength="20">
+                <label class="cv-form-label" for="cv-doc-type-select">서류 종류 <span class="cv-required">*</span></label>
+                <select id="cv-doc-type-select" class="cv-form-control">
+                  <option value="">직접 입력</option>
+                  <option value="BANKBOOK">통장 사본</option>
+                </select>
+                <input type="text" id="cv-doc-type-input" class="cv-form-control" placeholder="20자 이내" maxlength="20"
+                  style="margin-top: var(--space-2);">
               </div>
               <div class="cv-form-group">
-                <label class="cv-form-label" for="cv-doc-expire-input">만료일 <span
-                    class="cv-text-muted">(선택)</span></label>
-                <input type="text" id="cv-doc-expire-input" class="cv-form-control" placeholder="예) 2025년 12월 31일">
+                <label class="cv-form-label">만료일 <span class="cv-text-muted">(선택)</span></label>
+                <div class="cv-date-row">
+                  <input type="number" id="cv-doc-expire-year" class="cv-form-control cv-date-part" placeholder="YYYY"
+                    min="2000" max="2999">
+                  <span class="cv-date-sep">년</span>
+                  <input type="number" id="cv-doc-expire-month" class="cv-form-control cv-date-part" placeholder="MM"
+                    min="1" max="12">
+                  <span class="cv-date-sep">월</span>
+                  <input type="number" id="cv-doc-expire-day" class="cv-form-control cv-date-part" placeholder="DD"
+                    min="1" max="31">
+                  <span class="cv-date-sep">일</span>
+                </div>
               </div>
+
               <div class="cv-form-btns">
                 <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="cv-doc-upload-btn"
                   th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
@@ -213,7 +231,8 @@
                     <span th:text="${doc.originalName}">파일명</span>
                   </div>
                   <div class="cv-doc-meta">
-                    <span class="cv-doc-type-badge" th:text="${doc.docType}">종류</span>
+                    <span class="cv-doc-type-badge"
+                      th:text="${doc.docType == 'BANKBOOK'} ? '통장 사본' : ${doc.docType}">종류</span>
                     <span class="cv-text-muted cv-text-sm"
                       th:text="${#numbers.formatDecimal(doc.fileSize / 1024.0, 1, 'COMMA', 1, 'POINT')} + ' KB'">
                     </span>

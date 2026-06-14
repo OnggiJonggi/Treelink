@@ -4,13 +4,11 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tl.global.file.FileMapper">
 
-  <insert id="insertHistory" parameterType="FileInfoHistory"
-    useGeneratedKeys="true"
-    keyProperty="historyNo"
-    keyColumn="HISTORY_NO">
+  <insert id="insertHistory" parameterType="FileInfoHistory">
     insert into FILE_HISTORY(
       FILE_NO
       ,ORIGINAL_NAME
+      ,CHANGED_NAME
       ,SAVE_PATH
       ,ACTION
       <if test="actionAt!=null">
@@ -18,8 +16,9 @@
       </if>
       ,ACTION_BY
     )values(
-      #{fileNo}
+      #{fileNo, jdbcType=NUMERIC}
       ,#{originalName}
+      ,#{changedName}
       ,#{savePath}
       ,#{action}
       <if test="actionAt!=null">
@@ -28,19 +27,5 @@
       ,#{actionBy}
     )
   </insert>
-
-  <select id="selectLogoSavePath" resultType="FileInfoSavePath">
-    select FI.MIME, FI.SAVE_PATH
-    from FILE_INFO FI
-    inner join COMPANY_DOC CD on (FI.FILE_NO = CD.FILE_NO)
-    <if test="isAdmin==false">
-      inner join COMPANY C on(C.COMPANY_NO = CD.COMPANY_NO)
-    </if>
-    where CD.COMPANY_NO = #{companyNo}
-    and CD.DOC_TYPE = 'LOGO'
-    <if test="isAdmin==false">
-      and C.STATUS = 'ACTIVE'
-    </if>
-  </select>
 
 </mapper>

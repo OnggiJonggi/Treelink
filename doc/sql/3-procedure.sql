@@ -1,8 +1,11 @@
+-- 만료된 파일 FILE_INFO에서 삭제 및 파일 기록 추가
+
 create or replace procedure PROC_EXPIRE_FILE as
 begin
   insert into FILE_HISTORY(
     FILE_NO
     ,ORIGINAL_NAME
+    ,CHANGED_NAME
     ,SAVE_PATH
     ,ACTION
     ,ACTION_AT
@@ -11,6 +14,7 @@ begin
   select
     FILE_NO
     ,ORIGINAL_NAME
+    ,CHANGED_NAME
     ,SAVE_PATH
     ,'EXPIRED'
     ,SYSDATE

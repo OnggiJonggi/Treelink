@@ -30,7 +30,7 @@
       ,C.EMAIL
       ,C.CREATED_ON
       ,C.STATUS
-      ,CS.MEMO
+      ,CS_MEMO.MEMO
       ,S.FIELD
     from(
       select *
@@ -81,6 +81,10 @@
     ) C
     left join COMPANY_SPECIALTY CS on(CS.COMPANY_NO = C.COMPANY_NO)
     left join SPECIALTY S on(S.SPECIALTY_NO = CS.SPECIALTY_NO)
+    left join COMPANY_SPECIALTY CS_MEMO on (CS_MEMO.COMPANY_NO = C.COMPANY_NO
+      and CS_MEMO.SPECIALTY_NO = (
+        select SPECIALTY_NO from SPECIALTY where FIELD = '기타'
+      ))
   </select>
 
 
@@ -163,11 +167,15 @@
       ,C.EMAIL
       ,C.CREATED_ON
       ,C.STATUS
-      ,CS.MEMO
+      ,CS_MEMO.MEMO
       ,S.FIELD
     from COMPANY C
     left join COMPANY_SPECIALTY CS on(CS.COMPANY_NO = C.COMPANY_NO)
     left join SPECIALTY S on(S.SPECIALTY_NO = CS.SPECIALTY_NO)
+    left join COMPANY_SPECIALTY CS_MEMO on (CS_MEMO.COMPANY_NO = C.COMPANY_NO
+      and CS_MEMO.SPECIALTY_NO = (
+        select SPECIALTY_NO from SPECIALTY where FIELD = '기타'
+      ))
     where C.COMPANY_NO = #{companyNo}
   </select>
 
@@ -189,5 +197,19 @@
     where COMPANY_NO = #{companyNo}
   </delete>
 
+  <select id="selectIntro" resultType="string">
+    select INTRO
+    from COMPANY
+    where COMPANY_NO = #{companyNo}
+    <if test="status!=null">
+      and STATUS = #{status}
+    </if>
+  </select>
+
+  <update id="updateIntro">
+    update COMPANY
+    set INTRO = #{intro}
+    where COMPANY_NO = #{companyNo}
+  </update>
 
 </mapper>

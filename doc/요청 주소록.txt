@@ -42,6 +42,7 @@
   위치 확인(get, /company/{encryptedCompanyNo}/location)
   작업 현황(get, /company/{encryptedCompanyNo}/dashboard)
 기본 정보
+  로고 조회(get, /file/company/{encryptedCompanyNo}/logo)
   권한 - ADMIN
     업체 로고 등록(post, /file/company/{encryptedCompanyNo}/logo)
     업체 수정(put, /api/company/{encryptedCompanyNo})
@@ -49,6 +50,14 @@
     업체 서류 보기(get, /file/company/{encryptedCompanyNo}/doc/{encryptedDocNo})
     업체 서류 삭제(delete, /file/company/{encryptedCompanyNo}/doc/{encryptedDocNo})
     -실제 파일 삭제 로직 구현 필요해요!!
+업체 소개
+  사진 조회(get, /file/company/{encryptedCompanyNo}/intro/{changedName})
+  권한 - ADMIN
+    소개 생성/수정(put, /api/company/{encryptedCompanyNo}/intro)
+    사진 삽입(post, /file/company/{encryptedCompanyNo}/intro)
+평가 목록
+위치 확인
+작업 현황
 
 회원 검색(/member)
   회원 목록 불러오기(get, /api/member)

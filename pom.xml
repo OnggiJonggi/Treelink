@@ -43,8 +43,10 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 		<dependency>
+			<!-- thymeleaf와 spring security 연동-->
 			<groupId>org.thymeleaf.extras</groupId>
 			<artifactId>thymeleaf-extras-springsecurity6</artifactId>
+			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
@@ -74,13 +76,6 @@
 			<scope>test</scope>
 		</dependency>
 		
-		<!-- thymeleaf와 spring security 연동-->
-		<dependency>
-		    <groupId>org.thymeleaf.extras</groupId>
-		    <artifactId>thymeleaf-extras-springsecurity6</artifactId>
-		    <scope>compile</scope>
-		</dependency>
-		
 		<!-- 오라클, 마이바티스 -->
 		<dependency>
 		    <groupId>com.oracle.database.jdbc</groupId>
@@ -104,6 +99,14 @@
 		    <groupId>org.springdoc</groupId>
 		    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 		    <version>3.0.3</version>
+		    <scope>compile</scope>
+		</dependency>
+		
+		<!-- JSOP (게시판 HTML태그 화이트리스트 용) -->
+		<dependency>
+		    <groupId>org.jsoup</groupId>
+		    <artifactId>jsoup</artifactId>
+		    <version>1.22.2</version>
 		    <scope>compile</scope>
 		</dependency>
 	</dependencies>

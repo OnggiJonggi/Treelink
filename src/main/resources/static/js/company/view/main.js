@@ -348,11 +348,25 @@ function initDocRegister() {
   const formArea = document.getElementById('cv-doc-form-area');
   const uploadBtn = document.getElementById('cv-doc-upload-btn');
   const cancelBtn = document.getElementById('cv-doc-cancel-btn');
+  const docTypeSelect = document.getElementById('cv-doc-type-select');
+  const docTypeInput = document.getElementById('cv-doc-type-input');
 
   if (!registerBtn) return;
 
   registerBtn.addEventListener('click', function () {
     formArea.style.display = formArea.style.display === 'none' ? '' : 'none';
+  });
+
+  docTypeSelect.addEventListener('change', function () {
+    if (docTypeSelect.value === '') {
+      // 직접 입력 선택 시 입력칸 표시
+      docTypeInput.style.display = '';
+      docTypeInput.value = '';
+    } else {
+      // 선택지 선택 시 입력칸 숨김
+      docTypeInput.style.display = 'none';
+      docTypeInput.value = '';
+    }
   });
 
   cancelBtn.addEventListener('click', function () {
@@ -362,24 +376,34 @@ function initDocRegister() {
 
   uploadBtn.addEventListener('click', function () {
     const fileInput = document.getElementById('cv-doc-file-input');
+    const docTypeSelect = document.getElementById('cv-doc-type-select');
     const docTypeInput = document.getElementById('cv-doc-type-input');
-    const expireInput = document.getElementById('cv-doc-expire-input');
+    const expireYear = document.getElementById('cv-doc-expire-year').value.trim();
+    const expireMonth = document.getElementById('cv-doc-expire-month').value.trim();
+    const expireDay = document.getElementById('cv-doc-expire-day').value.trim();
 
     const file = fileInput.files[0];
-    const docType = docTypeInput.value.trim();
-    const expireRaw = expireInput.value.trim();
 
     if (!file) {
       alert('파일을 선택해주세요.');
       return;
     }
-    if (!docType) {
-      alert('서류 종류를 입력해주세요.');
-      return;
-    }
-    if (docType.length > 20) {
-      alert('서류 종류는 20자 이내로 입력해주세요.');
-      return;
+
+    let docType = '';
+    if (docTypeSelect.value !== '') {
+      // 드롭다운 선택지 사용
+      docType = docTypeSelect.value;
+    } else {
+      // 직접 입력 사용
+      docType = docTypeInput.value.trim();
+      if (!docType) {
+        alert('서류 종류를 입력해주세요.');
+        return;
+      }
+      if (docType.length > 20) {
+        alert('서류 종류는 20자 이내로 입력해주세요.');
+        return;
+      }
     }
 
     const encryptedNo = uploadBtn.getAttribute('data-encrypted-no');
@@ -387,14 +411,20 @@ function initDocRegister() {
     formData.append('file', file);
     formData.append('docType', docType);
 
-    // 만료일 파싱 (yyyy년 MM월 dd일 → yyyy-MM-dd)
-    if (expireRaw) {
-      const parsedExpire = parseKoreanDate(expireRaw);
-      if (!parsedExpire) {
-        alert("만료일 형식을 확인해주세요. 예) 2025년 12월 31일");
+    if (expireYear || expireMonth || expireDay) {
+      if (!expireYear || !expireMonth || !expireDay) {
+        alert('만료일의 년/월/일을 모두 입력해주세요.');
         return;
       }
-      formData.append('expireOn', parsedExpire);
+      const y = expireYear;
+      const m = String(expireMonth).padStart(2, '0');
+      const d = String(expireDay).padStart(2, '0');
+      const dateObj = new Date(`${y}-${m}-${d}`);
+      if (isNaN(dateObj.getTime())) {
+        alert('올바른 만료일을 입력해주세요.');
+        return;
+      }
+      formData.append('expireOn', `${y}-${m}-${d}`);
     }
 
     $.ajax({
@@ -426,9 +456,11 @@ function parseKoreanDate(str) {
 
 function resetDocForm() {
   const fileInput = document.getElementById('cv-doc-file-input');
+  const docTypeSelect = document.getElementById('cv-doc-type-select');
   const docTypeInput = document.getElementById('cv-doc-type-input');
   const expireInput = document.getElementById('cv-doc-expire-input');
   if (fileInput) fileInput.value = '';
+  if (docTypeSelect) { docTypeSelect.value = ''; }
   if (docTypeInput) docTypeInput.value = '';
   if (expireInput) expireInput.value = '';
 }
@@ -481,16 +513,19 @@ function openOrDownloadDoc(encryptedNo, encryptedFileNo) {
       const contentType = res.headers.get('Content-Type') || '';
       const isAttachment = disposition.toLowerCase().includes('attachment');
 
+      // Content-Disposition에서 파일명 파싱
+      let filename = 'download';
+      const fnMatch = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']+)['"]?/i);
+      if (fnMatch) {
+        filename = decodeURIComponent(fnMatch[1].trim());
+        console.log(filename);
+      }
+
       return res.blob().then(function (blob) {
         const blobUrl = URL.createObjectURL(new Blob([blob], { type: contentType }));
 
         if (isAttachment) {
-          // 다운로드
-          let filename = 'download';
-          const fnMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/i);
-          if (fnMatch) {
-            filename = decodeURIComponent(fnMatch[1].replace(/['"]/g, '').trim());
-          }
+          // 다운로드: <a download="파일명"> 사용
           const a = document.createElement('a');
           a.href = blobUrl;
           a.download = filename;
@@ -498,11 +533,20 @@ function openOrDownloadDoc(encryptedNo, encryptedFileNo) {
           a.click();
           document.body.removeChild(a);
         } else {
-          // 새창 열기
-          window.open(blobUrl, '_blank');
+          // 새창 열기: <a> 태그를 통해 열어야 탭 제목에 파일명 반영 안 되지만,
+          // blob URL 자체에 파일명을 심을 수 없으므로
+          // 파일명을 URL fragment로 힌트를 주거나, 새 창에서 직접 파일 URL 방식으로 처리
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          // download 속성 없이 클릭 → 새창에서 열림
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
         }
 
-        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 10000);
+        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 30000);
       });
     })
     .catch(function () {
