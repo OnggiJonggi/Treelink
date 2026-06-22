@@ -36,7 +36,7 @@ INSERT ALL
   -- 최고 관리자 계정 생성
   INTO MEMBER(ID, PWD, NAME, NICKNAME) VALUES ('asdf', '$2a$10$Zx4kOtUhOiT69iX7ZkwcFeO1OKKMiDjhtsgDgVxEqjibMh3HwnV06', '최고 관리자', '최고 관리자')
 
-SELECT * FROM DUAL;
+SELECT 1 FROM DUAL;
 
 
 -- 최고 관리자 권한 수정
@@ -48,6 +48,6 @@ WHERE MEMBER_NO = 1;
 -- 최고 관리자 권한 추가
 INSERT ALL
   INTO MEMBER_ROLE(MEMBER_NO, ROLE_NO) VALUES(1,2)
-SELECT * FROM DUAL;
+SELECT 1 FROM DUAL;
 
 COMMIT;

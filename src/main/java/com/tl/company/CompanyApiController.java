@@ -105,12 +105,15 @@ public class CompanyApiController {
 	 */
 	@PutMapping("/{encryptedCompanyNo}/intro")
 	public ResponseEntity<Void> insertIntro(
+			@RequestParam String intro,
 			@PathVariable String encryptedCompanyNo,
-			@RequestParam String intro) throws Exception{
+			@AuthenticationPrincipal CustomUserDetails userDetails
+			) throws Exception{
 		
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
-		
-		companyService.updateIntro(companyNo, intro);
+		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+
+		companyService.updateIntro(intro, companyNo, memberNo);
 		
 		return ResponseEntity.ok().build();
 	}

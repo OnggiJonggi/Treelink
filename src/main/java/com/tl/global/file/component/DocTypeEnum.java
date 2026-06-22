@@ -6,5 +6,5 @@ package com.tl.global.file.component;
 public enum DocTypeEnum {
 	LOGO, // 업체 로고
 	BANKBOOK, // 업체 통장 사본
-	INTRO, // 업체 소개문
+	INTRO, // 업체 소개문 사진
 }

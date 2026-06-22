@@ -13,7 +13,7 @@
     from FILE_INFO F
     right join COMPANY_DOC CD on(CD.FILE_NO = F.FILE_NO)
     where CD.COMPANY_NO = #{companyNo}
-    and CD.DOC_TYPE != 'LOGO'
+    and CD.DOC_TYPE not in ('LOGO', 'INTRO')
     order by F.FILE_NO desc
   </select>
 
@@ -149,5 +149,35 @@
       and C.STATUS = #{status}
     </if>
   </select>
+
+  <select id="selectUnusedIntro" resultType="FileInfoHistory">
+    select
+      FILE_NO
+      ,ORIGINAL_NAME
+      ,CHANGED_NAME
+      ,SAVE_PATH
+    from FILE_HISTORY
+    where FILE_NO in (
+      select FILE_NO
+      from COMPANY_DOC
+      where COMPANY_NO = #{companyNo}
+      and DOC_TYPE = 'INTRO'
+    )
+    and ACTION = 'ACTIVE'
+    <if test="list!=null and !list.isEmpty() > 0">
+      and CHANGED_NAME not in
+      <foreach collection="list" item="item" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </if>
+  </select>
+
+  <delete id="deleteUnusedIntroImage">
+    delete from FILE_INFO
+    where FILE_NO in
+    <foreach collection="list" item="item" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </delete>
 
 </mapper>

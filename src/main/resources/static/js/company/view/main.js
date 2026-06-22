@@ -60,7 +60,7 @@ function loadCompanyLogo() {
    네비 바
 ============================================= */
 function initNavBar() {
-  const basicBtn = document.getElementById('cv-nav-basic');
+  var basicBtn = document.getElementById('cv-nav-basic');
   if (basicBtn) {
     basicBtn.addEventListener('click', function () {
       location.reload();
@@ -69,18 +69,55 @@ function initNavBar() {
 
   document.querySelectorAll('.cv-nav-item[data-url]').forEach(function (btn) {
     btn.addEventListener('click', function () {
-      const url = btn.getAttribute('data-url');
-      fetchFragment(url);
+      var url = btn.getAttribute('data-url');
+      var menuName = btn.getAttribute('data-menu');
+      fetchFragment(url, menuName);
     });
   });
 }
 
-function fetchFragment(url) {
+function fetchFragment(url, menuName) {
   $.ajax({
     url: url,
     type: 'GET',
     success: function (html) {
+      // 1. 콘텐츠 삽입
       document.getElementById('cv-content-area').innerHTML = html;
+
+      // 2. innerHTML로 삽입된 <script> 태그는 실행되지 않으므로 수동 재실행
+      document
+        .getElementById('cv-content-area')
+        .querySelectorAll('script')
+        .forEach(function (oldScript) {
+          var newScript = document.createElement('script');
+          // src가 있는 외부 스크립트
+          if (oldScript.src) {
+            newScript.src = oldScript.src;
+          } else {
+            newScript.textContent = oldScript.textContent;
+          }
+          // type, charset 등 속성 복사
+          Array.from(oldScript.attributes).forEach(function (attr) {
+            if (attr.name !== 'src') {
+              newScript.setAttribute(attr.name, attr.value);
+            }
+          });
+          document.body.appendChild(newScript);
+          document.body.removeChild(newScript);
+        });
+
+      // 3. 네비 active 갱신 (menuName을 클릭한 버튼의 data-menu로부터 받음)
+      if (menuName) {
+        document.querySelectorAll('.cv-nav-item').forEach(function (btn) {
+          btn.classList.remove('active');
+        });
+        var targetBtn = document.querySelector('.cv-nav-item[data-menu="' + menuName + '"]');
+        if (targetBtn) {
+          targetBtn.classList.add('active');
+        }
+      }
+
+      // 4. lucide 아이콘 갱신
       lucide.createIcons();
     },
     error: function (xhr) {

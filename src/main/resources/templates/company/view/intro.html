@@ -1,7 +1,256 @@
 <th:block th:fragment="content">
 
+  <!-- ========================================
+       업체 소개 조각
+  ======================================== -->
+  <div id="intro-section" class="cv-info-card" th:attr="data-encrypted-no=${encryptedCompanyNo}">
 
+    <!-- 카드 헤더 -->
+    <div class="cv-card-header">
+      <h2 class="cv-card-title">
+        <i data-lucide="file-text"></i>
+        업체 소개
+      </h2>
 
-  <script src="https://cdn.jsdelivr.net/npm/summernote@latest/dist/summernote-bs5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/summernote@latest/dist/lang/summernote-ko-KR.min.js"></script>
+      <!-- ADMIN 전용: 소개문 작성 버튼 -->
+      <div sec:authorize="hasRole('ADMIN')" class="intro-admin-btns">
+        <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="intro-edit-btn">
+          <i data-lucide="pencil"></i>
+          소개문 작성
+        </button>
+        <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="intro-save-btn" style="display:none;">
+          <i data-lucide="check"></i>
+          작성 완료
+        </button>
+        <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="intro-cancel-btn" style="display:none;">
+          취소
+        </button>
+      </div>
+    </div>
+
+    <!-- 소개문 뷰 영역 -->
+    <div id="intro-view-area">
+      <!-- intro가 있을 때: HTML 렌더링 -->
+      <div th:if="${companyIntro != null and !#strings.isEmpty(companyIntro)}" id="intro-rendered-content"
+        class="intro-content-wrap">
+        <!--/*
+          summernote로 작성된 HTML이므로 th:utext로 렌더링.
+          내부 img 태그 src는 JS에서 blob URL로 교체.
+        */-->
+        <div th:utext="${companyIntro}"></div>
+      </div>
+      <!-- intro가 없을 때 -->
+      <div th:if="${companyIntro == null or #strings.isEmpty(companyIntro)}" id="intro-empty-state"
+        class="cv-empty-state cv-text-muted cv-text-sm">
+        <i data-lucide="file-x"></i>
+        등록된 소개문이 없습니다.
+      </div>
+    </div>
+
+    <!-- Summernote 에디터 영역 (숨김, ADMIN 전용) -->
+    <div sec:authorize="hasRole('ADMIN')" id="intro-editor-area" style="display:none; margin-top: var(--space-4);">
+      <textarea id="intro-summernote"></textarea>
+    </div>
+
+  </div><!-- /#intro-section -->
+
+  <!-- ========================================
+       조각 전용 스크립트 (IIFE - 즉시 실행)
+  ======================================== -->
+  <script th:inline="javascript">
+    (function () {
+
+      /* ── 1. 네비 바 active 상태 갱신 ── */
+      document.querySelectorAll('.cv-nav-item').forEach(function (btn) {
+        btn.classList.remove('active');
+      });
+      var introNavBtn = document.querySelector('.cv-nav-item[data-menu="intro"]');
+      if (introNavBtn) {
+        introNavBtn.classList.add('active');
+      }
+
+      /* ── 2. lucide 아이콘 갱신 ── */
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+
+      /* ── 3. 렌더링된 소개문 내 이미지 src 교체 ── */
+      var encryptedNo = document.getElementById('intro-section')
+        .getAttribute('data-encrypted-no');
+
+      function loadIntroImages() {
+        var contentDiv = document.getElementById('intro-rendered-content');
+        if (!contentDiv) return;
+        contentDiv.querySelectorAll('img[src]').forEach(function (img) {
+          var src = img.getAttribute('src');
+          // 상대경로이거나 이미 /file/company 경로인 경우
+          if (!src || src.startsWith('blob:') || src.startsWith('data:')) return;
+
+          // changedName 추출: src 마지막 세그먼트
+          var changedName = src.split('/').pop();
+          if (!changedName) return;
+
+          fetch('/file/company/' + encryptedNo + '/intro/' + changedName)
+            .then(function (res) {
+              if (!res.ok) throw new Error('img load failed');
+              return res.blob();
+            })
+            .then(function (blob) {
+              img.src = URL.createObjectURL(blob);
+            })
+            .catch(function () {
+              // 로드 실패 시 원본 src 유지
+            });
+        });
+      }
+      loadIntroImages();
+
+      /* ── 4. ADMIN 버튼 이벤트 ── */
+      var editBtn = document.getElementById('intro-edit-btn');
+      var saveBtn = document.getElementById('intro-save-btn');
+      var cancelBtn = document.getElementById('intro-cancel-btn');
+      var editorArea = document.getElementById('intro-editor-area');
+      var viewArea = document.getElementById('intro-view-area');
+
+      if (!editBtn) return; // ADMIN 아니면 이하 로직 불필요
+
+      var summernoteInited = false;
+      var originalContent = '';
+
+      /* 소개문 작성 버튼 클릭 → Summernote 활성화 */
+      editBtn.addEventListener('click', function () {
+        var renderedDiv = document.querySelector('#intro-rendered-content > div');
+        originalContent = renderedDiv ? renderedDiv.innerHTML : '';
+
+        viewArea.style.display = 'none';
+        editorArea.style.display = '';
+        editBtn.style.display = 'none';
+        saveBtn.style.display = '';
+        cancelBtn.style.display = '';
+
+        if (!summernoteInited) {
+          $('#intro-summernote').summernote({
+            lang: 'ko-KR',
+            height: 400,
+            placeholder: '업체 소개를 작성하세요.',
+            toolbar: [
+              ['style', ['style']],
+              ['font', ['bold', 'underline', 'clear']],
+              ['color', ['color']],
+              ['para', ['ul', 'ol', 'paragraph']],
+              ['table', ['table']],
+              ['insert', ['link', 'picture']],
+              ['view', ['fullscreen', 'codeview', 'help']]
+            ],
+            callbacks: {
+              onImageUpload: function (files) {
+                var file = files[0];
+                var formData = new FormData();
+                formData.append('file', file);
+
+                var editorBody = $('#intro-summernote').next('.note-editor').find('.note-editable');
+                var blobImg = editorBody.find('img[src^="blob:"]').last();
+
+                $.ajax({
+                  url: '/file/company/' + encryptedNo + '/intro',
+                  type: 'POST',
+                  data: formData,
+                  processData: false,
+                  contentType: false,
+                  success: function (changedName, status, xhr) {
+                    if (xhr.status === 200 && changedName) {
+                      var realSrc = '/file/company/' + encryptedNo + '/intro/' + changedName;
+
+                      if (blobImg.length) {
+                        blobImg.attr('src', realSrc);
+                      } else {
+                        $('#intro-summernote').summernote('insertImage', realSrc);
+                      }
+                    }
+                  },
+                  error: function (xhr) {
+                    // 업로드 실패 시 blob img 제거
+                    if (blobImg.length) blobImg.remove();
+                    alert('이미지 업로드에 실패했습니다. (' + xhr.status + ')');
+                  }
+                });
+              }
+            }
+          });
+          summernoteInited = true;
+        }
+
+        // 에디터에 기존 내용 설정
+        $('#intro-summernote').summernote('code', originalContent);
+      });
+
+      /* 취소 버튼 */
+      cancelBtn.addEventListener('click', function () {
+        resetEditor();
+      });
+
+      /* 작성 완료 버튼 클릭 → PUT 요청 */
+      saveBtn.addEventListener('click', function () {
+        var introHtml = $('#intro-summernote').summernote('code');
+
+        $.ajax({
+          url: '/api/company/' + encryptedNo + '/intro',
+          type: 'PUT',
+          data: { intro: introHtml },
+          success: function (res, status, xhr) {
+            if (xhr.status === 200) {
+              fetchFragment('/company/' + encryptedNo + '/intro', 'intro');
+            }
+          },
+          error: function (xhr) {
+            alert('소개문 저장에 실패했습니다. (' + xhr.status + ')');
+          }
+        });
+      });
+
+      /* ── 5. 이미지 업로드 (summernote onImageUpload 콜백) ── */
+      function uploadIntroImage(file) {
+        var formData = new FormData();
+        formData.append('file', file);
+
+        $.ajax({
+          url: '/file/company/' + encryptedNo + '/intro',
+          type: 'POST',
+          data: formData,
+          processData: false,
+          contentType: false,
+          success: function (changedName, status, xhr) {
+            if (xhr.status === 200 && changedName) {
+              var imgSrc = '/file/company/' + encryptedNo + '/intro/' + changedName;
+              $('#intro-summernote').summernote(
+                'insertImage', imgSrc,
+                function (img) {
+                  img.attr('src', imgSrc);
+                }
+              );
+            }
+          },
+          error: function (xhr) {
+            alert('이미지 업로드에 실패했습니다. (' + xhr.status + ')');
+          }
+        });
+      }
+
+      /* ── 6. 에디터 초기화 헬퍼 ── */
+      function resetEditor() {
+        if (summernoteInited) {
+          $('#intro-summernote').summernote('destroy');
+          summernoteInited = false;
+          document.getElementById('intro-summernote').value = '';
+        }
+        editorArea.style.display = 'none';
+        viewArea.style.display = '';
+        editBtn.style.display = '';
+        saveBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+      }
+
+    })(); // IIFE 종료
+  </script>
+
 </th:block>

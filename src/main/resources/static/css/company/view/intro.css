@@ -1,0 +1,37 @@
+.intro-content-wrap {
+  line-height: 1.8;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.intro-content-wrap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+  margin: var(--space-2) 0;
+}
+
+.intro-admin-btns {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+/* summernote 컨테이너 너비 맞춤 */
+#intro-editor-area .note-editor {
+  border-radius: var(--radius-lg);
+  border-color: var(--color-border);
+}
+
+#intro-empty-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8);
+  justify-content: center;
+}
+
+#intro-empty-state svg {
+  width: 18px;
+  height: 18px;
+}

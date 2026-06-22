@@ -39,4 +39,9 @@ public interface CompanyFileMapper {
 			@Param("changedName") String changedName,
 			@Param("status") CompanyStatusEnum status);
 
+	public List<FileInfoVO.History> selectUnusedIntro(
+			@Param("companyNo") int companyNo,
+			@Param("list") List<String> imageName);
+
+	public int deleteUnusedIntroImage(List<Integer> list);
 }

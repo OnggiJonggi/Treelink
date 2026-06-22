@@ -12,7 +12,7 @@
 
 Swagger UI : http://localhost:8080/swagger-ui.html
 
-전체 요청 경로 : doc\요청 주소록.txt
+전체 요청 경로 : doc/요청 주소록.txt
 
 ## 🗃️ DB
 

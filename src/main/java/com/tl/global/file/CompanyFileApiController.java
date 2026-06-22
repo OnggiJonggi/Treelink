@@ -50,7 +50,14 @@ public class CompanyFileApiController {
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
 		
-		companyFileService.insertLogo(companyNo, file, memberNo);
+		// MultipartFile을 FileDataVO로 변환
+		FileDataVO fileData = FileDataVO.builder()
+				.originalName(file.getOriginalFilename())
+				.mime(file.getContentType())
+				.size(file.getSize())
+				.bytes(file.getBytes()).build();
+		
+		companyFileService.insertLogo(fileData, companyNo, memberNo);
 		
 		return ResponseEntity.ok().build();
 	}
@@ -101,11 +108,18 @@ public class CompanyFileApiController {
 		
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		
+		// MultipartFile을 FileDataVO로 변환
+		FileDataVO fileData = FileDataVO.builder()
+				.originalName(file.getOriginalFilename())
+				.mime(file.getContentType())
+				.size(file.getSize())
+				.bytes(file.getBytes()).build();
+		
 		// 등록 중...
 		CompanyVO.DocRegistor docRegistor = CompanyVO.DocRegistor.builder()
 				.memberNo(Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo())))
 				.companyNo(companyNo)
-				.file(file)
+				.file(fileData)
 				.docType(docType)
 				.expireOn(expireOn).build();
 		companyFileService.registor(docRegistor);
@@ -182,7 +196,14 @@ public class CompanyFileApiController {
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
 
-		String changedName = companyFileService.insertIntroImage(memberNo, companyNo, file);
+		// MultipartFile을 FileDataVO로 변환
+		FileDataVO fileData = FileDataVO.builder()
+				.originalName(file.getOriginalFilename())
+				.mime(file.getContentType())
+				.size(file.getSize())
+				.bytes(file.getBytes()).build();
+		
+		String changedName = companyFileService.insertIntroImage(fileData, companyNo, memberNo);
 		
 		// encryptedFileNo 반환
 		return ResponseEntity.ok(changedName);
@@ -192,7 +213,7 @@ public class CompanyFileApiController {
 	 * 소개문 이미지 조회
 	 * 관리자 : 비활성된 업체 조회 가능
 	 */
-	@GetMapping("{encryptedCompanyNo}/intro/{changeName}")
+	@GetMapping("{encryptedCompanyNo}/intro/{changedName}")
 	public ResponseEntity<Resource> getIntroImage(
 			@PathVariable String encryptedCompanyNo,
 			@PathVariable String changedName,

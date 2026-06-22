@@ -5,10 +5,10 @@ import java.time.LocalDate;
 import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
+import com.tl.global.file.FileDataVO;
 
 @Component
 public class FileComponent {
@@ -20,20 +20,14 @@ public class FileComponent {
 	 * @param file
 	 * @return 불값
 	 */
-	public String isValid(MultipartFile file,
+	public String isValid(FileDataVO file,
 			String docType, LocalDate expireOn) throws Exception{
 		
-		// 파일 비었으면 가세요라
-		if (file == null || file.isEmpty())
-			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
-
 		// 파일 이름 내놔
-		String originalName = file.getOriginalFilename();
+		String originalName = file.getOriginalName();
 
 		// 파일 이름 이상하면 가세요라
-		if (originalName == null 
-				|| originalName.isBlank()
-				|| !Pattern.matches(FileRegexp.ORIGINAL_NAME_NO_REGEXP, originalName)
+		if (!Pattern.matches(FileRegexp.ORIGINAL_NAME_NO_REGEXP, originalName)
 				) throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// 서류 타입 이상하면 가세요라

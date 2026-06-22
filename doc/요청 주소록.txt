@@ -55,9 +55,9 @@
   권한 - ADMIN
     소개 생성/수정(put, /api/company/{encryptedCompanyNo}/intro)
     사진 삽입(post, /file/company/{encryptedCompanyNo}/intro)
-평가 목록
-위치 확인
-작업 현황
+평가 목록(/evaluation/{encryptedCompanyNo})
+위치 확인(/company/{encryptedCompanyNo}/location)
+작업 현황(/company/{encryptedCompanyNo}/dashboard)
 
 회원 검색(/member)
   회원 목록 불러오기(get, /api/member)

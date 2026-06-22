@@ -15,7 +15,6 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.company.CompanyStatusEnum;
@@ -55,6 +54,10 @@ public class CompanyFileService {
 		if(docRegistor.getDocType().equals(DocTypeEnum.LOGO.name()))
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 		
+		// 제대로 된 파일인가요
+		if(!docRegistor.getFile().isValid())
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		
 		// 파일 이름, 서류 종류 유효성 검사 및 이스케이프
 		fileComponent.isValid(docRegistor.getFile(),
 				docRegistor.getDocType(), docRegistor.getExpireOn());
@@ -69,7 +72,7 @@ public class CompanyFileService {
 
 		// 이름도 바꿔부러
 		String changedName = UUID.randomUUID().toString()
-				+ docRegistor.getFile().getOriginalFilename().substring(docRegistor.getFile().getOriginalFilename().lastIndexOf("."));
+				+ docRegistor.getFile().getOriginalName().substring(docRegistor.getFile().getOriginalName().lastIndexOf("."));
 
 		// 저장할 경로 생성
 		Path targetDir = Paths.get(path);
@@ -77,13 +80,13 @@ public class CompanyFileService {
 
 		// 파일 저장
 		Path targetFile = targetDir.resolve(changedName);
-		docRegistor.getFile().transferTo(targetFile.toFile());
+		Files.write(targetFile, docRegistor.getFile().getBytes());
 
 		// FILE_INFO 객체 생성
 		FileInfoVO.Registor fileInfo = FileInfoVO.Registor.builder()
-				.originalName(docRegistor.getFile().getOriginalFilename())
+				.originalName(docRegistor.getFile().getOriginalName())
 				.changedName(changedName)
-				.mime(docRegistor.getFile().getContentType())
+				.mime(docRegistor.getFile().getMime())
 				.fileSize(docRegistor.getFile().getSize())
 				.savePath(path)
 				.expireOn(docRegistor.getExpireOn())
@@ -97,7 +100,7 @@ public class CompanyFileService {
 		// FILE_HISTORY 객체 생성
 		FileInfoVO.History insertHistory = FileInfoVO.History.builder()
 				.fileNo(fileInfo.getFileNo())
-				.originalName(docRegistor.getFile().getOriginalFilename())
+				.originalName(docRegistor.getFile().getOriginalName())
 				.changedName(changedName)
 				.savePath(path)
 				.action(FileStatusEnum.ACTIVE)
@@ -180,28 +183,25 @@ public class CompanyFileService {
 	 * 업체 로고 삽입
 	 */
 	@Transactional
-	public void insertLogo(int companyNo, MultipartFile file, int memberNo) throws Exception {
+	public void insertLogo(FileDataVO file, int companyNo, int memberNo) throws Exception {
 		
 		// 파일 비었으면 가세요라
-		if (file == null || file.isEmpty())
+		if (!file.isValid())
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// 이거 이미지 맞나요?
-		if(!ImageEnum.isImage(file.getContentType())) {
+		if(!ImageEnum.isImage(file.getMime())) {
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		}
 		
 		// 파일 이름 내놔
-		String originalName = file.getOriginalFilename();
+		String originalName = file.getOriginalName();
 		
 		// 이름 이스케이프
 		originalName = FileNameEscapeEnum.escapeAll(originalName);
 		
 		// 변경된 이름
-		String changeName = companyNo
-				+ "호"
-				+ UUID.randomUUID().toString()
-				+ originalName.substring(originalName.lastIndexOf("."));
+		String changeName = nameChanger(originalName, companyNo);
 		
 		// 지금 몇 시에요?
 		LocalDateTime now = LocalDateTime.now();
@@ -217,13 +217,13 @@ public class CompanyFileService {
 
 		// 파일 저장
 		Path targetFile = targetDir.resolve(changeName);
-		file.transferTo(targetFile.toFile());
+		Files.write(targetFile, file.getBytes());
 
 		// FILE_INFO 객체 생성
 		FileInfoVO.Registor fileInfo = FileInfoVO.Registor.builder()
 				.originalName(originalName)
 				.changedName(changeName)
-				.mime(file.getContentType())
+				.mime(file.getMime())
 				.fileSize(file.getSize())
 				.savePath(path)
 				.companyNo(companyNo)
@@ -296,26 +296,24 @@ public class CompanyFileService {
 	 * @return 변경된 파일 이름
 	 */
 	@Transactional
-	public String insertIntroImage(int memberNo, int companyNo, MultipartFile file) throws Exception {
+	public String insertIntroImage(FileDataVO file, int companyNo, int memberNo) throws Exception {
 		
 		// 파일 비었으면 가세요라
-		if (file == null || file.isEmpty())
+		if(!file.isValid())
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// 이거 이미지 맞나요?
-		if(!ImageEnum.isImage(file.getContentType()))
+		if(!ImageEnum.isImage(file.getMime()))
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// 파일 이름 내놔
-		String originalName = file.getOriginalFilename();
+		String originalName = file.getOriginalName();
 		
 		// 이름 이스케이프
 		originalName = FileNameEscapeEnum.escapeAll(originalName);
 		
 		// 변경된 이름
-		String changeName = companyNo
-				+ UUID.randomUUID().toString()
-				+ originalName.substring(originalName.lastIndexOf("."));
+		String changeName = nameChanger(originalName, companyNo);
 		
 		// 지금 몇 시에요?
 		LocalDateTime now = LocalDateTime.now();
@@ -331,13 +329,13 @@ public class CompanyFileService {
 
 		// 파일 저장
 		Path targetFile = targetDir.resolve(changeName);
-		file.transferTo(targetFile.toFile());
-
+		Files.write(targetFile, file.getBytes());
+		
 		// FILE_INFO 객체 생성
 		FileInfoVO.Registor fileInfo = FileInfoVO.Registor.builder()
 				.originalName(originalName)
 				.changedName(changeName)
-				.mime(file.getContentType())
+				.mime(file.getMime())
 				.fileSize(file.getSize())
 				.savePath(path)
 				.companyNo(companyNo)
@@ -399,5 +397,21 @@ public class CompanyFileService {
 	    		.originalName(getFile.getOriginalName()) // 원본 이름 쓸 데가 있냐?
 	    		.mimeType(getFile.getMime())
 	    		.build();
+	}
+	
+	
+	
+	
+	
+	
+	/**
+	 * 파일 이름 변환기
+	 */
+	public String nameChanger(String originalName, int companyNo) {
+		return companyNo
+				+ "_"
+				+ UUID.randomUUID().toString()
+				+ originalName.substring(originalName.lastIndexOf("."));
+		
 	}
 }

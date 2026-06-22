@@ -4,10 +4,10 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tl.global.common.SearchPageVO;
+import com.tl.global.file.FileDataVO;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -124,7 +124,7 @@ public class CompanyVO {
 	public static class DocRegistor{
 		private int memberNo;
 		private int companyNo;
-		private MultipartFile file;
+		private FileDataVO file;
 		private String docType;
 		private LocalDate expireOn;
 	}

@@ -6,4 +6,5 @@ import org.apache.ibatis.annotations.Mapper;
 public interface FileMapper {
 
 	public int insertHistory(FileInfoVO.History insertHistory);
+	
 }
