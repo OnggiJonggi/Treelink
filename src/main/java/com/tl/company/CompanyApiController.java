@@ -3,8 +3,11 @@ package com.tl.company;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,8 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tl.global.api.BusinessNoCheckService;
 import com.tl.global.api.BusinessNoCheckVO;
 import com.tl.global.common.SearchResultVO;
-import com.tl.global.file.CompanyFileService;
-import com.tl.global.file.component.FileComponent;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
 import com.tl.global.security.RoleEnum;
@@ -28,11 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CompanyApiController {
-	public final BusinessNoCheckService businessNoCheckService;
-	public final CompanyService companyService;
-	public final CompanyFileService companyDocService;
-	public final CryptoComponent cryptoComponent;
-	public final FileComponent fileValidateComponent;
+	private final BusinessNoCheckService businessNoCheckService;
+	private final CompanyService companyService;
+	private final CompanyLocationService companyLocationService;
+	private final CryptoComponent cryptoComponent;
 	
 	/**
 	 * 사업자 등록번호 진위확인
@@ -103,7 +103,7 @@ public class CompanyApiController {
 	 * 회사 소개 생성/수정
 	 * 관리자
 	 */
-	@PutMapping("/{encryptedCompanyNo}/intro")
+	@PutMapping("{encryptedCompanyNo}/intro")
 	public ResponseEntity<Void> insertIntro(
 			@RequestParam String intro,
 			@PathVariable String encryptedCompanyNo,
@@ -118,4 +118,36 @@ public class CompanyApiController {
 		return ResponseEntity.ok().build();
 	}
 	
+	/**
+	 * 업체 위치 추가
+	 * 관리자
+	 */
+	@PostMapping("{encryptedCompanyNo}/location")
+	public ResponseEntity<Void> insertLocation(
+			@PathVariable("encryptedCompanyNo") String encCompanyNo,
+			@ModelAttribute @Valid CompanyVO.InsertLocation location) throws Exception{
+		
+		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encCompanyNo));
+		location.setCompanyNo(companyNo);
+		
+		companyLocationService.insertLocation(location);
+		
+		return ResponseEntity.ok().build();
+	}
+	
+	/**
+	 * 업체 위치 삭제
+	 */
+	@DeleteMapping("{encryptedCompanyNo}/location")
+	public ResponseEntity<Void> deleteLocation(
+			@PathVariable("encryptedCompanyNo") String encCompanyNo,
+			@RequestParam String encLocationNo) throws Exception{
+		
+		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encCompanyNo));
+		int locationNo = Integer.valueOf(cryptoComponent.decrypt(encLocationNo));
+		
+		companyLocationService.deleteLocation(companyNo, locationNo);
+		
+		return ResponseEntity.ok().build();
+	}
 }

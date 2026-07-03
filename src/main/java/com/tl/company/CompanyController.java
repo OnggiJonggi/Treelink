@@ -2,6 +2,7 @@ package com.tl.company;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,7 @@ import com.tl.global.api.BusinessNoCheckVO;
 import com.tl.global.common.SearchResultVO;
 import com.tl.global.file.CompanyFileService;
 import com.tl.global.file.FileInfoVO;
+import com.tl.global.location.LocationVO;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
 import com.tl.global.security.RoleEnum;
@@ -33,8 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 public class CompanyController {
 	private final CompanyService companyService;
 	private final CompanyFileService companyDocService;
+	private final CompanyLocationService companyLocationService;
 	private final CryptoComponent cryptoComponent;
-	
+
 	/**
 	 * 업체 목록 페이지로
 	 * 관리자 : 업체 상태에 따른 검색 기능
@@ -187,6 +190,39 @@ public class CompanyController {
 		model.addAttribute("companyIntro", intro);
 		
 		return "company/view/intro :: content";
+	}
+	
+	/**
+	 * 업체 위치 조각
+	 * 관리자 : 위치 추가/수정/삭제
+	 */
+	@Value("${kakao-js.key}")
+	private String kakaoKey;
+	
+	@GetMapping("{encryptedCompanyNo}/location")
+	public String goLocation(
+			@PathVariable("encryptedCompanyNo") String encCompanyNo,
+			Model model) throws Exception{
+		
+		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encCompanyNo));
+		
+		// 네비 바에게 여기가 어디고 나는 누구인지 알려줌
+		model.addAttribute("companyMenu", "location");
+		model.addAttribute("encryptedCompanyNo", encCompanyNo);
+		
+		// 위치 추출해서 넘겨주기
+		List<CompanyVO.LocationDetail> locations = companyLocationService.getLocaions(companyNo);
+		for(LocationVO.Detail item : locations) {
+			item.setEncLocationNo(cryptoComponent.encrypt(String.valueOf(item.getLocationNo())));
+			item.setLocationNo(0);
+		}
+		
+		model.addAttribute("locations", locations);
+		
+		// 카카오 맵 api 키
+		model.addAttribute("kakaoKey", kakaoKey);
+		
+		return "company/view/location :: content";
 	}
 	
 }

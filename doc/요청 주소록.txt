@@ -32,7 +32,7 @@
   사업자등록번호 확인(get, /api/company/check-businessno)
   폼 제출(post, /company/registor)
 
-업체 세부 뷰(/company/{encryptedCompanyNo})
+업체(/company/{encryptedCompanyNo})
   목록으로(get, /company)
   업체 로고(get, /file/company/{encryptedCompanyNo}/logo)
 네비 바
@@ -51,13 +51,21 @@
     업체 서류 삭제(delete, /file/company/{encryptedCompanyNo}/doc/{encryptedDocNo})
     -실제 파일 삭제 로직 구현 필요해요!!
 업체 소개
-  사진 조회(get, /file/company/{encryptedCompanyNo}/intro/{changedName})
+  사진 불러오기(get, /file/company/{encryptedCompanyNo}/intro/{changedName})
   권한 - ADMIN
     소개 생성/수정(put, /api/company/{encryptedCompanyNo}/intro)
     사진 삽입(post, /file/company/{encryptedCompanyNo}/intro)
 평가 목록(/evaluation/{encryptedCompanyNo})
 위치 확인(/company/{encryptedCompanyNo}/location)
-작업 현황(/company/{encryptedCompanyNo}/dashboard)
+  권한 - ADMIN
+    지오코드(get, /api/location/geocoding)
+    위치 추가(post, /api/company/{encryptedCompanyNo}/location)
+    위치 삭제(delete, /api/company/{encryptedCompanyNo}/location)
+작업 현황(/company/{encryptedCompanyNo}/management)
+  권한 - ADMIN
+    지오코드(get, /api/location/geocoding)
+    현황 추가(post, /api/company/{encryptedCompanyNo}/management)
+    현황 수정(put, /api/company/{encryptedCompanyNo}/management)
 
 회원 검색(/member)
   회원 목록 불러오기(get, /api/member)

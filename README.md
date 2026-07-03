@@ -5,7 +5,7 @@
 | 영역 | 기술 |
 |------|------|
 | 프론트 | Thymeleaf (+ Extras Spring Security 6), Bootstrap 5.3.3 |
-| 백엔드 | Java 17, Spring Boot 4.0.6, Maven |
+| 백엔드 | Java 17, Spring Boot 4.0.7, Maven |
 | DB | Oracle 26, MyBatis 4.0.1 (Spring Boot Starter) |
 
 ## 📄 API 문서
@@ -15,6 +15,8 @@ Swagger UI : http://localhost:8080/swagger-ui.html
 전체 요청 경로 : doc/요청 주소록.txt
 
 ## 🗃️ DB
+
+[ERD](https://www.erdcloud.com/d/eouBZEeTvHRiMui6A)
 
 doc/sql 경로 파일들 순서대로 실행
 
@@ -31,4 +33,9 @@ crypto.key=
 # 공공데이터포털 API 키 (Encoding 인증키)
 # https://www.data.go.kr/data/15107737/standard.do
 public-data.key=
+
+# 카카오 디벨로퍼
+# https://developers.kakao.com/
+kakao-rest.key=   # REST API 키
+kakao-js.key=     # JavaScript 키
 ```

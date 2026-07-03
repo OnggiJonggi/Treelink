@@ -1,0 +1,342 @@
+<th:block th:fragment="content">
+  <div id="location-content">
+
+    <!-- ADMIN 전용: 위치 추가 버튼 -->
+    <div sec:authorize="hasRole('ADMIN')" class="location-add-toolbar">
+      <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="location-add-open-btn">
+        <i data-lucide="map-pin-plus"></i>
+        위치 추가
+      </button>
+    </div>
+
+    <!-- ADMIN 전용: 위치 추가 영역 (숨김) -->
+    <div sec:authorize="hasRole('ADMIN')" id="location-add-form-area" style="display:none"
+      class="location-add-form-area" th:attr="data-encrypted-no=${encryptedCompanyNo}">
+      <div class="location-add-form-inner">
+
+        <div class="cv-form-group">
+          <label class="cv-form-label" for="location-add-name">설명</label>
+          <input type="text" id="location-add-name" class="cv-form-control" placeholder="해당 위치의 설명을 입력해주세요"
+            maxlength="20">
+          <div class="cv-form-error" id="location-add-err-name"></div>
+        </div>
+
+        <div class="cv-form-group">
+          <button type="button" class="cv-btn cv-btn-outline cv-btn-sm" id="location-add-search-btn">
+            <i data-lucide="search"></i>
+            주소 검색
+          </button>
+          <div class="location-address-display" id="location-add-address-display"></div>
+          <div class="cv-form-error" id="location-add-err-address"></div>
+        </div>
+
+        <div id="location-add-map" class="location-map-box" style="display:none"></div>
+
+        <div class="cv-form-btns">
+          <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="location-add-submit-btn">등록</button>
+          <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="location-add-cancel-btn">취소</button>
+        </div>
+      </div>
+    </div><!-- /#location-add-form-area -->
+
+    <!-- 위치 목록 -->
+    <div id="location-list" class="location-list">
+
+      <div class="location-card" th:each="loc : ${locations}" th:attr="data-encrypted-location-no=${loc.encLocationNo},
+                  data-encrypted-no=${encryptedCompanyNo}">
+
+        <div class="location-card-header">
+          <div class="location-info">
+            <p class="location-name" th:text="${loc.name}">위치명</p>
+            <p class="location-address" th:text="${loc.address}">주소</p>
+          </div>
+
+          <!-- ADMIN 전용: 삭제 -->
+          <button sec:authorize="hasRole('ADMIN')" type="button" class="location-delete-btn" title="위치 삭제" th:attr="data-encrypted-location-no=${loc.encLocationNo},
+                         data-encrypted-no=${encryptedCompanyNo}">
+            🗑️
+          </button>
+        </div>
+
+        <div class="location-map" th:id="'location-map-' + ${loc.encLocationNo}"
+          th:attr="data-lat=${loc.latitude}, data-lng=${loc.longitude}"></div>
+      </div>
+
+      <div th:if="${locations == null or #lists.isEmpty(locations)}" class="cv-empty-state cv-text-muted cv-text-sm">
+        등록된 위치가 없습니다.
+      </div>
+    </div><!-- /#location-list -->
+
+  </div><!-- /#location-content -->
+
+  <!-- kakaoKey 서버 값 전달 -->
+  <script th:inline="javascript">
+    window.__locationKakaoKey = /*[[${kakaoKey}]]*/ '';
+
+    (function () {
+
+      var LOCATION_NAME_REGEXP = /^[ㄱ-ㅎ가-힣a-zA-Z0-9&.',·-]{1,20}$/;
+      var currentGeocodeResult = null; // /api/location/geocoding 응답 저장
+
+      document.addEventListener('DOMContentLoaded', initLocationFragment);
+      // 이미 DOMContentLoaded 이후(ajax 재삽입)라면 즉시 실행
+      if (document.readyState !== 'loading') {
+        initLocationFragment();
+      }
+
+      function initLocationFragment() {
+        if (!document.getElementById('location-content')) return;
+
+        loadKakaoMapsSdk(function () {
+          renderAllLocationMaps();
+        });
+
+        initLocationDelete();
+        initLocationAddToggle();
+        initLocationAddressSearch();
+        initLocationAddSubmit();
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      /* =============================================
+         카카오 지도 SDK 로드 (중복 로드 방지)
+      ============================================= */
+      function loadKakaoMapsSdk(callback) {
+        if (window.kakao && window.kakao.maps && window.kakao.maps.LatLng) {
+          window.kakao.maps.load(callback);
+          return;
+        }
+        var existing = document.getElementById('kakao-maps-sdk');
+        if (existing) {
+          existing.addEventListener('load', function () {
+            window.kakao.maps.load(callback);
+          });
+          return;
+        }
+        var script = document.createElement('script');
+        script.id = 'kakao-maps-sdk';
+        script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=' + window.__locationKakaoKey + '&autoload=false';
+        script.onload = function () {
+          window.kakao.maps.load(callback);
+        };
+        document.head.appendChild(script);
+      }
+
+      /* =============================================
+         다음 우편번호 서비스 로드
+      ============================================= */
+      function loadDaumPostcodeSdk(callback) {
+        if (window.daum && window.daum.Postcode) {
+          callback();
+          return;
+        }
+        var existing = document.getElementById('daum-postcode-sdk');
+        if (existing) {
+          existing.addEventListener('load', callback);
+          return;
+        }
+        var script = document.createElement('script');
+        script.id = 'daum-postcode-sdk';
+        script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+        script.onload = callback;
+        document.head.appendChild(script);
+      }
+
+      /* =============================================
+         위치 목록 지도 렌더링
+      ============================================= */
+      function renderAllLocationMaps() {
+        document.querySelectorAll('.location-map').forEach(function (mapEl) {
+          var lat = parseFloat(mapEl.getAttribute('data-lat'));
+          var lng = parseFloat(mapEl.getAttribute('data-lng'));
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          var center = new kakao.maps.LatLng(lat, lng);
+          var map = new kakao.maps.Map(mapEl, { center: center, level: 3 });
+          var marker = new kakao.maps.Marker({ position: center });
+          marker.setMap(map);
+        });
+      }
+
+      /* =============================================
+         위치 삭제 (ADMIN)
+      ============================================= */
+      function initLocationDelete() {
+        document.querySelectorAll('.location-delete-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            if (!confirm('이 위치를 삭제하시겠습니까?')) return;
+
+            var encryptedNo = btn.getAttribute('data-encrypted-no');
+            var encLocationNo = btn.getAttribute('data-encrypted-location-no');
+
+            $.ajax({
+              url: '/api/company/' + encryptedNo + '/location',
+              type: 'DELETE',
+              data: { encLocationNo: encLocationNo },
+              success: function (res, status, xhr) {
+                if (xhr.status === 200) {
+                  refreshLocationFragment(encryptedNo);
+                }
+              },
+              error: function (xhr) {
+                alert('위치 삭제에 실패했습니다. (' + xhr.status + ')');
+              }
+            });
+          });
+        });
+      }
+
+      /* =============================================
+         위치 추가 - 토글
+      ============================================= */
+      function initLocationAddToggle() {
+        var openBtn = document.getElementById('location-add-open-btn');
+        var formArea = document.getElementById('location-add-form-area');
+        var cancelBtn = document.getElementById('location-add-cancel-btn');
+        if (!openBtn) return;
+
+        openBtn.addEventListener('click', function () {
+          formArea.style.display = formArea.style.display === 'none' ? '' : 'none';
+        });
+
+        cancelBtn.addEventListener('click', function () {
+          resetLocationAddForm();
+          formArea.style.display = 'none';
+        });
+      }
+
+      function resetLocationAddForm() {
+        currentGeocodeResult = null;
+        document.getElementById('location-add-name').value = '';
+        document.getElementById('location-add-address-display').textContent = '';
+        document.getElementById('location-add-map').style.display = 'none';
+        document.getElementById('location-add-err-name').textContent = '';
+        document.getElementById('location-add-err-address').textContent = '';
+      }
+
+      /* =============================================
+         주소 검색 (카카오 우편번호 서비스 -> 지오코딩)
+      ============================================= */
+      function initLocationAddressSearch() {
+        var searchBtn = document.getElementById('location-add-search-btn');
+        if (!searchBtn) return;
+
+        searchBtn.addEventListener('click', function () {
+          loadDaumPostcodeSdk(function () {
+            new daum.Postcode({
+              oncomplete: function (data) {
+                var address = data.roadAddress || data.jibunAddress;
+                requestGeocoding(address);
+              }
+            }).open();
+          });
+        });
+      }
+
+      function requestGeocoding(address) {
+        $.ajax({
+          url: '/api/location/geocoding',
+          type: 'GET',
+          data: { address: address },
+          success: function (res, status, xhr) {
+            if (xhr.status === 200) {
+              currentGeocodeResult = res;
+              document.getElementById('location-add-address-display').textContent = res.address;
+              document.getElementById('location-add-err-address').textContent = '';
+
+              loadKakaoMapsSdk(function () {
+                var mapBox = document.getElementById('location-add-map');
+                mapBox.style.display = '';
+                var center = new kakao.maps.LatLng(res.latitude, res.longitude);
+                var map = new kakao.maps.Map(mapBox, { center: center, level: 3 });
+                var marker = new kakao.maps.Marker({ position: center });
+                marker.setMap(map);
+              });
+            }
+          },
+          error: function (xhr) {
+            alert('주소를 좌표로 변환하지 못했습니다. (' + xhr.status + ')');
+          }
+        });
+      }
+
+      /* =============================================
+         위치 등록 제출
+      ============================================= */
+      function initLocationAddSubmit() {
+        var submitBtn = document.getElementById('location-add-submit-btn');
+        if (!submitBtn) return;
+
+        submitBtn.addEventListener('click', function () {
+          var nameInput = document.getElementById('location-add-name');
+          var name = nameInput.value.trim();
+          var errName = document.getElementById('location-add-err-name');
+          var errAddress = document.getElementById('location-add-err-address');
+          errName.textContent = '';
+          errAddress.textContent = '';
+
+          var valid = true;
+
+          if (!LOCATION_NAME_REGEXP.test(name)) {
+            errName.textContent = '이름은 한글, 영문, 숫자, 일부 특수문자(& . \' , -  ·) 1~20자여야 합니다.';
+            valid = false;
+          }
+          if (!currentGeocodeResult) {
+            errAddress.textContent = '주소를 먼저 검색해주세요.';
+            valid = false;
+          }
+          if (!valid) return;
+
+          var formArea = document.getElementById('location-add-form-area');
+          var encryptedNo = formArea.getAttribute('data-encrypted-no');
+
+          var params = new URLSearchParams();
+          params.append('name', name);
+          params.append('latitude', currentGeocodeResult.latitude);
+          params.append('longitude', currentGeocodeResult.longitude);
+          params.append('address', currentGeocodeResult.address);
+          params.append('sido', currentGeocodeResult.sido);
+          params.append('sigungu', currentGeocodeResult.sigungu);
+
+          $.ajax({
+            url: '/api/company/' + encryptedNo + '/location',
+            type: 'POST',
+            data: params.toString(),
+            contentType: 'application/x-www-form-urlencoded',
+            success: function (res, status, xhr) {
+              if (xhr.status === 200) {
+                resetLocationAddForm();
+                formArea.style.display = 'none';
+                refreshLocationFragment(encryptedNo);
+              }
+            },
+            error: function (xhr) {
+              alert('위치 등록에 실패했습니다. (' + xhr.status + ')');
+            }
+          });
+        });
+      }
+
+      /* =============================================
+         조각 재요청 (메인 페이지 전역 fetchFragment 재사용)
+      ============================================= */
+      function refreshLocationFragment(encryptedNo) {
+        var url = '/company/' + encryptedNo + '/location';
+        if (typeof fetchFragment === 'function') {
+          fetchFragment(url, 'location');
+        } else {
+          $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (html) {
+              document.getElementById('cv-content-area').innerHTML = html;
+            }
+          });
+        }
+      }
+
+    })();
+  </script>
+
+</th:block>

@@ -6,13 +6,16 @@ import org.jsoup.safety.Safelist;
 import org.springframework.stereotype.Component;
 
 /**
- * 사용자가 HTML 태그 사용이 가능한 입력칸에 멋대로 나쁜 태그를 으쌰으쌰하면 떽!하는 메소드지요
- * 
- * JSOUP 라이브러리가 쓰이지요
+ * 사용자 입력값 소독
  */
 @Component
 public class SanitizeComponent {
 
+	/**
+	 * 사용자가 HTML 태그 사용이 가능한 입력칸에 멋대로 나쁜 태그를 으쌰으쌰하면 떽!하는 메소드지요
+	 * 
+	 * JSOUP 라이브러리가 쓰이지요
+	 */
 	private static final Safelist POLICY = Safelist.relaxed()
 			.removeProtocols("img", "src", "http", "https") // 링크, 이미지 링크 삭제
 			
@@ -41,5 +44,34 @@ public class SanitizeComponent {
 		doc.select("img[src~=(?i)^data:]").remove();
 
 		return doc.body().html();
+	}
+	
+	/**
+	 * 검색어 소독
+	 * 오라클의 like 예약어 %,_ 이스케이프 및 길이 제한
+	 * 
+	 * @param 검색 문자열
+	 * @param 최대 허용 길이
+	 * @return 소독된 문자열
+	 */
+	public String searchKeyword(String keyword, int maxLength) {
+		
+		// 없으면 가라
+		if (keyword == null) return null;
+
+		// trim()
+		keyword = keyword.trim();
+
+		// 길면 가
+		if (keyword.length() > maxLength)
+			keyword = keyword.substring(0, maxLength);
+
+		// 이스케이프 문자 : '/'
+		keyword = keyword
+				.replace("/", "//")
+				.replace("%", "/%")
+				.replace("_", "/_");
+
+		return keyword;
 	}
 }

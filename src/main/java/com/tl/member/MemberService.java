@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.tl.global.common.SanitizeComponent;
 import com.tl.global.common.SearchResultVO;
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class MemberService{
 	private final MemberMapper memberMapper;
 	private final PasswordEncoder passwordEncoder;
+	private final SanitizeComponent sanitizeComponent;
 	private final CryptoComponent cryptoComponent;
 	
 	/**
@@ -68,9 +70,16 @@ public class MemberService{
 	
 
 	/**
-	 * 회원 목록 확인
+	 * 회원 목록 검색
 	 */
 	public SearchResultVO<MemberVO.Detail> getList(MemberVO.Search search) throws Exception {
+		
+		// 검색어 소독
+		search.setUserId(sanitizeComponent.searchKeyword(search.getUserId(), MemberRegexp.ID_MAX_LENGTH));
+		search.setName(sanitizeComponent.searchKeyword(search.getName(), MemberRegexp.NAME_MAX_LENGTH));
+		search.setNickname(sanitizeComponent.searchKeyword(search.getNickname(), MemberRegexp.NAME_MAX_LENGTH));
+		search.setPhone(sanitizeComponent.searchKeyword(search.getPhone(), MemberRegexp.PHONE_MAX_LENGTH));
+		
 		
 		// 목록 조회
 		List<MemberVO.Detail> result = memberMapper.selectMemberList(search);

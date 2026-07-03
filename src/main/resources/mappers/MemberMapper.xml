@@ -63,7 +63,7 @@
 	</insert>
 	
 
-		<select id="selectMemberList" parameterType="MemberSearch" resultMap="MemberDetailMap">
+	<select id="selectMemberList" parameterType="MemberSearch" resultMap="MemberDetailMap">
 		select
 			C.MEMBER_NO
 			,C.ID

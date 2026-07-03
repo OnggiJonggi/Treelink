@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tl.company.CompanyLocationMapper">
+  <resultMap id="CompanyLocationDetailMap"
+    type="CompanyLocationDetail"
+    autoMapping="true"
+    extends="com.tl.global.location.LocationMapper.LocationDetailMap">
+
+    <id property="companyNo" column="COMPANY_NO"/>
+    <result property="name" column="NAME"/>
+  </resultMap>
+
+  <select id="selectCompanyLocations" resultMap="CompanyLocationDetailMap">
+    select
+      L.LOCATION_NO
+      ,L.LATITUDE
+      ,L.LONGITUDE
+      ,L.ADDRESS
+      ,L.SIDO
+      ,L.SIGUNGU
+      ,CL.NAME
+    from COMPANY_LOCATION CL
+    left join LOCATION L on (CL.LOCATION_NO = L.LOCATION_NO)
+    where CL.COMPANY_NO = #{companyNo}
+    order by L.LOCATION_NO desc
+  </select>
+
+  <insert id="insert" parameterType="CompanyInsertLocation">
+    insert into COMPANY_LOCATION(
+      COMPANY_NO, LOCATION_NO, NAME
+    )values(
+      #{companyNo}, #{locationNo}, #{name}
+    )
+  </insert>
+
+  <delete id="delete">
+    delete from COMPANY_LOCATION
+    where LOCATION_NO = #{locationNo}
+    and COMPANY_NO = #{companyNo}
+  </delete>
+
+</mapper>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tl.global.location.LocationMapper">
+  <resultMap id="LocationDetailMap" type="LocationDetail" autoMapping="true">
+    <id property="locationNo" column="LOCATION_NO"/>
+    <result property="latitude" column="LATITUDE"/>
+    <result property="longitude" column="LONGITUDE"/>
+    <result property="address" column="ADDRESS"/>
+    <result property="sido" column="SIDO"/>
+    <result property="sigungu" column="SIGUNGU"/>
+  </resultMap>
+
+
+  <insert id="insert" parameterType="LocationInsert"
+		useGeneratedKeys="true"
+    keyProperty="locationNo"
+    keyColumn="LOCATION_NO">
+    insert into LOCATION(
+      LATITUDE ,LONGITUDE ,ADDRESS ,SIDO ,SIGUNGU
+    ) values(
+      #{latitude} ,#{longitude} ,#{address} ,#{sido} ,#{sigungu}
+    )
+	</insert>
+
+  <delete id="delete" parameterType="_int">
+    delete from LOCATION
+    where LOCATION_NO = #{locationNo}
+  </delete>
+</mapper>

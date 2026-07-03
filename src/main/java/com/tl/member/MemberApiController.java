@@ -32,7 +32,7 @@ public class MemberApiController {
 	 * @param member
 	 * @return 정상 200
 	 */
-	@GetMapping("/check-id")
+	@GetMapping("check-id")
 	public ResponseEntity<Void> checkId(String userId) {
 		memberService.checkId(userId);
 		return ResponseEntity.ok().build();
@@ -43,7 +43,7 @@ public class MemberApiController {
 	 * @param nickname
 	 * @return 정상 200, 이상해요 400
 	 */
-	@GetMapping("/check-nickname")
+	@GetMapping("check-nickname")
 	public ResponseEntity<Void> checkNickName(String nickname) {
 		memberService.checkNick(nickname);
 		return ResponseEntity.ok().build();
@@ -63,7 +63,7 @@ public class MemberApiController {
 	 * 회원 기본정보 수정
 	 * 관리자, 본인 계정
 	 */
-	@PutMapping("/{encryptedMemberNo}/update")
+	@PutMapping("{encryptedMemberNo}/update")
 	public ResponseEntity<Void> updateMemberBasicInfo(MemberVO.Update member,
 			@PathVariable String encryptedMemberNo) throws Exception{
 		
@@ -82,7 +82,7 @@ public class MemberApiController {
 	 * 최고 관리자 : 본인 계정 권한 수정 불가능
 	 * @return : 200 정상, 403 권한 없음
 	 */
-	@PutMapping("/{encryptedMemberNo}/update/role")
+	@PutMapping("{encryptedMemberNo}/update/role")
 	public ResponseEntity<Void> updateMemberRole(@NotNull RoleEnum role,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@PathVariable String encryptedMemberNo) throws Exception{
@@ -128,7 +128,7 @@ public class MemberApiController {
 	 * 관리자 : 본인 계정 수정 불가
 	 * @return : 200 정상, 403 권한 없음
 	 */
-	@PutMapping("/{encryptedMemberNo}/update/status")
+	@PutMapping("{encryptedMemberNo}/update/status")
 	public ResponseEntity<Void> updateMemberBasicInfo(@NotNull MemberStatusEnum status,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@PathVariable String encryptedMemberNo) throws Exception{
@@ -158,7 +158,7 @@ public class MemberApiController {
 	/**
 	 * 별명 중복 확인(수정용)
 	 */
-	@GetMapping("/check-updatednickname")
+	@GetMapping("check-updatednickname")
 	public ResponseEntity<Void> checkUpdatedNickname(String nickname, String encryptedMemberNo) throws Exception {
 		int memberNo = Integer.valueOf(cryptoComponent.decrypt(encryptedMemberNo));
 		memberService.checkUpdatedNickname(memberNo, nickname);

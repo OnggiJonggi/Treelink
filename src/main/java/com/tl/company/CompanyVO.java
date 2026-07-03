@@ -8,6 +8,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tl.global.common.SearchPageVO;
 import com.tl.global.file.FileDataVO;
+import com.tl.global.location.LocationVO;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Max;
@@ -127,5 +128,33 @@ public class CompanyVO {
 		private FileDataVO file;
 		private String docType;
 		private LocalDate expireOn;
+	}
+	
+	
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Data
+	@ToString(callSuper = true)
+	@EqualsAndHashCode(callSuper = true)
+	public static class InsertLocation extends LocationVO.Insert{
+		private int companyNo;
+		
+		@Pattern(regexp = CompanyRegexp.LOCATION_NAME_REGEXP, message = "업체 위치 이름이 이상해요")
+		private String name;
+	}
+	
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Getter
+	@ToString(callSuper = true)
+	@EqualsAndHashCode(callSuper = true)
+	public static class LocationDetail extends LocationVO.Detail{
+		
+		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+		private int companyNo;
+		private String encComopanyNo;
+		
+		private String name;
+		
 	}
 }

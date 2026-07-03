@@ -24,6 +24,8 @@
         <typeAlias type="com.tl.company.CompanyVO$Registor" alias="CompanyRegistor"/>
         <typeAlias type="com.tl.company.CompanyVO$Detail" alias="CompanyDetail"/>
         <typeAlias type="com.tl.company.CompanyVO$Search" alias="CompanySearch"/>
+        <typeAlias type="com.tl.company.CompanyVO$InsertLocation" alias="CompanyInsertLocation"/>
+        <typeAlias type="com.tl.company.CompanyVO$LocationDetail" alias="CompanyLocationDetail"/>
         
         <!-- FileInfo -->
         <typeAlias type="com.tl.global.file.FileInfoVO$Registor" alias="FileInfoRegistor"/>
@@ -32,6 +34,10 @@
         <typeAlias type="com.tl.global.file.FileInfoVO$History" alias="FileInfoHistory"/>
         <typeAlias type="com.tl.global.file.FileInfoVO$SavePath" alias="FileInfoSavePath"/>
 
+        <!-- Location -->
+        <typeAlias type="com.tl.global.location.LocationVO$Detail" alias="LocationDetail"/>
+        <typeAlias type="com.tl.global.location.LocationVO$Insert" alias="LocationInsert"/>
+        
         <!-- 전역 설정 -->
         <package name="com.tl"/>
     </typeAliases>
