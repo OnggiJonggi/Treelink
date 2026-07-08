@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title th:text="'트리링크 - ' + ${companyDetail.companyName}">트리링크 - 업체 정보</title>
-  <th:block th:replace="~{/common/fragment :: common}"></th:block>
+  <th:block th:replace="~{common/fragment :: common}"></th:block>
   <th:block sec:authorize="hasRole('ADMIN')">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@latest/dist/summernote-lite.min.css">
   </th:block>

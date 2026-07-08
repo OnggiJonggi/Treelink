@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>로그인</title>
-    <th:block th:replace="~{/common/fragment :: common}"></th:block>
+    <th:block th:replace="~{common/fragment :: common}"></th:block>
     <link rel="stylesheet" th:href="@{/css/member/login.css}">
 </head>
+
 <body>
 
     <main class="login-wrapper">
@@ -34,15 +36,8 @@
                     <label for="userId" class="field-label">아이디</label>
                     <div class="input-wrap">
                         <i data-lucide="user" class="input-icon"></i>
-                        <input
-                            type="text"
-                            id="userId"
-                            name="userId"
-                            class="field-input"
-                            placeholder="영문·숫자 4~12자"
-                            autocomplete="username"
-                            maxlength="12"
-                        >
+                        <input type="text" id="userId" name="userId" class="field-input" placeholder="영문·숫자 4~12자"
+                            autocomplete="username" maxlength="12">
                     </div>
                     <span class="field-msg" id="msg-userId"></span>
                 </div>
@@ -52,15 +47,8 @@
                     <label for="userPwd" class="field-label">비밀번호</label>
                     <div class="input-wrap">
                         <i data-lucide="lock" class="input-icon"></i>
-                        <input
-                            type="password"
-                            id="userPwd"
-                            name="userPwd"
-                            class="field-input"
-                            placeholder="영문·숫자·특수문자 포함 4~20자"
-                            autocomplete="current-password"
-                            maxlength="20"
-                        >
+                        <input type="password" id="userPwd" name="userPwd" class="field-input"
+                            placeholder="영문·숫자·특수문자 포함 4~20자" autocomplete="current-password" maxlength="20">
                         <button type="button" class="toggle-pwd" id="togglePwd" aria-label="비밀번호 표시/숨기기">
                             <i data-lucide="eye" id="eyeIcon"></i>
                         </button>
@@ -83,4 +71,5 @@
     </script>
     <script th:src="@{/js/member/login.js}"></script>
 </body>
+
 </html>
