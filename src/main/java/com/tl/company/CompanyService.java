@@ -146,6 +146,7 @@ public class CompanyService {
 	 */
 	@Transactional
 	public void updateIntro(String intro, int companyNo, int memberNo) {
+		
 		// 나쁜 태그 대롱대롱 하지요
 		intro = sanitizeComponent.sanitize(intro);
 		

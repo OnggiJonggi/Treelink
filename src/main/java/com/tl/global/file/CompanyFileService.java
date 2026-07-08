@@ -1,33 +1,24 @@
 package com.tl.global.file;
 
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
+import java.util.regex.Pattern;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.company.CompanyStatusEnum;
-import com.tl.company.CompanyVO;
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
+import com.tl.global.file.CompanyFileVO.HandOver;
 import com.tl.global.file.component.DocTypeEnum;
 import com.tl.global.file.component.FileComponent;
-import com.tl.global.file.component.FileNameEscapeEnum;
+import com.tl.global.file.component.FileRegexp;
 import com.tl.global.file.component.FileStatusEnum;
 import com.tl.global.file.component.ImageEnum;
-import com.tl.global.file.component.InlineMimeTypeEnum;
-import com.tl.global.file.component.SavePathEnum;
+import com.tl.global.file.component.RootSavePathEnum;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,75 +31,56 @@ public class CompanyFileService {
 	private final FileMapper fileMapper;
 	private final FileComponent fileComponent;
 
-	@Value("${file.upload.address}")
-	private String uploadAddress;
-	// 개발용 : D:/Dev/upload
-
 	/**
 	 * 업체 서류 등록
 	 */
 	@Transactional
-	public void registor(CompanyVO.DocRegistor docRegistor) throws Exception {
+	public void insert(HandOver request) throws Exception {
 		
 		// docType이 LOGO(회사 로고, 다른 곳에서 업로드받음)이면 안돼요
-		if(docRegistor.getDocType().equals(DocTypeEnum.LOGO.name()))
+		if(request.getDocType().equals(DocTypeEnum.LOGO.name()))
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
 		
-		// 제대로 된 파일인가요
-		if(!docRegistor.getFile().isValid())
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+		// 파일 이름 내놔
+		String originalName = request.getFile().getOriginalName();
+
+		// 파일 이름 이상하면 가세요라
+		if (originalName == null ||
+				!Pattern.matches(FileRegexp.ORIGINAL_NAME_NO_REGEXP, originalName)
+				) throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
-		// 파일 이름, 서류 종류 유효성 검사 및 이스케이프
-		fileComponent.isValid(docRegistor.getFile(),
-				docRegistor.getDocType(), docRegistor.getExpireOn());
+		// 서류 타입 이상하면 가세요라
+		if(request.getDocType() == null
+				|| !Pattern.matches(FileRegexp.DOC_TYPE_REGEXP, request.getDocType()))
+			throw new CustomException(ErrorCodeEnum.DOC_TYPE_FORBIDDEN);
 		
-		// 지금 몇 시에요?
-		LocalDateTime now = LocalDateTime.now();
-
-		// 저장 경로 만들기
-		String path = uploadAddress
-				+ SavePathEnum.COMPANY_DOC.getFolder()
-				+ now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-		// 이름도 바꿔부러
-		String changedName = UUID.randomUUID().toString()
-				+ docRegistor.getFile().getOriginalName().substring(docRegistor.getFile().getOriginalName().lastIndexOf("."));
-
-		// 저장할 경로 생성
-		Path targetDir = Paths.get(path);
-		Files.createDirectories(targetDir);
-
-		// 파일 저장
-		Path targetFile = targetDir.resolve(changedName);
-		Files.write(targetFile, docRegistor.getFile().getBytes());
-
-		// FILE_INFO 객체 생성
-		FileInfoVO.Registor fileInfo = FileInfoVO.Registor.builder()
-				.originalName(docRegistor.getFile().getOriginalName())
-				.changedName(changedName)
-				.mime(docRegistor.getFile().getMime())
-				.fileSize(docRegistor.getFile().getSize())
-				.savePath(path)
-				.expireOn(docRegistor.getExpireOn())
-				.companyNo(docRegistor.getCompanyNo())
-				.docType(docRegistor.getDocType()).build();
+		// 만료일이 이상해요
+		if(request.getExpireOn() == null
+				|| request.getExpireOn().isAfter(LocalDate.now())) {
+			/*
+			 * 통과!
+			 * !expireOn.isAfter(LocalDate.now())처럼 사용하면
+			 * 오늘 이후(오늘 포함)이 되요
+			 * 오늘이 포함되면 안 되니까 이르케 쓸게요
+			 */
+		}else throw new CustomException(ErrorCodeEnum.FILE_EXPIRE_ON_FORBIDDEN);
 		
-		// DB에 메타데이터 저장
-		companyFileMapper.insertInfo(fileInfo);
-		companyFileMapper.insertCompanyDoc(fileInfo);
 		
-		// FILE_HISTORY 객체 생성
-		FileInfoVO.History insertHistory = FileInfoVO.History.builder()
-				.fileNo(fileInfo.getFileNo())
-				.originalName(docRegistor.getFile().getOriginalName())
-				.changedName(changedName)
-				.savePath(path)
-				.action(FileStatusEnum.ACTIVE)
-				.actionAt(now)
-				.actionBy(docRegistor.getMemberNo()).build();
-
-		// DB에 파일 로그 저장
-		fileMapper.insertHistory(insertHistory);
+		// 저장
+		FileInfoVO.HandOver handOver = new FileInfoVO.HandOver(
+				request.getFile(), request.getMemberNo(), RootSavePathEnum.COMPANY_DOC);
+		fileComponent.save(handOver,
+				fileNo ->{
+					CompanyFileVO.Insert insert = CompanyFileVO.Insert.builder()
+							.companyNo(request.getMemberNo())
+							.fileNo(fileNo)
+							.docType(request.getDocType())
+							.expireOn(request.getExpireOn())
+							.build();
+					companyFileMapper.insertCompanyDoc(insert);
+				}
+			);
+		
 	}
 
 	/**
@@ -126,32 +98,17 @@ public class CompanyFileService {
 	 * @param companyNo
 	 * @param docNo
 	 */
-	public FileInfoVO.FileResult getFile(int companyNo, int docNo) {
+	public String getFile(int companyNo, int docNo) {
 		
 		// 원본 이름, 경로, MIME 얻어내기
-		FileInfoVO.GetFile getFile = companyFileMapper.selectGetFile(companyNo, docNo);
-	    if (getFile == null)
+		FileInfoVO.Basic basic = companyFileMapper.selectBasic(companyNo, docNo);
+	    if (basic == null)
 	    	throw new CustomException(ErrorCodeEnum.FILE_INFO_NOT_FOUND);
 		
-	    // 파일 경로
-	    Path filePath = Paths.get(fileComponent.createPath(getFile.getSavePath(), getFile.getChangedName())).normalize();
+	    // S3에서 파일 url 추출
+	    String url = fileComponent.getSavedUrl(basic);
 	    
-	    // 파일 가져오기
-	    Resource resource;
-	    try {
-	        resource = new UrlResource(filePath.toUri());
-	    } catch (MalformedURLException e) {
-	        throw new CustomException(ErrorCodeEnum.FILE_NOT_FOUND);
-	    }
-	    
-	    // inline여부 확인
-	    boolean inline = InlineMimeTypeEnum.isInline(getFile.getMime());
-		
-	    return FileInfoVO.FileResult.builder()
-	    		.resource(resource)
-	    		.originalName(getFile.getOriginalName())
-	    		.mimeType(getFile.getMime())
-	    		.inline(inline).build();
+	    return url;
 	}
 
 	/**
@@ -165,7 +122,7 @@ public class CompanyFileService {
 	public void deleteDoc(int companyNo, int docNo, int memberNo) {
 		
 		// 기존 상태 조회
-		FileInfoVO.History history = companyFileMapper.selectInfoForHistory(docNo);
+		FileInfoVO.History history = fileMapper.selectInfoForHistory(docNo);
 		
 		// 파일 번호 null로 두기
 		history.setFileNo(null);
@@ -185,49 +142,9 @@ public class CompanyFileService {
 	@Transactional
 	public void insertLogo(FileDataVO file, int companyNo, int memberNo) throws Exception {
 		
-		// 파일 비었으면 가세요라
-		if (!file.isValid())
-			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
-		
 		// 이거 이미지 맞나요?
-		if(!ImageEnum.isImage(file.getMime())) {
+		if(file.getMime() == null || !ImageEnum.isImage(file.getMime()))
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
-		}
-		
-		// 파일 이름 내놔
-		String originalName = file.getOriginalName();
-		
-		// 이름 이스케이프
-		originalName = FileNameEscapeEnum.escapeAll(originalName);
-		
-		// 변경된 이름
-		String changeName = nameChanger(originalName, companyNo);
-		
-		// 지금 몇 시에요?
-		LocalDateTime now = LocalDateTime.now();
-
-		// 저장 경로 만들기
-		String path = uploadAddress
-				+ SavePathEnum.COMPANY_LOGO.getFolder() 
-				+ now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-		// 저장할 경로 생성
-		Path targetDir = Paths.get(path);
-		Files.createDirectories(targetDir);
-
-		// 파일 저장
-		Path targetFile = targetDir.resolve(changeName);
-		Files.write(targetFile, file.getBytes());
-
-		// FILE_INFO 객체 생성
-		FileInfoVO.Registor fileInfo = FileInfoVO.Registor.builder()
-				.originalName(originalName)
-				.changedName(changeName)
-				.mime(file.getMime())
-				.fileSize(file.getSize())
-				.savePath(path)
-				.companyNo(companyNo)
-				.docType(DocTypeEnum.LOGO.name()).build();
 		
 		// DB에 이미 로고 파일이 있나요?
 		FileInfoVO.History oldHistory = companyFileMapper.selectInfoForLogoHistory(companyNo);
@@ -242,49 +159,43 @@ public class CompanyFileService {
 			int result1 = fileMapper.insertHistory(oldHistory);
 			if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 			
-			
 			// 지워.
 			int result2 = companyFileMapper.deleteLogo(oldHistory.getFileNo());
 			if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
-
-		// DB에 메타데이터 저장
-		int result3 = companyFileMapper.insertInfo(fileInfo);
-		if(result3==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-		int result4 = companyFileMapper.insertCompanyDoc(fileInfo);
-		if(result4==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		
-		// FILE_HISTORY 객체 생성
-		FileInfoVO.History history = FileInfoVO.History.builder()
-				.fileNo(fileInfo.getFileNo())
-				.originalName(originalName)
-				.changedName(changeName)
-				.savePath(path)
-				.action(FileStatusEnum.ACTIVE)
-				.actionAt(now)
-				.actionBy(memberNo).build();
-		
-		// DB에 파일 로그 저장
-		int result5 = fileMapper.insertHistory(history);
-		if(result5==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		// 저장
+		FileInfoVO.HandOver handOver = new FileInfoVO.HandOver(
+				file, memberNo, RootSavePathEnum.COMPANY_LOGO);
+		fileComponent.save(handOver,
+				fileNo ->{
+					CompanyFileVO.Insert insert = CompanyFileVO.Insert.builder()
+							.companyNo(companyNo)
+							.fileNo(fileNo)
+							.docType(DocTypeEnum.LOGO.name())
+							.expireOn(null)
+							.build();
+					companyFileMapper.insertCompanyDoc(insert);
+				}
+			);
 	}
 	
 	
 	/**
 	 * 업체 로고 조회
 	 */
-	public FileInfoVO.SavePath getSavePath(int companyNo, boolean isAdmin) {
+	public String getSavePath(int companyNo, boolean isAdmin) {
 		
-		FileInfoVO.SavePath result = companyFileMapper.selectLogoSavePath(companyNo, isAdmin);
+		FileInfoVO.Basic basic = companyFileMapper.selectLogoSavePath(companyNo, isAdmin);
 		
 		// 뭐야 없잖아...
-		if(result==null || result.getSavePath()==null)
+		if(basic==null || basic.getSavePath()==null)
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
 		
-		// 폴더 경로와 파일 이름으로 진짜 경로 완성
-		result.setSavePath(fileComponent.createPath(result.getSavePath(), result.getChangedName()));
+		// S3에서 url가져오기
+		String url = fileComponent.getSavedUrl(basic);
 		
-		return result;
+		return url;
 	}
 
 	/**
@@ -298,120 +209,41 @@ public class CompanyFileService {
 	@Transactional
 	public String insertIntroImage(FileDataVO file, int companyNo, int memberNo) throws Exception {
 		
-		// 파일 비었으면 가세요라
-		if(!file.isValid())
-			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
-		
 		// 이거 이미지 맞나요?
-		if(!ImageEnum.isImage(file.getMime()))
+		if(file.getMime() == null || !ImageEnum.isImage(file.getMime()))
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
-		// 파일 이름 내놔
-		String originalName = file.getOriginalName();
+		// 저장
+		FileInfoVO.HandOver handOver = new FileInfoVO.HandOver(
+				file, memberNo, RootSavePathEnum.COMPANY_INTRO);
+		String changeName = fileComponent.save(handOver,
+				fileNo ->{
+					CompanyFileVO.Insert insert = CompanyFileVO.Insert.builder()
+							.companyNo(companyNo)
+							.fileNo(fileNo)
+							.docType(DocTypeEnum.INTRO.name())
+							.expireOn(null)
+							.build();
+					companyFileMapper.insertCompanyDoc(insert);
+				}
+			);
 		
-		// 이름 이스케이프
-		originalName = FileNameEscapeEnum.escapeAll(originalName);
-		
-		// 변경된 이름
-		String changeName = nameChanger(originalName, companyNo);
-		
-		// 지금 몇 시에요?
-		LocalDateTime now = LocalDateTime.now();
-
-		// 저장 경로 만들기
-		String path = uploadAddress
-				+ SavePathEnum.COMPANY_INTRO.getFolder() 
-				+ now.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-		// 저장할 경로 생성
-		Path targetDir = Paths.get(path);
-		Files.createDirectories(targetDir);
-
-		// 파일 저장
-		Path targetFile = targetDir.resolve(changeName);
-		Files.write(targetFile, file.getBytes());
-		
-		// FILE_INFO 객체 생성
-		FileInfoVO.Registor fileInfo = FileInfoVO.Registor.builder()
-				.originalName(originalName)
-				.changedName(changeName)
-				.mime(file.getMime())
-				.fileSize(file.getSize())
-				.savePath(path)
-				.companyNo(companyNo)
-				.docType(DocTypeEnum.INTRO.name()).build();
-		
-		// DB에 메타데이터 저장
-		int result1 = companyFileMapper.insertInfo(fileInfo);
-		if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-		int result2 = companyFileMapper.insertCompanyDoc(fileInfo);
-		if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-
-		// FILE_HISTORY 객체 생성
-		FileInfoVO.History history = FileInfoVO.History.builder()
-				.fileNo(fileInfo.getFileNo())
-				.originalName(originalName)
-				.changedName(changeName)
-				.savePath(path)
-				.action(FileStatusEnum.ACTIVE)
-				.actionAt(now)
-				.actionBy(memberNo).build();
-		
-		// DB에 파일 로그 저장
-		int result3 = fileMapper.insertHistory(history);
-		if(result3==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-		
-		// 파일 식별번호 반환
 		return changeName;
 	}
 
 	/**
 	 * 업체 소개문 이미지 조회
-	 * 
-	 * @param memberNo
-	 * @param companyNo
-	 * @param changedName
-	 * @param status
-	 * @return FileResult
 	 */
-	public FileInfoVO.FileResult getIntroImage(int companyNo, String changedName, CompanyStatusEnum status) {
+	public String getIntroImage(int companyNo, String changedName, CompanyStatusEnum status) {
 		
 		// 원본 이름, 경로, MIME 얻어내기
-		FileInfoVO.GetFile getFile = companyFileMapper.selectIntroImage(companyNo, changedName, status);
-	    if (getFile == null)
+		FileInfoVO.Basic basic = companyFileMapper.selectIntroImage(companyNo, changedName, status);
+	    if (basic == null)
 	    	throw new CustomException(ErrorCodeEnum.FILE_INFO_NOT_FOUND);
 		
-	    // 파일 경로
-	    Path filePath = Paths.get(fileComponent.createPath(getFile.getSavePath(), getFile.getChangedName())).normalize();
-	    
-	    // 파일 가져오기
-	    Resource resource;
-	    try {
-	        resource = new UrlResource(filePath.toUri());
-	    } catch (MalformedURLException e) {
-	        throw new CustomException(ErrorCodeEnum.FILE_NOT_FOUND);
-	    }
+	    // S3에서 url 추출
+	    String url = fileComponent.getSavedUrl(basic);
 		
-	    return FileInfoVO.FileResult.builder()
-	    		.resource(resource)
-	    		.originalName(getFile.getOriginalName()) // 원본 이름 쓸 데가 있냐?
-	    		.mimeType(getFile.getMime())
-	    		.build();
-	}
-	
-	
-	
-	
-	
-	
-	/**
-	 * 파일 이름 변환기
-	 */
-	public String nameChanger(String originalName, int companyNo) {
-		return companyNo
-				+ "_"
-				+ UUID.randomUUID().toString()
-				+ originalName.substring(originalName.lastIndexOf("."));
-		
+	    return url;
 	}
 }

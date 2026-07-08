@@ -112,7 +112,7 @@ public class CompanyApiController {
 		
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
-
+		
 		companyService.updateIntro(intro, companyNo, memberNo);
 		
 		return ResponseEntity.ok().build();

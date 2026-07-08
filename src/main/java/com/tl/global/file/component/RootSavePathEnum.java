@@ -4,7 +4,7 @@ import lombok.Getter;
 
 // 파일 저장 경로 저장
 @Getter
-public enum SavePathEnum {
+public enum RootSavePathEnum {
 	COMPANY_DOC("company-doc/"),
 	COMPANY_LOGO("image/company-logo/"),
 	COMPANY_INTRO("image/company-intro/"),
@@ -14,7 +14,7 @@ public enum SavePathEnum {
 
 	
 	// 이넘 생성자는 직접 작성이 관례
-	private SavePathEnum(String folder) {
+	private RootSavePathEnum(String folder) {
 		this.folder = folder;
 	}
 }

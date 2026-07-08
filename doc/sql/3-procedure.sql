@@ -1,4 +1,5 @@
 -- 만료된 파일 FILE_INFO에서 삭제 및 파일 기록 추가
+-- TODO : EXPIRE_ON 수정 필요
 
 create or replace procedure PROC_EXPIRE_FILE as
 begin

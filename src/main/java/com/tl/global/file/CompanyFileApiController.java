@@ -1,13 +1,7 @@
 package com.tl.global.file;
 
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,10 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriUtils;
 
 import com.tl.company.CompanyStatusEnum;
-import com.tl.company.CompanyVO;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
 import com.tl.global.security.RoleEnum;
@@ -68,29 +60,27 @@ public class CompanyFileApiController {
 	 * 전체 : 활성화된 업체 로고만 조회 가능
 	 */
 	@GetMapping("{encryptedCompanyNo}/logo")
-	public ResponseEntity<Resource> getImage(
+	public ResponseEntity<String> getImage(
 			@PathVariable String encryptedCompanyNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails) throws Exception{
 		
 		// 업체 식별번호 복호화
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		
-		FileInfoVO.SavePath path;
+		String url;
 		if(userDetails==null ||
 				!userDetails.getAuthorities().stream()
 		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
 			
 			// 관리자 권한이 없으면 활성화된 회사만 조회 가능
-			path = companyFileService.getSavePath(companyNo, false);
-		}else path = companyFileService.getSavePath(companyNo, true);
+			url = companyFileService.getSavePath(companyNo, false);
+		}else url = companyFileService.getSavePath(companyNo, true);
 		
-		// 파일 꺼내오는 중...
-		Resource resource = new FileSystemResource(path.getSavePath());
+		// 없으면 가세요
+		if(url == null || url.isEmpty())
+			return ResponseEntity.notFound().build();
 		
-		// 아 없으면 좀 가라고
-		if(!resource.exists()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-		
-		return ResponseEntity.ok().contentType(MediaType.parseMediaType(path.getMime())).body(resource);
+		return ResponseEntity.ok().body(url);
 	}
 	
 	/**
@@ -116,13 +106,13 @@ public class CompanyFileApiController {
 				.bytes(file.getBytes()).build();
 		
 		// 등록 중...
-		CompanyVO.DocRegistor docRegistor = CompanyVO.DocRegistor.builder()
+		CompanyFileVO.HandOver handOver = CompanyFileVO.HandOver.builder()
 				.memberNo(Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo())))
 				.companyNo(companyNo)
 				.file(fileData)
 				.docType(docType)
 				.expireOn(expireOn).build();
-		companyFileService.registor(docRegistor);
+		companyFileService.insert(handOver);
 		
 		return ResponseEntity.ok().build();
 	}
@@ -132,32 +122,16 @@ public class CompanyFileApiController {
 	 * 관리자
 	 */
 	@GetMapping("{encryptedCompanyNo}/doc/{encryptedDocNo}")
-	public ResponseEntity<Resource> getDoc(
+	public ResponseEntity<String> getDoc(
 			@PathVariable String encryptedCompanyNo,
 			@PathVariable String encryptedDocNo) throws Exception{
 		
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		int docNo = Integer.valueOf(cryptoComponent.decrypt(encryptedDocNo));
 		
-		FileInfoVO.FileResult result = companyFileService.getFile(companyNo, docNo);
-		
-		// Content-Disposition 구성
-		String encodedName = UriUtils.encode(result.getOriginalName(), StandardCharsets.UTF_8);
-		String disposition = (result.isInline() ? "inline" : "attachment") + "; filename=\"" + encodedName + "\"";
+		String url = companyFileService.getFile(companyNo, docNo);
 
-		// MIME 타입 -> Content-Type 변환
-		MediaType mediaType;
-		try {
-			mediaType = MediaType.parseMediaType(result.getMimeType());
-		} catch (Exception e) {
-			// octet-stream : 뭔지 모르는 바이너리 데이터
-			mediaType = MediaType.APPLICATION_OCTET_STREAM;
-		}
-
-		return ResponseEntity.ok()
-				.header(HttpHeaders.CONTENT_DISPOSITION, disposition)
-				.contentType(mediaType)
-				.body(result.getResource());
+		return ResponseEntity.ok().body(url);
 	}
 	
 	/**
@@ -205,7 +179,7 @@ public class CompanyFileApiController {
 		
 		String changedName = companyFileService.insertIntroImage(fileData, companyNo, memberNo);
 		
-		// encryptedFileNo 반환
+		// 변경된 이름 반환
 		return ResponseEntity.ok(changedName);
 	}
 	
@@ -214,7 +188,7 @@ public class CompanyFileApiController {
 	 * 관리자 : 비활성된 업체 조회 가능
 	 */
 	@GetMapping("{encryptedCompanyNo}/intro/{changedName}")
-	public ResponseEntity<Resource> getIntroImage(
+	public ResponseEntity<String> getIntroImage(
 			@PathVariable String encryptedCompanyNo,
 			@PathVariable String changedName,
 			@AuthenticationPrincipal CustomUserDetails userDetails) throws Exception{
@@ -222,22 +196,17 @@ public class CompanyFileApiController {
 		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
 		
 		// 조회
-		FileInfoVO.FileResult result;
+		String url;
 		if(userDetails==null ||
 				!userDetails.getAuthorities().stream()
 		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
 			
 			// 관리자 권한이 없으면 활성화된 회사만 조회 가능
-			result = companyFileService.getIntroImage(companyNo, changedName, CompanyStatusEnum.ACTIVE);
+			url = companyFileService.getIntroImage(companyNo, changedName, CompanyStatusEnum.ACTIVE);
 			
 			// 권한 있으면 제한 없음
-		}else result = companyFileService.getIntroImage(companyNo, changedName, null);
-	
-		// MIME타입 생성
-		MediaType mime = MediaType.parseMediaType(result.getMimeType());
+		}else url = companyFileService.getIntroImage(companyNo, changedName, null);
 		
-		return ResponseEntity.ok()
-				.contentType(mime)
-				.body(result.getResource());
+		return ResponseEntity.ok().body(url);
 	}
 }

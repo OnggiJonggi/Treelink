@@ -4,6 +4,25 @@
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.tl.global.file.FileMapper">
 
+  <insert id="insertInfo" parameterType="FileInfoInsert"
+    useGeneratedKeys="true"
+    keyProperty="fileNo"
+    keyColumn="FILE_NO">
+    insert into FILE_INFO(
+        ORIGINAL_NAME
+        ,CHANGED_NAME
+        ,MIME
+        ,FILE_SIZE
+        ,SAVE_PATH
+      ) values(
+        #{originalName}
+        ,#{changedName}
+        ,#{mime}
+        ,#{fileSize}
+        ,#{savePath}
+      )
+  </insert>
+
   <insert id="insertHistory" parameterType="FileInfoHistory">
     insert into FILE_HISTORY(
       FILE_NO
@@ -27,4 +46,14 @@
       ,#{actionBy}
     )
   </insert>
+  
+  <select id="selectInfoForHistory" parameterType="_int" resultType="FileInfoHistory">
+    select
+      FILE_NO
+      ,ORIGINAL_NAME
+      ,CHANGED_NAME
+      ,SAVE_PATH
+    from FILE_INFO
+    where FILE_NO = #{fileNo}
+  </select>
 </mapper>

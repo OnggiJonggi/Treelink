@@ -17,15 +17,17 @@ public class SanitizeComponent {
 	 * JSOUP 라이브러리가 쓰이지요
 	 */
 	private static final Safelist POLICY = Safelist.relaxed()
-			.removeProtocols("img", "src", "http", "https") // 링크, 이미지 링크 삭제
-			
-			.addProtocols("a", "href", "http", "https")
-			.addAttributes("a", "target")
-			.addEnforcedAttribute("a", "rel", "noopener noreferrer")
-			.addTags("s", "u")
-			.addAttributes("p", "style")
-			.addAttributes("span", "style")
-			.addAttributes("div", "style");
+		    .removeProtocols("img", "src", "http", "https")
+		    .addProtocols("a", "href", "http", "https")
+		    .addAttributes("a", "target")
+		    .addEnforcedAttribute("a", "rel", "noopener noreferrer")
+		    .addTags("s", "u", "font")
+		    .addAttributes("font", "color")
+		    .addAttributes("u", "style")
+		    .addAttributes("p", "style")
+		    .addAttributes("span", "style")
+		    .addAttributes("div", "style")
+		    .addAttributes(":all", "class");
 
 	public String sanitize(String rawHtml) {
 		

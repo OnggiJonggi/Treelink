@@ -82,25 +82,19 @@
         var contentDiv = document.getElementById('intro-rendered-content');
         if (!contentDiv) return;
         contentDiv.querySelectorAll('img[src]').forEach(function (img) {
-          var src = img.getAttribute('src');
-          // 상대경로이거나 이미 /file/company 경로인 경우
-          if (!src || src.startsWith('blob:') || src.startsWith('data:')) return;
+          var originalSrc = img.getAttribute('src');
+          if (!originalSrc || originalSrc.startsWith('blob:') || originalSrc.startsWith('data:')) return;
 
-          // changedName 추출: src 마지막 세그먼트
-          var changedName = src.split('/').pop();
-          if (!changedName) return;
-
-          fetch('/file/company/' + encryptedNo + '/intro/' + changedName)
+          fetch(originalSrc)
             .then(function (res) {
               if (!res.ok) throw new Error('img load failed');
-              return res.blob();
+              return res.text();
             })
-            .then(function (blob) {
-              img.src = URL.createObjectURL(blob);
+            .then(function (s3Url) {
+              img.setAttribute('data-original-src', originalSrc);
+              img.src = s3Url;
             })
-            .catch(function () {
-              // 로드 실패 시 원본 src 유지
-            });
+            .catch(function () { });
         });
       }
       loadIntroImages();
@@ -158,18 +152,32 @@
                   processData: false,
                   contentType: false,
                   success: function (changedName, status, xhr) {
-                    if (xhr.status === 200 && changedName) {
-                      var realSrc = '/file/company/' + encryptedNo + '/intro/' + changedName;
+                    if (xhr.status !== 200 || !changedName) return;
 
-                      if (blobImg.length) {
-                        blobImg.attr('src', realSrc);
-                      } else {
-                        $('#intro-summernote').summernote('insertImage', realSrc);
-                      }
-                    }
+                    var ourUrl = '/file/company/' + encryptedNo + '/intro/' + changedName;
+
+                    fetch(ourUrl)
+                      .then(function (res) {
+                        if (!res.ok) throw new Error('preview link fetch failed');
+                        return res.text();
+                      })
+                      .then(function (s3Url) {
+                        if (blobImg.length) {
+                          blobImg.attr('src', s3Url);
+                          blobImg.attr('data-original-src', ourUrl);
+                        } else {
+                          $('#intro-summernote').summernote('insertImage', s3Url, function ($image) {
+                            $image.attr('data-original-src', ourUrl);
+                          });
+                        }
+                      })
+                      .catch(function () {
+                        if (blobImg.length) {
+                          blobImg.attr('src', ourUrl).attr('data-original-src', ourUrl);
+                        }
+                      });
                   },
                   error: function (xhr) {
-                    // 업로드 실패 시 blob img 제거
                     if (blobImg.length) blobImg.remove();
                     alert('이미지 업로드에 실패했습니다. (' + xhr.status + ')');
                   }
@@ -191,6 +199,14 @@
 
       /* 작성 완료 버튼 클릭 → PUT 요청 */
       saveBtn.addEventListener('click', function () {
+        var editableDiv = $('#intro-summernote').next('.note-editor').find('.note-editable');
+
+        editableDiv.find('img[data-original-src]').each(function () {
+          $(this)
+            .attr('src', $(this).attr('data-original-src'))
+            .removeAttr('data-original-src');
+        });
+
         var introHtml = $('#intro-summernote').summernote('code');
 
         $.ajax({

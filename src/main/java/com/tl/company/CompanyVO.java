@@ -7,7 +7,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tl.global.common.SearchPageVO;
-import com.tl.global.file.FileDataVO;
 import com.tl.global.location.LocationVO;
 
 import jakarta.validation.constraints.Email;
@@ -19,7 +18,6 @@ import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -113,23 +111,6 @@ public class CompanyVO {
 		private String option;
 		private String etcMemo;
 	}
-	
-	/**
-	 * 컨트롤러->서비스 전달용 객체
-	 */
-	@NoArgsConstructor
-	@AllArgsConstructor
-	@Getter
-	@ToString
-	@Builder
-	public static class DocRegistor{
-		private int memberNo;
-		private int companyNo;
-		private FileDataVO file;
-		private String docType;
-		private LocalDate expireOn;
-	}
-	
 	
 	@NoArgsConstructor
 	@AllArgsConstructor

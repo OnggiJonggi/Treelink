@@ -1,12 +1,9 @@
 package com.tl.company;
 
 import java.util.List;
-import java.util.Set;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
-import com.tl.global.location.LocationVO;
 
 @Mapper
 public interface CompanyMapper {

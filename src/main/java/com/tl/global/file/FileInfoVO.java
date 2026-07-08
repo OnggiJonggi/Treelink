@@ -3,18 +3,20 @@ package com.tl.global.file;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import org.springframework.core.io.Resource;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tl.global.file.component.FileStatusEnum;
+import com.tl.global.file.component.RootSavePathEnum;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 public class FileInfoVO {
 	
@@ -22,24 +24,16 @@ public class FileInfoVO {
 	@AllArgsConstructor
 	@Data
 	@Builder
-	public static class Registor{
+	public static class Insert{
 		
 		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 		private int fileNo;
 		
 		private String originalName;
-		
 		private String changedName;
 		private String mime;
 		private long fileSize;
 		private String savePath;
-		
-		@DateTimeFormat(pattern = "yyyy-MM-dd")
-		private LocalDate expireOn;
-		
-		private int companyNo;
-		
-		private String docType; // 서류 종류, 식별 아이디 등등
 	}
 	
 	
@@ -66,22 +60,12 @@ public class FileInfoVO {
 	@NoArgsConstructor
 	@AllArgsConstructor
 	@Getter
-	public static class GetFile{
+	@ToString
+	public static class Basic{
 		private String originalName;
 		private String changedName;
 		private String mime;
 		private String savePath;
-	}
-	
-	@NoArgsConstructor
-	@AllArgsConstructor
-	@Getter
-	@Builder
-	public static class FileResult {
-	    private Resource resource;
-	    private String originalName;
-	    private String mimeType;
-	    private boolean inline; // true = 새 탭 렌더링, false = 다운로드
 	}
 	
 	// FILE_HISTORY 삽입
@@ -104,19 +88,21 @@ public class FileInfoVO {
 		private int actionBy;
 	}
 	
-	
-	@NoArgsConstructor
+	// FileComponent.save() 전용 객체
 	@AllArgsConstructor
+	@NoArgsConstructor
 	@Getter
-	@ToString
-	public static class SavePath{
-		private String changedName;
-		private String mime;
-		private String savePath;
+	@SuperBuilder
+	@ToString(callSuper = true)
+	@EqualsAndHashCode(callSuper = true)
+	public static class HandOver extends FileDataVO{
+		int memberNo;
+		RootSavePathEnum rootSavePath;
 		
-		
-		public void setSavePath(String savePath) {
-			this.savePath = savePath;
+		public HandOver(FileDataVO file, int memberNo, RootSavePathEnum rootSavePath) {
+			super(file.getOriginalName(), file.getMime(), file.getSize(), file.getBytes());
+			this.memberNo = memberNo;
+			this.rootSavePath = rootSavePath;
 		}
 	}
 }

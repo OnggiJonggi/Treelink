@@ -8,7 +8,7 @@
       F.FILE_NO
       ,F.ORIGINAL_NAME
       ,F.FILE_SIZE
-      ,F.EXPIRE_ON
+      ,CD.EXPIRE_ON
       ,CD.DOC_TYPE
     from FILE_INFO F
     right join COMPANY_DOC CD on(CD.FILE_NO = F.FILE_NO)
@@ -17,26 +17,7 @@
     order by F.FILE_NO desc
   </select>
 
-  <insert id="insertInfo" parameterType="FileInfoRegistor"
-    useGeneratedKeys="true"
-    keyProperty="fileNo"
-    keyColumn="FILE_NO">
-    insert into FILE_INFO(
-        ORIGINAL_NAME
-        ,CHANGED_NAME
-        ,MIME
-        ,FILE_SIZE
-        ,SAVE_PATH
-        ,EXPIRE_ON
-      ) values(
-        #{originalName}
-        ,#{changedName}
-        ,#{mime}
-        ,#{fileSize}
-        ,#{savePath}
-        ,#{expireOn}
-      )
-  </insert>
+
 
   <delete id="deleteLogoInfo" parameterType="_int">
     delete from FILE_INFO
@@ -49,20 +30,22 @@
   </delete>
 
   
-  <insert id="insertCompanyDoc" parameterType="FileInfoRegistor">
+  <insert id="insertCompanyDoc" parameterType="CompanyFileInsert">
       insert into COMPANY_DOC(
         COMPANY_NO
         ,FILE_NO
         ,DOC_TYPE
+        ,EXPIRE_ON
       ) values(
         #{companyNo}
         ,#{fileNo}
         ,#{docType}
+        ,#{expireOn}
       )
   </insert>
 
 
-  <select id="selectGetFile" resultType="FileInfoGetFile">
+  <select id="selectBasic" resultType="FileInfoBasic">
     select
       F.ORIGINAL_NAME
       ,F.CHANGED_NAME
@@ -79,20 +62,9 @@
     where FILE_NO = #{fileNo}
   </delete>
 
-  <select id="selectInfoForHistory" parameterType="_int" resultType="FileInfoHistory">
-    select
-      FILE_NO
-      ,ORIGINAL_NAME
-      ,CHANGED_NAME
-      ,SAVE_PATH
-    from FILE_INFO
-    where FILE_NO = #{fileNo}
-  </select>
-
-  <select id="selectLogoSavePath" resultType="FileInfoSavePath">
+  <select id="selectLogoSavePath" resultType="FileInfoBasic">
     select 
-      FI.MIME
-      ,FI.SAVE_PATH
+      FI.SAVE_PATH
       ,FI.CHANGED_NAME
     from FILE_INFO FI
     inner join COMPANY_DOC CD on (FI.FILE_NO = CD.FILE_NO)
@@ -131,7 +103,7 @@
     )
   </delete>
 
-  <select id="selectIntroImage" resultType="FileInfoGetFile">
+  <select id="selectIntroImage" resultType="FileInfoBasic">
     select 
       FI.ORIGINAL_NAME
       ,FI.CHANGED_NAME

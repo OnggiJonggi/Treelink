@@ -26,13 +26,15 @@
         <typeAlias type="com.tl.company.CompanyVO$Search" alias="CompanySearch"/>
         <typeAlias type="com.tl.company.CompanyVO$InsertLocation" alias="CompanyInsertLocation"/>
         <typeAlias type="com.tl.company.CompanyVO$LocationDetail" alias="CompanyLocationDetail"/>
+
+        <!-- CompanyFile -->
+        <typeAlias type="com.tl.global.file.CompanyFileVO$Insert" alias="CompanyFileInsert"/>
         
         <!-- FileInfo -->
-        <typeAlias type="com.tl.global.file.FileInfoVO$Registor" alias="FileInfoRegistor"/>
+        <typeAlias type="com.tl.global.file.FileInfoVO$Insert" alias="FileInfoInsert"/>
         <typeAlias type="com.tl.global.file.FileInfoVO$Detail" alias="FileInfoDetail"/>
-        <typeAlias type="com.tl.global.file.FileInfoVO$GetFile" alias="FileInfoGetFile"/>
+        <typeAlias type="com.tl.global.file.FileInfoVO$Basic" alias="FileInfoBasic"/>
         <typeAlias type="com.tl.global.file.FileInfoVO$History" alias="FileInfoHistory"/>
-        <typeAlias type="com.tl.global.file.FileInfoVO$SavePath" alias="FileInfoSavePath"/>
 
         <!-- Location -->
         <typeAlias type="com.tl.global.location.LocationVO$Detail" alias="LocationDetail"/>

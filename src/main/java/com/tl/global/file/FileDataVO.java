@@ -1,13 +1,17 @@
 package com.tl.global.file;
 
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Muiltipartfile 객체 변환용
  */
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
-@Builder
+@SuperBuilder
 public class FileDataVO {
 	private String originalName;
 	private String mime;

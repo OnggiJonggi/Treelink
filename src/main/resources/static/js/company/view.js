@@ -46,6 +46,13 @@ function loadCompanyLogo() {
   fetch(logoUrl)
     .then(function (res) {
       if (!res.ok) throw new Error('not found');
+      return res.text();
+    })
+    .then(function (oneTimeUrl) {
+      return fetch(oneTimeUrl);
+    })
+    .then(function (res) {
+      if (!res.ok) throw new Error('not found');
       return res.blob();
     })
     .then(function (blob) {
@@ -545,24 +552,29 @@ function openOrDownloadDoc(encryptedNo, encryptedFileNo) {
   fetch('/file/company/' + encryptedNo + '/doc/' + encryptedFileNo)
     .then(function (res) {
       if (!res.ok) throw new Error('request failed');
+      return res.text();
+    })
+    .then(function (oneTimeUrl) {
+      return fetch(oneTimeUrl);
+    })
+    .then(function (res) {
+      if (!res.ok) throw new Error('request failed');
 
+      // 이하 기존 로직과 동일하되, 헤더는 2차 응답에서 읽음
       const disposition = res.headers.get('Content-Disposition') || '';
       const contentType = res.headers.get('Content-Type') || '';
       const isAttachment = disposition.toLowerCase().includes('attachment');
 
-      // Content-Disposition에서 파일명 파싱
       let filename = 'download';
       const fnMatch = disposition.match(/filename\*?=['"]?(?:UTF-\d['"]*)?([^;\r\n"']+)['"]?/i);
       if (fnMatch) {
         filename = decodeURIComponent(fnMatch[1].trim());
-        console.log(filename);
       }
 
       return res.blob().then(function (blob) {
         const blobUrl = URL.createObjectURL(new Blob([blob], { type: contentType }));
 
         if (isAttachment) {
-          // 다운로드: <a download="파일명"> 사용
           const a = document.createElement('a');
           a.href = blobUrl;
           a.download = filename;
@@ -570,14 +582,10 @@ function openOrDownloadDoc(encryptedNo, encryptedFileNo) {
           a.click();
           document.body.removeChild(a);
         } else {
-          // 새창 열기: <a> 태그를 통해 열어야 탭 제목에 파일명 반영 안 되지만,
-          // blob URL 자체에 파일명을 심을 수 없으므로
-          // 파일명을 URL fragment로 힌트를 주거나, 새 창에서 직접 파일 URL 방식으로 처리
           const a = document.createElement('a');
           a.href = blobUrl;
           a.target = '_blank';
           a.rel = 'noopener noreferrer';
-          // download 속성 없이 클릭 → 새창에서 열림
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
