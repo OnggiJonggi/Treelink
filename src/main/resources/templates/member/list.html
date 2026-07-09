@@ -130,7 +130,7 @@
 
         <!-- 회원 카드 목록 -->
         <div class="member-grid" id="memberGrid">
-          <div th:each="member : ${memberList.list}" class="member-card" th:data-enc="${member.encryptedMemberNo}"
+          <div th:each="member : ${memberList.list}" class="member-card" th:data-enc="${member.encMemberNo}"
             onclick="goToDetail(this)">
 
             <div class="member-card-top">

@@ -46,7 +46,7 @@ public class CompanyVO {
 		private String representativeName;
 
 		@NotBlank(message = "전화번호가 뭐에요")
-		@Pattern(regexp = CompanyRegexp.PHONE_REGEXP, message = "회사 이름이 이상해요")
+		@Pattern(regexp = CompanyRegexp.PHONE_REGEXP, message = "전화번호가 이상해요")
 		private String phone;
 
 		@Email(regexp = CompanyRegexp.EMAIL_REGEXP, message = "이메일이 이상해요")
@@ -74,7 +74,7 @@ public class CompanyVO {
 		
 		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 		private int companyNo;
-		private String encryptedCompanyNo;
+		private String encCompanyNo;
 		
 		private String businessNo; // 사업자 등록번호. 하이픈 없이 숫자만.
 		private String companyName;
@@ -92,8 +92,8 @@ public class CompanyVO {
 		public void setCompanyNo(int companyNo) {
 			this.companyNo = companyNo;
 		}
-		public void setEncryptedCompanyNo(String encryptedCompanyNo) {
-			this.encryptedCompanyNo = encryptedCompanyNo;
+		public void setEncCompanyNo(String encCompanyNo) {
+			this.encCompanyNo = encCompanyNo;
 		}
 	}
 	

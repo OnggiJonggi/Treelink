@@ -46,7 +46,7 @@ public class FileInfoVO {
 		
 		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
 		private int fileNo;
-		private String encryptedFileNo;
+		private String encFileNo;
 		
 		private String originalName;
 		private long fileSize;

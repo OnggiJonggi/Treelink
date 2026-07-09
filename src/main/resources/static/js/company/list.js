@@ -134,7 +134,7 @@ function renderCompanyGrid(list) {
   list.forEach(function (company) {
     const card = document.createElement('div');
     card.className = 'company-card';
-    card.dataset.enc = company.encryptedCompanyNo;
+    card.dataset.enc = company.encCompanyNo;
     card.setAttribute('onclick', 'goToDetail(this)');
 
     const statusHtml = isAdmin ? `<div class="company-status">${getStatusBadge(company.status)}</div>` : '';

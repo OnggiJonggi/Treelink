@@ -145,7 +145,7 @@
           <div class="company-grid" id="companyGrid">
 
             <th:block th:each="company : ${companyList.list}">
-              <div class="company-card" th:data-enc="${company.encryptedCompanyNo}" onclick="goToDetail(this)">
+              <div class="company-card" th:data-enc="${company.encCompanyNo}" onclick="goToDetail(this)">
 
                 <div class="company-card-top">
                   <div class="company-avatar">

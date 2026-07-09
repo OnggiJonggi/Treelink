@@ -18,7 +18,7 @@ public class CompanyRegexp {
 	public static final String COMPANY_NAME_REGEXP = "^[ㄱ-ㅎ가-힣a-zA-Z0-9&.',\\-·]{1," + COMPANY_NAME_MAX_LENGTH + "}$";
 	public static final String REPRESENTATIVE_NAME_REGEXP = "^[ㄱ-ㅎ가-힣a-zA-Z0-9]{1," + REPRESENTATIVE_NAME_MAX_LENGTH + "}$";
 	public static final String PHONE_REGEXP = "^[0-9]{1," + PHONE_MAX_LENGTH + "}$";
-	public static final String EMAIL_REGEXP = "^(?=.{1," + EMAIL_MAX_LENGTH + "}$)[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
+	public static final String EMAIL_REGEXP = "^$|^(?=.{1," + EMAIL_MAX_LENGTH + "}$)[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$";
 	public static final String ETC_MEMO_REGEXP = "^.{1," + ETC_MEMO_MAX_LENGTH + "}$";
 	public static final String LOCATION_NAME_REGEXP = "^[ㄱ-ㅎ가-힣a-zA-Z0-9&.',\\-·]{1," + LOCATION_NAME_MAX_LENGTH + "}$";
 }

@@ -62,7 +62,7 @@ public class CompanyController {
 		
 		// 식별번호 암호화
 		for(CompanyVO.Detail company : result.getList()) {
-			company.setEncryptedCompanyNo(cryptoComponent.encrypt(String.valueOf(company.getCompanyNo())));
+			company.setEncCompanyNo(cryptoComponent.encrypt(company.getCompanyNo()));
 			company.setCompanyNo(0);
 		}
 		
@@ -93,31 +93,33 @@ public class CompanyController {
 			,Model model) throws Exception{
 		
 		if(bindingResult.hasErrors()) {
+			log.info("사업체 등록 오류! \n대상 : {}\n오류 : {}", companyRegistor, bindingResult);
+			
 			model.addAttribute("companyRegistor", new CompanyVO.Registor());
 			model.addAttribute("BusinessNoCheckRequest", new BusinessNoCheckVO.request());
-			return "admin/company/registor";
+			return "company/registor";
 		}
 		
 		// DB저장 및 업체 식별번호 추출
 		int companyNo = companyService.companyRegistor(companyRegistor);
 		
 		// 암호화
-		String encryptedCompanyNo = cryptoComponent.encrypt(String.valueOf(companyNo)); 
+		String encCompanyNo = cryptoComponent.encrypt(companyNo); 
 		
-		return "redirect:/company/"+encryptedCompanyNo;
+		return "redirect:/company/"+encCompanyNo;
 	}
 	
 	/**
 	 * 사업체 상세 페이지
 	 * 관리자(서류 열람, 중단/종료된 사업체 상세 조회)
 	 */
-	@GetMapping("/{encryptedCompanyNo}")
+	@GetMapping("/{encCompanyNo}")
 	public String goView(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@AuthenticationPrincipal UserDetails userDetails,
 			Model model) throws Exception {
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		// 네비 바에게 여기가 어디고 나는 누구인지 알려줌
 		model.addAttribute("companyMenu", "basic");
@@ -126,7 +128,7 @@ public class CompanyController {
 		CompanyVO.Detail detail = companyService.getCompanyBasicInfo(companyNo);
 		
 		// 회사 식별번호 암호화
-		detail.setEncryptedCompanyNo(cryptoComponent.encrypt(String.valueOf(detail.getCompanyNo())));
+		detail.setEncCompanyNo(cryptoComponent.encrypt(detail.getCompanyNo()));
 		detail.setCompanyNo(0);
 		
 		model.addAttribute("companyDetail", detail);
@@ -140,7 +142,7 @@ public class CompanyController {
 			
 			// 파일 식별번호 암호화
 			for(FileInfoVO.Detail doc : docs) {
-				doc.setEncryptedFileNo(cryptoComponent.encrypt(String.valueOf(doc.getFileNo())));
+				doc.setEncFileNo(cryptoComponent.encrypt(doc.getFileNo()));
 				doc.setFileNo(0);
 			}
 			
@@ -162,17 +164,17 @@ public class CompanyController {
 	 * 업체 소개 페이지 조각
 	 * 관리자 : 비활성 업체 조회 가능
 	 */
-	@GetMapping("/{encryptedCompanyNo}/intro")
+	@GetMapping("/{encCompanyNo}/intro")
 	public String getIntro(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@AuthenticationPrincipal UserDetails userDetails,
 			Model model) throws Exception {
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		// 네비 바에게 여기가 어디고 나는 누구인지 알려줌
 		model.addAttribute("companyMenu", "intro");
-		model.addAttribute("encryptedCompanyNo", encryptedCompanyNo);
+		model.addAttribute("encCompanyNo", encCompanyNo);
 		
 		// 소개문 조회
 		String intro;
@@ -199,21 +201,21 @@ public class CompanyController {
 	@Value("${kakao-js.key}")
 	private String kakaoKey;
 	
-	@GetMapping("{encryptedCompanyNo}/location")
+	@GetMapping("{encCompanyNo}/location")
 	public String goLocation(
-			@PathVariable("encryptedCompanyNo") String encCompanyNo,
+			@PathVariable("encCompanyNo") String encCompanyNo,
 			Model model) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		// 네비 바에게 여기가 어디고 나는 누구인지 알려줌
 		model.addAttribute("companyMenu", "location");
-		model.addAttribute("encryptedCompanyNo", encCompanyNo);
+		model.addAttribute("encCompanyNo", encCompanyNo);
 		
 		// 위치 추출해서 넘겨주기
 		List<CompanyVO.LocationDetail> locations = companyLocationService.getLocaions(companyNo);
 		for(LocationVO.Detail item : locations) {
-			item.setEncLocationNo(cryptoComponent.encrypt(String.valueOf(item.getLocationNo())));
+			item.setEncLocationNo(cryptoComponent.encrypt(item.getLocationNo()));
 			item.setLocationNo(0);
 		}
 		

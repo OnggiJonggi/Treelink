@@ -93,7 +93,7 @@ public class MemberService{
 		
 		// 회원 식별번호 암호화
 		for(MemberVO.Detail member : searchResult.getList()) {
-			member.setEncryptedMemberNo(cryptoComponent.encrypt(String.valueOf(member.getMemberNo())));
+			member.setEncMemberNo(cryptoComponent.encrypt(member.getMemberNo()));
 			member.setMemberNo(0);
 		}
 		

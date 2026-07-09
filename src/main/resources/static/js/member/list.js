@@ -125,7 +125,7 @@ function renderMemberGrid(list) {
     const phone = (member.phone && member.phone.trim() !== '') ? member.phone : '-';
     const card = document.createElement('div');
     card.className = 'member-card';
-    card.dataset.enc = member.encryptedMemberNo;
+    card.dataset.enc = member.encMemberNo;
     card.setAttribute('onclick', 'goToDetail(this)');
 
     card.innerHTML = `

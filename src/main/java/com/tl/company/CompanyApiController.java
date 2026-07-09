@@ -74,7 +74,7 @@ public class CompanyApiController {
 		
 		// 식별번호 암호화
 		for(CompanyVO.Detail company : result.getList()) {
-			company.setEncryptedCompanyNo(cryptoComponent.encrypt(String.valueOf(company.getCompanyNo())));
+			company.setEncCompanyNo(cryptoComponent.encrypt(company.getCompanyNo()));
 			company.setCompanyNo(0);
 		}
 		
@@ -85,13 +85,13 @@ public class CompanyApiController {
 	 * 업체 수정
 	 * 관리자
 	 */
-	@PutMapping("/{encryptedCompanyNo}")
+	@PutMapping("/{encCompanyNo}")
 	public ResponseEntity<Void> updateCompany(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@Valid CompanyVO.Registor company) throws Exception{
 		
 		// 회사 식별번호 복호화
-		company.setCompanyNo(Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo)));
+		company.setCompanyNo(cryptoComponent.decrypt(encCompanyNo));
 		
 		companyService.updateCompany(company);
 		
@@ -103,15 +103,15 @@ public class CompanyApiController {
 	 * 회사 소개 생성/수정
 	 * 관리자
 	 */
-	@PutMapping("{encryptedCompanyNo}/intro")
+	@PutMapping("{encCompanyNo}/intro")
 	public ResponseEntity<Void> insertIntro(
 			@RequestParam String intro,
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails
 			) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
+		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		companyService.updateIntro(intro, companyNo, memberNo);
 		
@@ -122,12 +122,12 @@ public class CompanyApiController {
 	 * 업체 위치 추가
 	 * 관리자
 	 */
-	@PostMapping("{encryptedCompanyNo}/location")
+	@PostMapping("{encCompanyNo}/location")
 	public ResponseEntity<Void> insertLocation(
-			@PathVariable("encryptedCompanyNo") String encCompanyNo,
+			@PathVariable("encCompanyNo") String encCompanyNo,
 			@ModelAttribute @Valid CompanyVO.InsertLocation location) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		location.setCompanyNo(companyNo);
 		
 		companyLocationService.insertLocation(location);
@@ -138,13 +138,13 @@ public class CompanyApiController {
 	/**
 	 * 업체 위치 삭제
 	 */
-	@DeleteMapping("{encryptedCompanyNo}/location")
+	@DeleteMapping("{encCompanyNo}/location")
 	public ResponseEntity<Void> deleteLocation(
-			@PathVariable("encryptedCompanyNo") String encCompanyNo,
+			@PathVariable("encCompanyNo") String encCompanyNo,
 			@RequestParam String encLocationNo) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encCompanyNo));
-		int locationNo = Integer.valueOf(cryptoComponent.decrypt(encLocationNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
+		int locationNo = cryptoComponent.decrypt(encLocationNo);
 		
 		companyLocationService.deleteLocation(companyNo, locationNo);
 		

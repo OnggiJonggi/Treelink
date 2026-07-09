@@ -96,26 +96,26 @@ public class MemberController {
 	 * 회원 상세 정보 보기
 	 * 모든 회원
 	 */
-	@GetMapping({"/myinfo","/{encryptedMemberNo}"})
-	public String myInfo(@PathVariable(required = false) String encryptedMemberNo,
+	@GetMapping({"/myinfo","/{encMemberNo}"})
+	public String myInfo(@PathVariable(required = false) String encMemberNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			Model model) throws Exception {
 		
 		// 대상 회원 번호 추출
 		int memberNo;
-		if(encryptedMemberNo == null) {
-			memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		if(encMemberNo == null) {
+			memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		}else {
-			memberNo = Integer.valueOf(cryptoComponent.decrypt(encryptedMemberNo));
+			memberNo = cryptoComponent.decrypt(encMemberNo);
 		}
 		
 		MemberVO.Detail result = memberService.getBasicInfo(memberNo);
 		
 		// 대상 회원 번호 암호화
-		result.setEncryptedMemberNo(cryptoComponent.encrypt(String.valueOf(result.getMemberNo())));
+		result.setEncMemberNo(cryptoComponent.encrypt(result.getMemberNo()));
 		result.setMemberNo(0);
 		
-		model.addAttribute("encryptedMemberNo", encryptedMemberNo);
+		model.addAttribute("encMemberNo", encMemberNo);
 		model.addAttribute("memberDetail", result);
 		model.addAttribute("memberUpdate", new MemberVO.Update());
 		
@@ -131,7 +131,7 @@ public class MemberController {
 			HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		// 누구세요
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// 관리자 계정은 탈퇴가 안 되셔요
 		if(userDetails.getAuthorities().stream()

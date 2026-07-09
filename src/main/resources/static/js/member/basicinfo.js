@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-  const encryptedMemberNo = document.getElementById('encryptedMemberNo').value;
+  const encMemberNo = document.getElementById('encMemberNo').value;
 
   // ─── 연락처 초기값 세팅 ───
   const rawPhone = document.querySelector('.info-value[data-phone]');
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
     $.ajax({
       url: '/api/member/check-updatednickname',
       method: 'GET',
-      data: { nickname: nickname, encryptedMemberNo: encryptedMemberNo },
+      data: { nickname: nickname, encMemberNo: encMemberNo },
       success: function () {
         nicknameChecked = true;
         showFeedback('nicknameFeedback', '사용 가능한 별명입니다.', 'success');
@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!valid) return;
 
     const formData = {
-      encryptedMemberNo: encryptedMemberNo,
+      encMemberNo: encMemberNo,
       name: name,
       nickname: document.getElementById('inputNickname').value.trim(),
     };
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     $.ajax({
-      url: '/api/member/' + encryptedMemberNo + '/update',
+      url: '/api/member/' + encMemberNo + '/update',
       method: 'PUT',
       data: formData,
       success: function () {
@@ -226,11 +226,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       $.ajax({
-        url: '/api/member/' + encryptedMemberNo + '/update/status',
+        url: '/api/member/' + encMemberNo + '/update/status',
         method: 'PUT',
         data: {
           status: selected.value,
-          encryptedMemberNo: encryptedMemberNo
+          encMemberNo: encMemberNo
         },
         success: function () {
           location.reload();
@@ -268,11 +268,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
       $.ajax({
-        url: '/api/member/' + encryptedMemberNo + '/update/role',
+        url: '/api/member/' + encMemberNo + '/update/role',
         method: 'PUT',
         data: {
           role: selected.value,
-          encryptedMemberNo: encryptedMemberNo
+          encMemberNo: encMemberNo
         },
         success: function () {
           location.reload();

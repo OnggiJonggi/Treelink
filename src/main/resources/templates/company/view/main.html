@@ -23,7 +23,7 @@
          ============================ -->
     <div class="cv-header-area">
       <div class="cv-logo-wrap">
-        <img id="cv-company-logo" th:attr="data-logo-url=@{/file/company/{no}/logo(no=${companyDetail.encryptedCompanyNo})},
+        <img id="cv-company-logo" th:attr="data-logo-url=@{/file/company/{no}/logo(no=${companyDetail.encCompanyNo})},
                       data-fallback-url=@{/img/main-logo.png}" src="/img/main-logo.png" alt="업체 로고"
           class="cv-company-logo">
 
@@ -40,7 +40,7 @@
           <div id="cv-logo-confirm-area" style="display:none" class="cv-logo-confirm-area">
             <span id="cv-logo-file-name" class="cv-text-muted cv-text-sm"></span>
             <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="cv-logo-confirm-btn"
-              th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+              th:attr="data-enc-no=${companyDetail.encCompanyNo}">
               업로드 확인
             </button>
             <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="cv-logo-cancel-btn">취소</button>
@@ -53,27 +53,27 @@
            ============================ -->
       <nav class="cv-nav">
         <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'basic'} ? ' active' : ''"
-          th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}" id="cv-nav-basic">
+          th:attr="data-enc-no=${companyDetail.encCompanyNo}" id="cv-nav-basic">
           <i data-lucide="info"></i>
           기본 정보
         </button>
         <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'intro'} ? ' active' : ''"
-          th:attr="data-url=@{/company/{no}/intro(no=${companyDetail.encryptedCompanyNo})}" data-menu="intro">
+          th:attr="data-url=@{/company/{no}/intro(no=${companyDetail.encCompanyNo})}" data-menu="intro">
           <i data-lucide="file-text"></i>
           업체 소개
         </button>
         <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'evaluation'} ? ' active' : ''"
-          th:attr="data-url=@{/evaluation/{no}(no=${companyDetail.encryptedCompanyNo})}" data-menu="evaluation">
+          th:attr="data-url=@{/evaluation/{no}(no=${companyDetail.encCompanyNo})}" data-menu="evaluation">
           <i data-lucide="star"></i>
           평가 보기
         </button>
         <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'location'} ? ' active' : ''"
-          th:attr="data-url=@{/company/{no}/location(no=${companyDetail.encryptedCompanyNo})}" data-menu="location">
+          th:attr="data-url=@{/company/{no}/location(no=${companyDetail.encCompanyNo})}" data-menu="location">
           <i data-lucide="map-pin"></i>
           위치 보기
         </button>
         <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'management'} ? ' active' : ''"
-          th:attr="data-url=@{/company/{no}/management(no=${companyDetail.encryptedCompanyNo})}" data-menu="management">
+          th:attr="data-url=@{/company/{no}/management(no=${companyDetail.encCompanyNo})}" data-menu="management">
           <i data-lucide="layout-dashboard"></i>
           작업 현황
         </button>
@@ -213,7 +213,7 @@
 
               <div class="cv-form-btns">
                 <button type="button" class="cv-btn cv-btn-primary cv-btn-sm" id="cv-doc-upload-btn"
-                  th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+                  th:attr="data-enc-no=${companyDetail.encCompanyNo}">
                   업로드
                 </button>
                 <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="cv-doc-cancel-btn">취소</button>
@@ -225,8 +225,8 @@
           <div class="cv-doc-list-wrap" th:if="${companyDocs != null and not #lists.isEmpty(companyDocs)}">
             <h3 class="cv-section-title">서류 목록</h3>
             <div class="cv-doc-list">
-              <div class="cv-doc-item" th:each="doc : ${companyDocs}" th:attr="data-encrypted-file-no=${doc.encryptedFileNo},
-                            data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+              <div class="cv-doc-item" th:each="doc : ${companyDocs}" th:attr="data-enc-file-no=${doc.encFileNo},
+                            data-enc-no=${companyDetail.encCompanyNo}">
                 <div class="cv-doc-item-info">
                   <div class="cv-doc-name">
                     <i data-lucide="file"></i>
@@ -243,8 +243,8 @@
                     </span>
                   </div>
                 </div>
-                <button type="button" class="cv-btn cv-btn-danger cv-btn-xs cv-doc-delete-btn" th:attr="data-encrypted-file-no=${doc.encryptedFileNo},
-                                 data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+                <button type="button" class="cv-btn cv-btn-danger cv-btn-xs cv-doc-delete-btn" th:attr="data-enc-file-no=${doc.encFileNo},
+                                 data-enc-no=${companyDetail.encCompanyNo}">
                   <i data-lucide="trash-2"></i>
                   삭제
                 </button>
@@ -276,7 +276,7 @@
         </button>
       </div>
       <div class="cv-modal-body">
-        <form id="cv-edit-form" th:attr="data-encrypted-no=${companyDetail.encryptedCompanyNo}">
+        <form id="cv-edit-form" th:attr="data-enc-no=${companyDetail.encCompanyNo}">
 
           <!-- 업체명 -->
           <div class="cv-form-group">

@@ -53,8 +53,8 @@ public class CustomUserDetails implements UserDetails{
     }
     
     // 회원번호 꺼내기
-    public String getEncryptedMemberNo() {
-    	return memberDetail.getEncryptedMemberNo();
+    public String getEncMemberNo() {
+    	return memberDetail.getEncMemberNo();
     }
     
     // 계정 만료 여부

@@ -63,12 +63,12 @@ public class MemberApiController {
 	 * 회원 기본정보 수정
 	 * 관리자, 본인 계정
 	 */
-	@PutMapping("{encryptedMemberNo}/update")
+	@PutMapping("{encMemberNo}/update")
 	public ResponseEntity<Void> updateMemberBasicInfo(MemberVO.Update member,
-			@PathVariable String encryptedMemberNo) throws Exception{
+			@PathVariable String encMemberNo) throws Exception{
 		
 		// 회원 식별번호 추출
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(encryptedMemberNo));
+		int memberNo = cryptoComponent.decrypt(encMemberNo);
 		member.setMemberNo(memberNo);
 		
 		memberService.updateMemberBasicInfo(member);
@@ -82,16 +82,16 @@ public class MemberApiController {
 	 * 최고 관리자 : 본인 계정 권한 수정 불가능
 	 * @return : 200 정상, 403 권한 없음
 	 */
-	@PutMapping("{encryptedMemberNo}/update/role")
+	@PutMapping("{encMemberNo}/update/role")
 	public ResponseEntity<Void> updateMemberRole(@NotNull RoleEnum role,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable String encryptedMemberNo) throws Exception{
+			@PathVariable String encMemberNo) throws Exception{
 		
 		// 피수정 회원 식별번호
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(encryptedMemberNo));
+		int memberNo = cryptoComponent.decrypt(encMemberNo);
 		
 		// 수정 회원 식별번호
-		int myMemberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int myMemberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// 최고 관리자 권한은 죽었다 깨어나도 떽! 이야.
 		if(role==RoleEnum.SUPER_ADMIN) {
@@ -128,16 +128,16 @@ public class MemberApiController {
 	 * 관리자 : 본인 계정 수정 불가
 	 * @return : 200 정상, 403 권한 없음
 	 */
-	@PutMapping("{encryptedMemberNo}/update/status")
+	@PutMapping("{encMemberNo}/update/status")
 	public ResponseEntity<Void> updateMemberBasicInfo(@NotNull MemberStatusEnum status,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable String encryptedMemberNo) throws Exception{
+			@PathVariable String encMemberNo) throws Exception{
 		
 		// 피수정자 회원 식별번호 추출
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(encryptedMemberNo));
+		int memberNo = cryptoComponent.decrypt(encMemberNo);
 		
 		// 수정자 식별번호 추출
-		int myMemberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int myMemberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// 관리자 계정이면 본인 계정 수정 불가능
 		if(userDetails.getAuthorities().stream()
@@ -159,8 +159,8 @@ public class MemberApiController {
 	 * 별명 중복 확인(수정용)
 	 */
 	@GetMapping("check-updatednickname")
-	public ResponseEntity<Void> checkUpdatedNickname(String nickname, String encryptedMemberNo) throws Exception {
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(encryptedMemberNo));
+	public ResponseEntity<Void> checkUpdatedNickname(String nickname, String encMemberNo) throws Exception {
+		int memberNo = cryptoComponent.decrypt(encMemberNo);
 		memberService.checkUpdatedNickname(memberNo, nickname);
 		return ResponseEntity.ok().build();
 	}

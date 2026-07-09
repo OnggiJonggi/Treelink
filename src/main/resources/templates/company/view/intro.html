@@ -3,7 +3,7 @@
   <!-- ========================================
        업체 소개 조각
   ======================================== -->
-  <div id="intro-section" class="cv-info-card" th:attr="data-encrypted-no=${encryptedCompanyNo}">
+  <div id="intro-section" class="cv-info-card" th:attr="data-enc-no=${encCompanyNo}">
 
     <!-- 카드 헤더 -->
     <div class="cv-card-header">
@@ -75,8 +75,8 @@
       }
 
       /* ── 3. 렌더링된 소개문 내 이미지 src 교체 ── */
-      var encryptedNo = document.getElementById('intro-section')
-        .getAttribute('data-encrypted-no');
+      var encNo = document.getElementById('intro-section')
+        .getAttribute('data-enc-no');
 
       function loadIntroImages() {
         var contentDiv = document.getElementById('intro-rendered-content');
@@ -146,7 +146,7 @@
                 var blobImg = editorBody.find('img[src^="blob:"]').last();
 
                 $.ajax({
-                  url: '/file/company/' + encryptedNo + '/intro',
+                  url: '/file/company/' + encNo + '/intro',
                   type: 'POST',
                   data: formData,
                   processData: false,
@@ -154,7 +154,7 @@
                   success: function (changedName, status, xhr) {
                     if (xhr.status !== 200 || !changedName) return;
 
-                    var ourUrl = '/file/company/' + encryptedNo + '/intro/' + changedName;
+                    var ourUrl = '/file/company/' + encNo + '/intro/' + changedName;
 
                     fetch(ourUrl)
                       .then(function (res) {
@@ -210,12 +210,12 @@
         var introHtml = $('#intro-summernote').summernote('code');
 
         $.ajax({
-          url: '/api/company/' + encryptedNo + '/intro',
+          url: '/api/company/' + encNo + '/intro',
           type: 'PUT',
           data: { intro: introHtml },
           success: function (res, status, xhr) {
             if (xhr.status === 200) {
-              fetchFragment('/company/' + encryptedNo + '/intro', 'intro');
+              fetchFragment('/company/' + encNo + '/intro', 'intro');
             }
           },
           error: function (xhr) {
@@ -230,14 +230,14 @@
         formData.append('file', file);
 
         $.ajax({
-          url: '/file/company/' + encryptedNo + '/intro',
+          url: '/file/company/' + encNo + '/intro',
           type: 'POST',
           data: formData,
           processData: false,
           contentType: false,
           success: function (changedName, status, xhr) {
             if (xhr.status === 200 && changedName) {
-              var imgSrc = '/file/company/' + encryptedNo + '/intro/' + changedName;
+              var imgSrc = '/file/company/' + encNo + '/intro/' + changedName;
               $('#intro-summernote').summernote(
                 'insertImage', imgSrc,
                 function (img) {

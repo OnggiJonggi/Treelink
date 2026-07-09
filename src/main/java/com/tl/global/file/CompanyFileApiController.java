@@ -33,14 +33,14 @@ public class CompanyFileApiController {
 	 * 업체 로고 등록
 	 * 관리자
 	 */
-	@PostMapping("{encryptedCompanyNo}/logo")
+	@PostMapping("{encCompanyNo}/logo")
 	public ResponseEntity<Void> getLogo(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@RequestParam MultipartFile file) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
+		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// MultipartFile을 FileDataVO로 변환
 		FileDataVO fileData = FileDataVO.builder()
@@ -59,13 +59,13 @@ public class CompanyFileApiController {
 	 * 관리자
 	 * 전체 : 활성화된 업체 로고만 조회 가능
 	 */
-	@GetMapping("{encryptedCompanyNo}/logo")
+	@GetMapping("{encCompanyNo}/logo")
 	public ResponseEntity<String> getImage(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails) throws Exception{
 		
 		// 업체 식별번호 복호화
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		String url;
 		if(userDetails==null ||
@@ -87,16 +87,16 @@ public class CompanyFileApiController {
 	 * 업체 서류 등록
 	 * 관리자
 	 */
-	@PostMapping("{encryptedCompanyNo}/doc")
+	@PostMapping("{encCompanyNo}/doc")
 	public ResponseEntity<Void> docRegistration(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@RequestParam MultipartFile file,
 			@RequestParam String docType,
 			@RequestParam(required = false) LocalDate expireOn,
 			@AuthenticationPrincipal CustomUserDetails userDetails
 			) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		// MultipartFile을 FileDataVO로 변환
 		FileDataVO fileData = FileDataVO.builder()
@@ -107,7 +107,7 @@ public class CompanyFileApiController {
 		
 		// 등록 중...
 		CompanyFileVO.HandOver handOver = CompanyFileVO.HandOver.builder()
-				.memberNo(Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo())))
+				.memberNo(cryptoComponent.decrypt(userDetails.getEncMemberNo()))
 				.companyNo(companyNo)
 				.file(fileData)
 				.docType(docType)
@@ -121,13 +121,13 @@ public class CompanyFileApiController {
 	 * 업체 서류 조회
 	 * 관리자
 	 */
-	@GetMapping("{encryptedCompanyNo}/doc/{encryptedDocNo}")
+	@GetMapping("{encCompanyNo}/doc/{encDocNo}")
 	public ResponseEntity<String> getDoc(
-			@PathVariable String encryptedCompanyNo,
-			@PathVariable String encryptedDocNo) throws Exception{
+			@PathVariable String encCompanyNo,
+			@PathVariable String encDocNo) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
-		int docNo = Integer.valueOf(cryptoComponent.decrypt(encryptedDocNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
+		int docNo = cryptoComponent.decrypt(encDocNo);
 		
 		String url = companyFileService.getFile(companyNo, docNo);
 
@@ -139,18 +139,18 @@ public class CompanyFileApiController {
 	 * 관리자
 	 * 
 	 * @param CompanyUuid
-	 * @param encryptedDocNo
+	 * @param encDocNo
 	 * @return 204
 	 */
-	@DeleteMapping("{encryptedCompanyNo}/doc/{encryptedDocNo}")
+	@DeleteMapping("{encCompanyNo}/doc/{encDocNo}")
 	public ResponseEntity<Void> deleteDoc(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable String encryptedCompanyNo,
-			@PathVariable String encryptedDocNo) throws Exception{
+			@PathVariable String encCompanyNo,
+			@PathVariable String encDocNo) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
-		int docNo = Integer.valueOf(cryptoComponent.decrypt(encryptedDocNo));
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
+		int docNo = cryptoComponent.decrypt(encDocNo);
+		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		companyFileService.deleteDoc(companyNo, docNo, memberNo);
 		
@@ -161,14 +161,14 @@ public class CompanyFileApiController {
 	 * 업체 소개문 summernote이미지 삽입
 	 * 관리자
 	 */
-	@PostMapping("{encryptedCompanyNo}/intro")
+	@PostMapping("{encCompanyNo}/intro")
 	public ResponseEntity<String> insertIntroImage(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@RequestParam MultipartFile file,
 			@AuthenticationPrincipal CustomUserDetails userDetails) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
-		int memberNo = Integer.valueOf(cryptoComponent.decrypt(userDetails.getEncryptedMemberNo()));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
+		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 
 		// MultipartFile을 FileDataVO로 변환
 		FileDataVO fileData = FileDataVO.builder()
@@ -187,13 +187,13 @@ public class CompanyFileApiController {
 	 * 소개문 이미지 조회
 	 * 관리자 : 비활성된 업체 조회 가능
 	 */
-	@GetMapping("{encryptedCompanyNo}/intro/{changedName}")
+	@GetMapping("{encCompanyNo}/intro/{changedName}")
 	public ResponseEntity<String> getIntroImage(
-			@PathVariable String encryptedCompanyNo,
+			@PathVariable String encCompanyNo,
 			@PathVariable String changedName,
 			@AuthenticationPrincipal CustomUserDetails userDetails) throws Exception{
 		
-		int companyNo = Integer.valueOf(cryptoComponent.decrypt(encryptedCompanyNo));
+		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		// 조회
 		String url;

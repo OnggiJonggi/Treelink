@@ -11,7 +11,7 @@
 
     <!-- ADMIN 전용: 위치 추가 영역 (숨김) -->
     <div sec:authorize="hasRole('ADMIN')" id="location-add-form-area" style="display:none"
-      class="location-add-form-area" th:attr="data-encrypted-no=${encryptedCompanyNo}">
+      class="location-add-form-area" th:attr="data-enc-no=${encCompanyNo}">
       <div class="location-add-form-inner">
 
         <div class="cv-form-group">
@@ -42,8 +42,8 @@
     <!-- 위치 목록 -->
     <div id="location-list" class="location-list">
 
-      <div class="location-card" th:each="loc : ${locations}" th:attr="data-encrypted-location-no=${loc.encLocationNo},
-                  data-encrypted-no=${encryptedCompanyNo}">
+      <div class="location-card" th:each="loc : ${locations}" th:attr="data-enc-location-no=${loc.encLocationNo},
+                  data-enc-no=${encCompanyNo}">
 
         <div class="location-card-header">
           <div class="location-info">
@@ -52,8 +52,8 @@
           </div>
 
           <!-- ADMIN 전용: 삭제 -->
-          <button sec:authorize="hasRole('ADMIN')" type="button" class="location-delete-btn" title="위치 삭제" th:attr="data-encrypted-location-no=${loc.encLocationNo},
-                         data-encrypted-no=${encryptedCompanyNo}">
+          <button sec:authorize="hasRole('ADMIN')" type="button" class="location-delete-btn" title="위치 삭제" th:attr="data-enc-location-no=${loc.encLocationNo},
+                         data-enc-no=${encCompanyNo}">
             🗑️
           </button>
         </div>
@@ -167,16 +167,16 @@
           btn.addEventListener('click', function () {
             if (!confirm('이 위치를 삭제하시겠습니까?')) return;
 
-            var encryptedNo = btn.getAttribute('data-encrypted-no');
-            var encLocationNo = btn.getAttribute('data-encrypted-location-no');
+            var encNo = btn.getAttribute('data-enc-no');
+            var encLocationNo = btn.getAttribute('data-enc-location-no');
 
             $.ajax({
-              url: '/api/company/' + encryptedNo + '/location',
+              url: '/api/company/' + encNo + '/location',
               type: 'DELETE',
               data: { encLocationNo: encLocationNo },
               success: function (res, status, xhr) {
                 if (xhr.status === 200) {
-                  refreshLocationFragment(encryptedNo);
+                  refreshLocationFragment(encNo);
                 }
               },
               error: function (xhr) {
@@ -289,7 +289,7 @@
           if (!valid) return;
 
           var formArea = document.getElementById('location-add-form-area');
-          var encryptedNo = formArea.getAttribute('data-encrypted-no');
+          var encNo = formArea.getAttribute('data-enc-no');
 
           var params = new URLSearchParams();
           params.append('name', name);
@@ -300,7 +300,7 @@
           params.append('sigungu', currentGeocodeResult.sigungu);
 
           $.ajax({
-            url: '/api/company/' + encryptedNo + '/location',
+            url: '/api/company/' + encNo + '/location',
             type: 'POST',
             data: params.toString(),
             contentType: 'application/x-www-form-urlencoded',
@@ -308,7 +308,7 @@
               if (xhr.status === 200) {
                 resetLocationAddForm();
                 formArea.style.display = 'none';
-                refreshLocationFragment(encryptedNo);
+                refreshLocationFragment(encNo);
               }
             },
             error: function (xhr) {
@@ -321,8 +321,8 @@
       /* =============================================
          조각 재요청 (메인 페이지 전역 fetchFragment 재사용)
       ============================================= */
-      function refreshLocationFragment(encryptedNo) {
-        var url = '/company/' + encryptedNo + '/location';
+      function refreshLocationFragment(encNo) {
+        var url = '/company/' + encNo + '/location';
         if (typeof fetchFragment === 'function') {
           fetchFragment(url, 'location');
         } else {

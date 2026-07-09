@@ -184,12 +184,12 @@ function initLogoUpload() {
     const file = fileInput.files[0];
     if (!file) return;
 
-    const encryptedNo = confirmBtn.getAttribute('data-encrypted-no');
+    const encNo = confirmBtn.getAttribute('data-enc-no');
     const formData = new FormData();
     formData.append('file', file);
 
     $.ajax({
-      url: '/file/company/' + encryptedNo + '/logo',
+      url: '/file/company/' + encNo + '/logo',
       type: 'POST',
       data: formData,
       processData: false,
@@ -278,7 +278,7 @@ function initEditModal() {
   submitBtn.addEventListener('click', function () {
     if (!validateEditForm()) return;
 
-    const encryptedNo = form.getAttribute('data-encrypted-no');
+    const encNo = form.getAttribute('data-enc-no');
 
     const year = document.getElementById('cv-edit-year').value.padStart(4, '0');
     const month = String(document.getElementById('cv-edit-month').value).padStart(2, '0');
@@ -306,7 +306,7 @@ function initEditModal() {
     }
 
     $.ajax({
-      url: '/api/company/' + encryptedNo,
+      url: '/api/company/' + encNo,
       type: 'PUT',
       data: params.toString(),
       contentType: 'application/x-www-form-urlencoded',
@@ -450,7 +450,7 @@ function initDocRegister() {
       }
     }
 
-    const encryptedNo = uploadBtn.getAttribute('data-encrypted-no');
+    const encNo = uploadBtn.getAttribute('data-enc-no');
     const formData = new FormData();
     formData.append('file', file);
     formData.append('docType', docType);
@@ -472,7 +472,7 @@ function initDocRegister() {
     }
 
     $.ajax({
-      url: '/file/company/' + encryptedNo + '/doc',
+      url: '/file/company/' + encNo + '/doc',
       type: 'POST',
       data: formData,
       processData: false,
@@ -519,9 +519,9 @@ function initDocList() {
       // 삭제 버튼 클릭은 이 이벤트가 처리하지 않음
       if (e.target.closest('.cv-doc-delete-btn')) return;
 
-      const encryptedFileNo = item.getAttribute('data-encrypted-file-no');
-      const encryptedNo = item.getAttribute('data-encrypted-no');
-      openOrDownloadDoc(encryptedNo, encryptedFileNo);
+      const encFileNo = item.getAttribute('data-enc-file-no');
+      const encNo = item.getAttribute('data-enc-no');
+      openOrDownloadDoc(encNo, encFileNo);
     });
   });
 
@@ -529,13 +529,13 @@ function initDocList() {
   document.querySelectorAll('.cv-doc-delete-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
       e.stopPropagation();
-      const encryptedFileNo = btn.getAttribute('data-encrypted-file-no');
-      const encryptedNo = btn.getAttribute('data-encrypted-no');
+      const encFileNo = btn.getAttribute('data-enc-file-no');
+      const encNo = btn.getAttribute('data-enc-no');
 
       if (!confirm('이 서류를 삭제하시겠습니까?')) return;
 
       $.ajax({
-        url: '/file/company/' + encryptedNo + '/doc/' + encryptedFileNo,
+        url: '/file/company/' + encNo + '/doc/' + encFileNo,
         type: 'DELETE',
         success: function () {
           location.reload();
@@ -548,8 +548,8 @@ function initDocList() {
   });
 }
 
-function openOrDownloadDoc(encryptedNo, encryptedFileNo) {
-  fetch('/file/company/' + encryptedNo + '/doc/' + encryptedFileNo)
+function openOrDownloadDoc(encNo, encFileNo) {
+  fetch('/file/company/' + encNo + '/doc/' + encFileNo)
     .then(function (res) {
       if (!res.ok) throw new Error('request failed');
       return res.text();
