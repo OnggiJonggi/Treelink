@@ -12,7 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.tl.company.CompanyStatusEnum;
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
-import com.tl.global.file.CompanyFileVO.HandOver;
+import com.tl.global.file.CompanyDocVO.HandOver;
 import com.tl.global.file.component.DocTypeEnum;
 import com.tl.global.file.component.FileComponent;
 import com.tl.global.file.component.FileRegexp;
@@ -26,8 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class CompanyFileService {
-	private final CompanyFileMapper companyFileMapper;
+public class CompanyDocService {
+	private final CompanyDocMapper companyDocMapper;
 	private final FileMapper fileMapper;
 	private final FileComponent fileComponent;
 
@@ -71,13 +71,13 @@ public class CompanyFileService {
 				request.getFile(), request.getMemberNo(), RootSavePathEnum.COMPANY_DOC);
 		fileComponent.save(handOver,
 				fileNo ->{
-					CompanyFileVO.Insert insert = CompanyFileVO.Insert.builder()
+					CompanyDocVO.Insert insert = CompanyDocVO.Insert.builder()
 							.companyNo(request.getMemberNo())
 							.fileNo(fileNo)
 							.docType(request.getDocType())
 							.expireOn(request.getExpireOn())
 							.build();
-					companyFileMapper.insertCompanyDoc(insert);
+					companyDocMapper.insertCompanyDoc(insert);
 				}
 			);
 		
@@ -85,23 +85,18 @@ public class CompanyFileService {
 
 	/**
 	 * 업체 서류 메타데이터 조회
-	 * 
-	 * @param companyNo
-	 * @return 회사 서류들
 	 */
-	public List<FileInfoVO.Detail> getInfo(int companyNo) {
-		return companyFileMapper.selectInfo(companyNo);
+	public List<CompanyDocVO.Detail> getInfo(int companyNo) {
+		return companyDocMapper.selectInfo(companyNo);
 	}
 
 	/**
 	 * 업체 서류 파일 보기
-	 * @param companyNo
-	 * @param docNo
 	 */
-	public String getFile(int companyNo, int docNo) {
+	public String getFile(int companyNo, int fileNo) {
 		
 		// 원본 이름, 경로, MIME 얻어내기
-		FileInfoVO.Basic basic = companyFileMapper.selectBasic(companyNo, docNo);
+		FileInfoVO.Basic basic = companyDocMapper.selectBasic(companyNo, fileNo);
 	    if (basic == null)
 	    	throw new CustomException(ErrorCodeEnum.FILE_INFO_NOT_FOUND);
 		
@@ -113,16 +108,14 @@ public class CompanyFileService {
 
 	/**
 	 * 파일 삭제
+	 * 
 	 * 상태값 DELETED로 변경, FILE_HISTORY 기록
-	 * @param companyUuid
-	 * @param docNo
-	 * @param memberNo
 	 */
 	@Transactional
-	public void deleteDoc(int companyNo, int docNo, int memberNo) {
+	public void deleteDoc(int companyNo, int fileNo, int memberNo) {
 		
 		// 기존 상태 조회
-		FileInfoVO.History history = fileMapper.selectInfoForHistory(docNo);
+		FileInfoVO.History history = fileMapper.selectInfoForHistory(fileNo);
 		
 		// 파일 번호 null로 두기
 		history.setFileNo(null);
@@ -132,7 +125,7 @@ public class CompanyFileService {
 		history.setActionBy(memberNo);
 		
 		// 지워
-		companyFileMapper.deleteDoc(docNo);
+		companyDocMapper.deleteDoc(fileNo);
 		fileMapper.insertHistory(history);
 	}
 
@@ -147,7 +140,7 @@ public class CompanyFileService {
 			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// DB에 이미 로고 파일이 있나요?
-		FileInfoVO.History oldHistory = companyFileMapper.selectInfoForLogoHistory(companyNo);
+		FileInfoVO.History oldHistory = companyDocMapper.selectInfoForLogoHistory(companyNo);
 		
 		// 아니삣삐야지금로고파일이있다고한거니??있으면밀어버리고새로넣어야지모하는거야
 		if(oldHistory != null) {
@@ -160,7 +153,7 @@ public class CompanyFileService {
 			if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 			
 			// 지워.
-			int result2 = companyFileMapper.deleteLogo(oldHistory.getFileNo());
+			int result2 = companyDocMapper.deleteLogo(oldHistory.getFileNo());
 			if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		
@@ -169,13 +162,13 @@ public class CompanyFileService {
 				file, memberNo, RootSavePathEnum.COMPANY_LOGO);
 		fileComponent.save(handOver,
 				fileNo ->{
-					CompanyFileVO.Insert insert = CompanyFileVO.Insert.builder()
+					CompanyDocVO.Insert insert = CompanyDocVO.Insert.builder()
 							.companyNo(companyNo)
 							.fileNo(fileNo)
 							.docType(DocTypeEnum.LOGO.name())
 							.expireOn(null)
 							.build();
-					companyFileMapper.insertCompanyDoc(insert);
+					companyDocMapper.insertCompanyDoc(insert);
 				}
 			);
 	}
@@ -184,18 +177,15 @@ public class CompanyFileService {
 	/**
 	 * 업체 로고 조회
 	 */
-	public String getSavePath(int companyNo, boolean isAdmin) {
+	public String getSavePath(int companyNo, boolean isAll) {
 		
-		FileInfoVO.Basic basic = companyFileMapper.selectLogoSavePath(companyNo, isAdmin);
+		FileInfoVO.Basic basic = companyDocMapper.selectLogoSavePath(companyNo, isAll);
 		
 		// 뭐야 없잖아...
-		if(basic==null || basic.getSavePath()==null)
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		if(basic==null || basic.getSavePath()==null) return null;
 		
 		// S3에서 url가져오기
-		String url = fileComponent.getSavedUrl(basic);
-		
-		return url;
+		return fileComponent.getSavedUrl(basic);
 	}
 
 	/**
@@ -218,13 +208,13 @@ public class CompanyFileService {
 				file, memberNo, RootSavePathEnum.COMPANY_INTRO);
 		String changeName = fileComponent.save(handOver,
 				fileNo ->{
-					CompanyFileVO.Insert insert = CompanyFileVO.Insert.builder()
+					CompanyDocVO.Insert insert = CompanyDocVO.Insert.builder()
 							.companyNo(companyNo)
 							.fileNo(fileNo)
 							.docType(DocTypeEnum.INTRO.name())
 							.expireOn(null)
 							.build();
-					companyFileMapper.insertCompanyDoc(insert);
+					companyDocMapper.insertCompanyDoc(insert);
 				}
 			);
 		
@@ -237,7 +227,7 @@ public class CompanyFileService {
 	public String getIntroImage(int companyNo, String changedName, CompanyStatusEnum status) {
 		
 		// 원본 이름, 경로, MIME 얻어내기
-		FileInfoVO.Basic basic = companyFileMapper.selectIntroImage(companyNo, changedName, status);
+		FileInfoVO.Basic basic = companyDocMapper.selectIntroImage(companyNo, changedName, status);
 	    if (basic == null)
 	    	throw new CustomException(ErrorCodeEnum.FILE_INFO_NOT_FOUND);
 		

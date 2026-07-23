@@ -12,6 +12,8 @@
   <link rel="stylesheet" th:href="@{/css/company/view/location.css}">
   <link rel="stylesheet" th:href="@{/css/company/view/main.css}">
   <link rel="stylesheet" th:href="@{/css/company/view/intro.css}">
+  <link rel="stylesheet" th:href="@{/css/company/view/eval.css}">
+  <link rel="stylesheet" th:href="@{/css/company/view/management.css}">
 </head>
 
 <body>
@@ -62,10 +64,10 @@
           <i data-lucide="file-text"></i>
           업체 소개
         </button>
-        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'evaluation'} ? ' active' : ''"
-          th:attr="data-url=@{/evaluation/{no}(no=${companyDetail.encCompanyNo})}" data-menu="evaluation">
+        <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'eval'} ? ' active' : ''"
+          th:attr="data-url=@{/company/{no}/eval(no=${companyDetail.encCompanyNo})}" data-menu="eval">
           <i data-lucide="star"></i>
-          평가 보기
+          평가 조회
         </button>
         <button type="button" class="cv-nav-item" th:classappend="${companyMenu == 'location'} ? ' active' : ''"
           th:attr="data-url=@{/company/{no}/location(no=${companyDetail.encCompanyNo})}" data-menu="location">

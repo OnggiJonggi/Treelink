@@ -4,13 +4,16 @@ import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-public class CompanyFileVO {
+public class CompanyDocVO {
 	
 	@NoArgsConstructor
 	@AllArgsConstructor
@@ -39,5 +42,29 @@ public class CompanyFileVO {
 		
 		@DateTimeFormat(pattern = "yyyy-MM-dd")
 		private LocalDate expireOn;
+	}
+	
+	
+	/**
+	 * COMPANY_DOC 조회용
+	 */
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Data
+	@Builder
+	@ToString
+	public static class Detail{
+		
+		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+		private int fileNo;
+		private String encFileNo;
+		
+		private String originalName;
+		private long fileSize;
+		
+		@DateTimeFormat(pattern = "yyyy-MM-dd")
+		private LocalDate expireOn;
+		
+		private String docType;
 	}
 }

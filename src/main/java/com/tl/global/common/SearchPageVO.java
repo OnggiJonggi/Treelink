@@ -6,8 +6,8 @@ package com.tl.global.common;
  */
 public class SearchPageVO {
     private int page = 1;
-    // int startRow;
-    // int endRow;
+    // int startRow; - getter만 존재
+    // int endRow; - getter만 존재
 
     public int getPage() {
     	return page;

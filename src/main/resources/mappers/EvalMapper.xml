@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tl.company.EvalMapper">
+
+  <resultMap id="EvalDetailMap" type="EvalDetail" autoMapping="true">
+    <id property="evaluationNo" column="EVALUATION_NO"/>
+
+    <collection property="scores" ofType="EvalScoreDetail">
+      <id property="itemNo" column="ITEM_NO"/>
+      <result property="score" column="SCORE"/>
+      <result property="reson" column="RESON"/>
+      <result property="field" column="FIELD"/>
+    </collection>
+
+    <collection property="files" ofType="EvalDocDetail">
+      <id property="fileNo" column="FILE_NO"/>
+      <result property="changedName" column="CHANGED_NAME"/>
+      <result property="originalName" column="ORIGINAL_NAME"/>
+      <result property="fileSize" column="FILE_SIZE"/>
+      <result property="memo" column="MEMO"/>
+    </collection>
+  </resultMap>
+  
+  <resultMap id="EvalHistoryDetailMap" type="EvalHistoryDetail" autoMapping="true">
+    <id property="historyNo" column="HISTORY_NO"/>
+    <result property="evaluationNo" column="EVALUATION_NO"/>
+    <result property="evaluateBy" column="EVALUATE_BY"/>
+    <result property="revisionNo" column="REVISION_NO"/>
+    <result property="updateAt" column="UPDATE_AT"/>
+    <result property="actionReson" column="ACTION_RESON"/>
+    <result property="nickname" column="NICKNAME"/>
+
+    <collection property="scores" ofType="EvalScoreDetail">
+      <id property="itemNo" column="ITEM_NO"/>
+      <result property="score" column="SCORE"/>
+      <result property="reson" column="RESON"/>
+      <result property="field" column="FIELD"/>
+    </collection>
+
+    <collection property="files" ofType="EvalDocDetail">
+      <id property="fileNo" column="FILE_NO"/>
+      <result property="changedName" column="CHANGED_NAME"/>
+      <result property="originalName" column="ORIGINAL_NAME"/>
+      <result property="fileSize" column="FILE_SIZE"/>
+      <result property="memo" column="MEMO"/>
+    </collection>
+  </resultMap>
+
+
+  <select id="selectEval" resultMap="EvalDetailMap">
+    select
+      E.EVALUATION_NO
+      ,ES.SCORE
+      ,ES.RESON
+      ,EI.ITEM_NO
+      ,EI.FIELD
+      ,ED.MEMO
+      ,FI.FILE_NO
+      ,FI.FILE_SIZE
+      ,FI.ORIGINAL_NAME
+    from EVALUATION_SCORE ES
+    inner join EVALUATION_ITEM EI on (EI.ITEM_NO = ES.ITEM_NO)
+    inner join EVALUATION E on (E.EVALUATION_NO = ES.EVALUATION_NO)
+    inner join EVALUATION_HISTORY EH on (EH.EVALUATION_NO = E.EVALUATION_NO
+      and EH.HISTORY_NO = (
+        select nvl(max(EH2.HISTORY_NO), 0)
+        from EVALUATION_HISTORY EH2
+        where EH2.EVALUATION_NO = E.EVALUATION_NO
+      ))
+    left join EVALUATION_DOC ED on (ED.HISTORY_NO = EH.HISTORY_NO)
+    left join FILE_INFO FI on (FI.FILE_NO = ED.FILE_NO)
+    <if test="!isAll">
+      inner join COMPANY C on (C.COMPANY_NO = E.EVALUATION_NO)
+    </if>
+    where E.EVALUATION_NO = #{companyNo}
+    <if test="!isAll">
+      and C.STATUS = 'ACTIVE'
+    </if>
+    order by EI.ITEM_NO asc
+  </select>
+
+  <select id="selectRevisionNo" resultType="_int" parameterType="_int">
+    select nvl(max(REVISION_NO), 0)
+    from EVALUATION_HISTORY
+    where EVALUATION_NO = #{evaluationNo}
+  </select>
+
+  <insert id="insert" parameterType="_int">
+    insert into EVALUATION(EVALUATION_NO) values(#{evaluationNo})
+  </insert>
+
+  <insert id="insertScore" parameterType="EvalInsert">
+    insert all
+      <foreach collection="scores" item="item">
+        into EVALUATION_SCORE(EVALUATION_NO, ITEM_NO, SCORE, RESON)
+        values (
+          #{evaluationNo}
+          ,#{item.itemNo}
+          ,#{item.score}
+          ,#{item.reson}
+        )
+      </foreach>
+    select 1 from dual
+  </insert>
+
+  <insert id="insertHistory" parameterType="EvalInsert"
+    useGeneratedKeys="true"
+    keyProperty="historyNo"
+    keyColumn="HISTORY_NO">
+    insert into EVALUATION_HISTORY(EVALUATION_NO, EVALUATE_BY, REVISION_NO, ACTION_RESON)
+      values (#{evaluationNo}, #{actionBy}, #{revisionNo}, #{actionReson})
+  </insert>
+
+  <insert id="insertHistoryScore" parameterType="EvalInsert">
+    insert all
+      <foreach collection="scores" item="item">
+        into EVALUATION_SCORE_HISTORY(HISTORY_NO, ITEM_NO, SCORE, RESON)
+        values (
+          #{historyNo}
+          ,#{item.itemNo}
+          ,#{item.score}
+          ,#{item.reson}
+        )
+      </foreach>
+    select 1 from dual
+  </insert>
+
+  <update id="update" parameterType="EvalInsert">
+    update EVALUATION_SCORE
+    set
+      SCORE = #{insertScore.score}
+      ,RESON = #{insertScore.reson}
+    where EVALUATION_NO = #{evaluationNo}
+    and ITEM_NO = (
+      select ITEM_NO
+      from EVALUATION_ITEM
+      where FIELD = #{insertScore.field}
+    )
+  </update>
+
+  <select id="selectHistoryList" parameterType="EvalSearch" resultMap="EvalHistoryDetailMap">
+    select
+      EH.REVISION_NO
+      ,EH.UPDATE_AT
+      ,EH.ACTION_RESON
+      ,M.NICKNAME
+    from EVALUATION_HISTORY EH
+    left join MEMBER M on (M.MEMBER_NO = EH.EVALUATE_BY)
+    <if test="!isAll">
+      left join EVALUATION E on (E.EVALUATION_NO = EH.EVALUATION_NO)
+      left join COMPANY C on (C.COMPANY_NO = E.EVALUATION_NO)
+    </if>
+    where EH.EVALUATION_NO = #{evaluationNo}
+    and EH.REVISION_NO between #{startRow} and #{endRow}
+    <if test="!isAll">
+      and C.STATUS = 'ACTIVE'
+    </if>
+    order by EH.REVISION_NO DESC
+  </select>
+
+  <select id="selectHistoryTotalCount" parameterType="EvalSearch" resultType="_int">
+    select count(*)
+    from EVALUATION_HISTORY EH
+    <if test="!isAll">
+      left join EVALUATION E on (E.EVALUATION_NO = EH.EVALUATION_NO)
+      left join COMPANY C on (C.COMPANY_NO = E.EVALUATION_NO)
+    </if>
+    where EH.EVALUATION_NO = #{evaluationNo}
+    <if test="!isAll">
+      and C.STATUS = 'ACTIVE'
+    </if>
+  </select>
+  
+  <select id="selectRevision" resultMap="EvalHistoryDetailMap">
+    select
+      TARGET.HISTORY_NO
+      ,TARGET.REVISION_NO
+      ,TARGET.UPDATE_AT
+      ,TARGET.ACTION_RESON
+      ,TARGET.NICKNAME
+      ,ESH_ITEM.SCORE
+      ,ESH_ITEM.RESON
+      ,ESH_ITEM.ITEM_NO
+      ,ESH_ITEM.FIELD
+      ,ED.MEMO
+      ,FI.FILE_NO
+      ,FI.ORIGINAL_NAME
+      ,FI.FILE_SIZE
+    from (
+      select
+        EH.HISTORY_NO
+        ,EH.REVISION_NO
+        ,EH.UPDATE_AT
+        ,EH.ACTION_RESON
+        ,M.NICKNAME
+        ,row_number() over (order by EH.REVISION_NO desc) as HRN
+      from EVALUATION_HISTORY EH
+      left join MEMBER M on (M.MEMBER_NO = EH.EVALUATE_BY)
+      <if test="!isAll">
+        left join EVALUATION E on (E.EVALUATION_NO = EH.EVALUATION_NO)
+        left join COMPANY C on (C.COMPANY_NO = E.EVALUATION_NO)
+      </if>
+      where EH.EVALUATION_NO = #{companyNo}
+      and EH.REVISION_NO &lt;= #{revisionNo}
+      <if test="!isAll">
+        and C.STATUS = 'ACTIVE'
+      </if>
+    ) TARGET
+    inner join (
+      select
+        ESH2.SCORE
+        ,ESH2.RESON
+        ,EI2.ITEM_NO
+        ,EI2.FIELD
+        ,EH2.HISTORY_NO
+        ,row_number() over (
+            partition by ESH2.ITEM_NO
+            order by EH2.REVISION_NO desc
+          ) as RN
+      from EVALUATION_HISTORY EH2
+      inner join EVALUATION_SCORE_HISTORY ESH2 on (ESH2.HISTORY_NO = EH2.HISTORY_NO)
+      inner join EVALUATION_ITEM EI2 on (EI2.ITEM_NO = ESH2.ITEM_NO)
+      where EH2.EVALUATION_NO = #{companyNo}
+      and EH2.REVISION_NO &lt;= #{revisionNo}
+    ) ESH_ITEM on (ESH_ITEM.RN = 1)
+    left join EVALUATION_DOC ED on (ED.HISTORY_NO = TARGET.HISTORY_NO)
+    left join FILE_INFO FI on (FI.FILE_NO = ED.FILE_NO)
+    where TARGET.HRN = 1
+  </select>
+
+  <select id="selectHistoryNo" parameterType="_int" resultType="_int">
+    select nvl(max(HISTORY_NO), 0)
+    from EVALUATION_HISTORY
+    where EVALUATION_NO = #{evaluationNo}
+  </select>
+
+  <select id="selectOldScores" parameterType="_int" resultType="EvalScoreDetail">
+    select
+      EI.ITEM_NO
+      ,EI.FIELD
+      ,ES.SCORE
+      ,ES.RESON
+    from EVALUATION_SCORE ES
+    inner join EVALUATION_ITEM EI on (ES.ITEM_NO = EI.ITEM_NO)
+    where ES.EVALUATION_NO = #{evaluationNo}
+  </select>
+
+</mapper>

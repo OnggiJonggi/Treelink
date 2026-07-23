@@ -8,23 +8,23 @@ import org.apache.ibatis.annotations.Param;
 import com.tl.company.CompanyStatusEnum;
 
 @Mapper
-public interface CompanyFileMapper {
+public interface CompanyDocMapper {
 
-	public List<FileInfoVO.Detail> selectInfo(int companyNo);
+	public List<CompanyDocVO.Detail> selectInfo(int companyNo);
 	
 	public int deleteLogoInfo(int companyNo);
 	
-	public int insertCompanyDoc(CompanyFileVO.Insert fileInfo);
+	public int insertCompanyDoc(CompanyDocVO.Insert fileInfo);
 	
 	public FileInfoVO.Basic selectBasic(
 			@Param("companyNo") int companyNo,
-			@Param("docNo") int docNo);
+			@Param("fileNo") int fileNo);
 
 	public int deleteDoc(int fileNo);
 
 	public FileInfoVO.Basic selectLogoSavePath(
 			@Param("companyNo")int companyNo,
-			@Param("isAdmin")boolean isAdmin);
+			@Param("isAll")boolean isAll);
 	
 	public FileInfoVO.History selectInfoForLogoHistory(int companyNo);
 

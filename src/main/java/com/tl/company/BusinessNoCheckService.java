@@ -1,4 +1,4 @@
-package com.tl.global.api;
+package com.tl.company;
 
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -29,6 +29,13 @@ public class BusinessNoCheckService {
 	
 	/**
 	 * 국세청 사업자등록정보 진위확인 API
+	 * https://www.data.go.kr/data/15107737/standard.do
+	 * 
+	 * 사업자 등록번호, 대표 이름, 창립일을 입력받아
+	 * 실존하는 사업자 등록번호인지 확인
+	 * 사업자인지만 판별하지 업종이 뭔지는 모름
+	 * 업종까지 판별하려면 다른 유료 서비스 사용하거나
+	 * 일정 계약금액 이상이면 건설 면허가 필요하다는 점을 활용하던가.
 	 */
 	public void checkBusinessNo(BusinessNoCheckVO.request request) {
 		BusinessNoCheckVO.apiRequest apiRequest = BusinessNoCheckVO.apiRequest.builder()

@@ -1,0 +1,758 @@
+<th:block th:fragment="content">
+  <div id="management-content" th:attr="data-enc-no=${encCompanyNo}">
+
+    <!-- ADMIN 여부를 JS 에서도 판별하기 위한 hidden flag -->
+    <div id="management-admin-flag" th:attr="data-admin=${isAdmin}" style="display:none;"></div>
+
+    <!-- ============================
+         상단 툴바: 현황 개수 정보 + 현황 추가 버튼
+         ============================ -->
+    <div class="management-toolbar">
+      <div class="management-count-info" id="management-count-info">
+        <span class="management-total-count">
+          전체 <strong id="management-total-count-val" th:text="${result.result.totalCount}">0</strong>건
+        </span>
+        <span class="management-semi-count" id="management-semi-count" th:if="${result.semiCount >= 0}">
+          숨겨진 현황 <strong th:text="${result.semiCount}">0</strong>건
+        </span>
+        <span class="management-all-count" id="management-all-count" th:if="${result.allCount >= 0}">
+          표시된 현황 <strong th:text="${result.allCount}">0</strong>건
+        </span>
+      </div>
+
+      <button sec:authorize="hasRole('ADMIN')" type="button" class="cv-btn cv-btn-primary cv-btn-sm"
+        id="management-add-open-btn">
+        <i data-lucide="plus-circle"></i>
+        현황 추가
+      </button>
+    </div>
+
+    <!-- ============================
+         작업 현황 카드 목록 (2열)
+         ============================ -->
+    <div class="management-grid" id="management-grid">
+
+      <th:block th:each="item : ${result.result.list}">
+        <div class="management-card" th:attr="data-enc-location-no=${item.encLocationNo}">
+
+          <!-- ADMIN 전용: 수정 아이콘 -->
+          <button sec:authorize="hasRole('ADMIN')" type="button" class="management-edit-btn" data-tooltip="수정하기"
+            th:attr="data-enc-location-no=${item.encLocationNo},
+                           data-name=${item.name},
+                           data-memo=${item.memo},
+                           data-start-on=${item.startOn},
+                           data-end-on=${item.endOn},
+                           data-visible=${item.visible},
+                           data-status=${item.status},
+                           data-latitude=${item.latitude},
+                           data-longitude=${item.longitude},
+                           data-address=${item.address},
+                           data-sido=${item.sido},
+                           data-sigungu=${item.sigungu}">
+            <i data-lucide="pencil"></i>
+          </button>
+
+          <!-- 1열: 장소 -->
+          <div class="management-row management-row-name">
+            <i data-lucide="map-pin" class="management-row-icon"></i>
+            <span class="management-name" th:text="${item.name}">현황명</span>
+          </div>
+
+          <!-- 2열: 상세 -->
+          <div class="management-row management-row-memo">
+            <p class="management-memo" th:text="${item.memo}">상세 내용</p>
+          </div>
+
+          <!-- 3열: 카카오 맵 -->
+          <div class="management-map" th:id="'management-map-' + ${item.encLocationNo}"
+            th:attr="data-lat=${item.latitude}, data-lng=${item.longitude}"></div>
+
+          <!-- 4열: 주소 -->
+          <div class="management-row management-row-address">
+            <i data-lucide="navigation" class="management-row-icon"></i>
+            <span th:text="${item.address}">주소</span>
+          </div>
+
+          <!-- 5,6열: 시작일 / 종료일 -->
+          <div class="management-row management-row-period">
+            <span class="management-period-item">
+              <i data-lucide="calendar-days" class="management-row-icon"></i>
+              <span th:text="${#temporals.format(item.startOn, 'yyyy-MM-dd')}">시작일</span>
+            </span>
+            <span class="management-period-sep">~</span>
+            <span class="management-period-item">
+              <span th:text="${#temporals.format(item.endOn, 'yyyy-MM-dd')}">종료일</span>
+            </span>
+          </div>
+
+          <!-- ADMIN 전용: 7열 공개범위 / 상태 -->
+          <div sec:authorize="hasRole('ADMIN')" class="management-row management-row-badges">
+            <span class="management-badge management-visible-badge" th:classappend="${item.visible.name() == 'ALL'} ? ' visible-all'
+                                 : (${item.visible.name() == 'SEMI'} ? ' visible-semi' : ' visible-hidden')" th:text="${item.visible.name() == 'ALL'} ? '전체 공개'
+                           : (${item.visible.name() == 'SEMI'} ? '일부 공개' : '미공개')">
+            </span>
+            <span class="management-badge management-status-badge" th:classappend="${item.status.name() == 'READY'} ? ' status-ready'
+                                 : (${item.status.name() == 'ONGOING'} ? ' status-ongoing'
+                                 : (${item.status.name() == 'CANCELLED'} ? ' status-cancelled' : ' status-finished'))"
+              th:text="${item.status.name() == 'READY'} ? '대기'
+                           : (${item.status.name() == 'ONGOING'} ? '진행중'
+                           : (${item.status.name() == 'CANCELLED'} ? '취소' : '종료'))">
+            </span>
+          </div>
+
+        </div>
+      </th:block>
+
+      <div th:if="${result.result.list == null or #lists.isEmpty(result.result.list)}"
+        class="cv-empty-state cv-text-muted cv-text-sm" id="management-empty-state">
+        등록된 작업 현황이 없습니다.
+      </div>
+
+    </div><!-- /#management-grid -->
+
+    <!-- ============================
+         페이징 바
+         ============================ -->
+    <nav class="management-pagination" id="management-pagination" th:if="${result.result.totalPage > 0}">
+      <button class="page-btn page-nav" th:disabled="${!result.result.hasPrev}"
+        th:onclick="|managementMovePage(${result.result.startPage - 1})|">
+        <i data-lucide="chevron-left"></i>
+      </button>
+      <th:block th:each="i : ${#numbers.sequence(result.result.startPage, result.result.endPage)}">
+        <button class="page-btn" th:classappend="${i == 1} ? ' active' : ''" th:text="${i}"
+          th:onclick="|managementMovePage(${i})|">
+        </button>
+      </th:block>
+      <button class="page-btn page-nav" th:disabled="${!result.result.hasNext}"
+        th:onclick="|managementMovePage(${result.result.endPage + 1})|">
+        <i data-lucide="chevron-right"></i>
+      </button>
+    </nav>
+
+  </div><!-- /#management-content -->
+
+  <!-- ============================
+       현황 추가/수정 모달 (ADMIN 전용, 공용)
+       ============================ -->
+  <div sec:authorize="hasRole('ADMIN')" id="management-modal" class="cv-modal-backdrop" style="display:none"
+    role="dialog" aria-modal="true" aria-labelledby="management-modal-title">
+    <div class="cv-modal">
+      <div class="cv-modal-header">
+        <h3 class="cv-modal-title" id="management-modal-title">현황 추가</h3>
+        <button type="button" class="cv-modal-close" id="management-modal-close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="cv-modal-body">
+        <form id="management-form">
+
+          <input type="hidden" id="management-enc-location-no" value="">
+
+          <!-- 현황 이름 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="management-name">현황 이름 <span class="cv-required">*</span></label>
+            <input type="text" id="management-name" class="cv-form-control" maxlength="20" placeholder="20자 이내">
+            <div class="cv-form-error" id="management-err-name"></div>
+          </div>
+
+          <!-- 상세 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="management-memo">상세 <span class="cv-required">*</span></label>
+            <textarea id="management-memo" class="cv-form-control" maxlength="100" placeholder="100자 이내"
+              rows="3"></textarea>
+            <div class="cv-form-error" id="management-err-memo"></div>
+          </div>
+
+          <!-- 시작일 / 종료일 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label">기간 <span class="cv-required">*</span></label>
+            <div class="management-date-row">
+              <input type="date" id="management-startOn" class="cv-form-control">
+              <span class="cv-date-sep">~</span>
+              <input type="date" id="management-endOn" class="cv-form-control">
+            </div>
+            <div class="cv-form-error" id="management-err-period"></div>
+          </div>
+
+          <!-- 공개 범위 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="management-visible">공개 범위 <span class="cv-required">*</span></label>
+            <select id="management-visible" class="cv-form-control">
+              <option value="ALL">전체 공개</option>
+              <option value="SEMI">일부 공개</option>
+              <option value="HIDDEN">미공개</option>
+            </select>
+          </div>
+
+          <!-- 상태 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label" for="management-status">상태 <span class="cv-required">*</span></label>
+            <select id="management-status" class="cv-form-control">
+              <option value="READY">대기</option>
+              <option value="ONGOING">진행중</option>
+              <option value="CANCELLED">취소</option>
+              <option value="FINISHED">종료</option>
+            </select>
+          </div>
+
+          <!-- 위치 -->
+          <div class="cv-form-group">
+            <label class="cv-form-label">위치 <span class="cv-required">*</span></label>
+            <button type="button" class="cv-btn cv-btn-outline cv-btn-sm" id="management-address-search-btn">
+              <i data-lucide="search"></i>
+              주소 검색
+            </button>
+            <div class="location-address-display" id="management-address-display"></div>
+            <div class="cv-form-error" id="management-err-address"></div>
+          </div>
+          <div id="management-modal-map" class="location-map-box" style="display:none"></div>
+
+        </form>
+      </div>
+      <div class="cv-modal-footer">
+        <button type="button" class="cv-btn cv-btn-ghost" id="management-modal-cancel-btn">취소</button>
+        <button type="button" class="cv-btn cv-btn-primary" id="management-modal-submit-btn">확인</button>
+      </div>
+    </div>
+  </div><!-- /#management-modal -->
+
+  <!-- kakaoKey 서버 값 전달 + 전체 스크립트 -->
+  <script th:inline="javascript">
+    window.__managementKakaoKey = /*[[${kakaoKey}]]*/ '';
+    window.__managementEncCompanyNo = /*[[${encCompanyNo}]]*/ '';
+  </script>
+  <script th:inline="javascript">
+    (function () {
+
+      var NAME_REGEXP = /^[ㄱ-ㅎ가-힣a-zA-Z0-9!@#$%^*()_+\-=\[\]{};:,.?/~₩·\s]{1,20}$/;
+      var MEMO_REGEXP = /^[ㄱ-ㅎ가-힣a-zA-Z0-9!@#$%^*()_+\-=\[\]{};:,.?/~₩·\s]{1,100}$/;
+
+      var isAdmin = false;
+      var currentPage = 1;
+      var currentGeocodeResult = null; // 주소 검색 결과 { latitude, longitude, address, sido, sigungu }
+      var modalMode = 'ADD'; // 'ADD' | 'EDIT'
+      var editingEncLocationNo = null;
+
+      document.addEventListener('DOMContentLoaded', initManagementFragment);
+      if (document.readyState !== 'loading') {
+        initManagementFragment();
+      }
+
+      function initManagementFragment() {
+        var root = document.getElementById('management-content');
+        if (!root) return;
+
+        var adminFlag = document.getElementById('management-admin-flag');
+        isAdmin = adminFlag && adminFlag.dataset.admin === 'true';
+
+        loadKakaoMapsSdk(function () {
+          renderAllManagementMaps();
+        });
+
+        initManagementAddOpen();
+        initManagementEditButtons();
+        initManagementModalCommon();
+        initManagementAddressSearch();
+        initManagementSubmit();
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      /* =============================================
+         SDK 로더
+      ============================================= */
+      function loadKakaoMapsSdk(callback) {
+        if (window.kakao && window.kakao.maps && window.kakao.maps.LatLng) {
+          window.kakao.maps.load(callback);
+          return;
+        }
+        var existing = document.getElementById('kakao-maps-sdk');
+        if (existing) {
+          existing.addEventListener('load', function () {
+            window.kakao.maps.load(callback);
+          });
+          return;
+        }
+        var script = document.createElement('script');
+        script.id = 'kakao-maps-sdk';
+        script.src = '//dapi.kakao.com/v2/maps/sdk.js?appkey=' + window.__managementKakaoKey + '&autoload=false';
+        script.onload = function () {
+          window.kakao.maps.load(callback);
+        };
+        document.head.appendChild(script);
+      }
+
+      function loadDaumPostcodeSdk(callback) {
+        if (window.daum && window.daum.Postcode) {
+          callback();
+          return;
+        }
+        var existing = document.getElementById('daum-postcode-sdk');
+        if (existing) {
+          existing.addEventListener('load', callback);
+          return;
+        }
+        var script = document.createElement('script');
+        script.id = 'daum-postcode-sdk';
+        script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+        script.onload = callback;
+        document.head.appendChild(script);
+      }
+
+      /* =============================================
+         카드 지도 렌더링
+      ============================================= */
+      function renderAllManagementMaps() {
+        document.querySelectorAll('.management-map').forEach(function (mapEl) {
+          var lat = parseFloat(mapEl.getAttribute('data-lat'));
+          var lng = parseFloat(mapEl.getAttribute('data-lng'));
+          if (isNaN(lat) || isNaN(lng)) return;
+
+          var center = new kakao.maps.LatLng(lat, lng);
+          var map = new kakao.maps.Map(mapEl, { center: center, level: 3 });
+          var marker = new kakao.maps.Marker({ position: center });
+          marker.setMap(map);
+        });
+      }
+
+      /* =============================================
+         현황 추가 - 모달 열기
+      ============================================= */
+      function initManagementAddOpen() {
+        var openBtn = document.getElementById('management-add-open-btn');
+        if (!openBtn) return;
+        openBtn.addEventListener('click', function () {
+          modalMode = 'ADD';
+          editingEncLocationNo = null;
+          resetManagementForm();
+          document.getElementById('management-modal-title').textContent = '현황 추가';
+          openManagementModal();
+        });
+      }
+
+      /* =============================================
+         현황 수정 - 모달 열기 (카드별 수정 아이콘)
+      ============================================= */
+      function initManagementEditButtons() {
+        document.querySelectorAll('.management-edit-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            modalMode = 'EDIT';
+            editingEncLocationNo = btn.getAttribute('data-enc-location-no');
+            resetManagementForm();
+
+            document.getElementById('management-modal-title').textContent = '현황 수정';
+            document.getElementById('management-enc-location-no').value = editingEncLocationNo;
+            document.getElementById('management-name').value = btn.getAttribute('data-name') || '';
+            document.getElementById('management-memo').value = btn.getAttribute('data-memo') || '';
+            document.getElementById('management-startOn').value = btn.getAttribute('data-start-on') || '';
+            document.getElementById('management-endOn').value = btn.getAttribute('data-end-on') || '';
+            document.getElementById('management-visible').value = btn.getAttribute('data-visible') || 'ALL';
+            document.getElementById('management-status').value = btn.getAttribute('data-status') || 'READY';
+
+            var lat = parseFloat(btn.getAttribute('data-latitude'));
+            var lng = parseFloat(btn.getAttribute('data-longitude'));
+            var address = btn.getAttribute('data-address');
+            var sido = btn.getAttribute('data-sido');
+            var sigungu = btn.getAttribute('data-sigungu');
+
+            currentGeocodeResult = { latitude: lat, longitude: lng, address: address, sido: sido, sigungu: sigungu };
+            document.getElementById('management-address-display').textContent = address || '';
+
+            // 1) 모달을 먼저 열어서 컨테이너가 실제 크기를 갖게 한다
+            openManagementModal();
+
+            var mapBox = document.getElementById('management-modal-map');
+            mapBox.style.display = '';
+
+            // 2) 레이아웃이 반영된 다음 틱에 지도를 생성 + relayout
+            loadKakaoMapsSdk(function () {
+              window.setTimeout(function () {
+                var center = new kakao.maps.LatLng(lat, lng);
+                var map = new kakao.maps.Map(mapBox, { center: center, level: 3 });
+                var marker = new kakao.maps.Marker({ position: center });
+                marker.setMap(map);
+
+                map.relayout();
+                map.setCenter(center);
+
+                // 이후 주소 재검색 시에도 재사용할 수 있도록 map 인스턴스를 저장
+                mapBox.__kakaoMapInstance = map;
+              }, 0);
+            });
+          });
+        });
+      }
+
+      function openManagementModal() {
+        document.getElementById('management-modal').style.display = 'flex';
+      }
+
+      function closeManagementModal() {
+        document.getElementById('management-modal').style.display = 'none';
+      }
+
+      function resetManagementForm() {
+        currentGeocodeResult = null;
+        document.getElementById('management-enc-location-no').value = '';
+        document.getElementById('management-name').value = '';
+        document.getElementById('management-memo').value = '';
+        document.getElementById('management-startOn').value = '';
+        document.getElementById('management-endOn').value = '';
+        document.getElementById('management-visible').value = 'ALL';
+        document.getElementById('management-status').value = 'READY';
+        document.getElementById('management-address-display').textContent = '';
+        document.getElementById('management-modal-map').style.display = 'none';
+        ['name', 'memo', 'period', 'address'].forEach(function (key) {
+          var el = document.getElementById('management-err-' + key);
+          if (el) el.textContent = '';
+        });
+      }
+
+      function initManagementModalCommon() {
+        var closeBtn = document.getElementById('management-modal-close');
+        var cancelBtn = document.getElementById('management-modal-cancel-btn');
+        if (closeBtn) closeBtn.addEventListener('click', closeManagementModal);
+        if (cancelBtn) cancelBtn.addEventListener('click', closeManagementModal);
+      }
+
+      /* =============================================
+         주소 검색 (카카오 우편번호 -> 지오코딩)
+      ============================================= */
+      function initManagementAddressSearch() {
+        var searchBtn = document.getElementById('management-address-search-btn');
+        if (!searchBtn) return;
+
+        searchBtn.addEventListener('click', function () {
+          loadDaumPostcodeSdk(function () {
+            new daum.Postcode({
+              oncomplete: function (data) {
+                var address = data.roadAddress || data.jibunAddress;
+                requestGeocoding(address);
+              }
+            }).open();
+          });
+        });
+      }
+
+      function requestGeocoding(address) {
+        $.ajax({
+          url: '/api/location/geocoding',
+          type: 'GET',
+          data: { address: address },
+          success: function (res, status, xhr) {
+            if (xhr.status === 200) {
+              currentGeocodeResult = res;
+              document.getElementById('management-address-display').textContent = res.address;
+              document.getElementById('management-err-address').textContent = '';
+
+              var mapBox = document.getElementById('management-modal-map');
+              mapBox.style.display = '';
+
+              loadKakaoMapsSdk(function () {
+                window.setTimeout(function () {
+                  var center = new kakao.maps.LatLng(res.latitude, res.longitude);
+                  var map = new kakao.maps.Map(mapBox, { center: center, level: 3 });
+                  var marker = new kakao.maps.Marker({ position: center });
+                  marker.setMap(map);
+
+                  map.relayout();
+                  map.setCenter(center);
+                }, 0);
+              });
+            }
+          },
+          error: function (xhr) {
+            alert('주소를 좌표로 변환하지 못했습니다. (' + xhr.status + ')');
+          }
+        });
+      }
+
+      /* =============================================
+         폼 제출 (추가 / 수정 공용)
+      ============================================= */
+      function initManagementSubmit() {
+        var submitBtn = document.getElementById('management-modal-submit-btn');
+        if (!submitBtn) return;
+
+        submitBtn.addEventListener('click', function () {
+          var name = document.getElementById('management-name').value.trim();
+          var memo = document.getElementById('management-memo').value.trim();
+          var startOn = document.getElementById('management-startOn').value;
+          var endOn = document.getElementById('management-endOn').value;
+          var visible = document.getElementById('management-visible').value;
+          var status = document.getElementById('management-status').value;
+
+          var errName = document.getElementById('management-err-name');
+          var errMemo = document.getElementById('management-err-memo');
+          var errPeriod = document.getElementById('management-err-period');
+          var errAddress = document.getElementById('management-err-address');
+          errName.textContent = '';
+          errMemo.textContent = '';
+          errPeriod.textContent = '';
+          errAddress.textContent = '';
+
+          var valid = true;
+
+          if (!NAME_REGEXP.test(name)) {
+            errName.textContent = '현황 이름이 이상해요 (1~20자)';
+            valid = false;
+          }
+          if (!MEMO_REGEXP.test(memo)) {
+            errMemo.textContent = '상세 내용이 이상해요 (1~100자)';
+            valid = false;
+          }
+          if (!startOn || !endOn) {
+            errPeriod.textContent = '시작일과 종료일을 입력해주세요.';
+            valid = false;
+          } else if (new Date(endOn) < new Date(startOn)) {
+            errPeriod.textContent = '종료일은 시작일보다 늦어야 합니다.';
+            valid = false;
+          }
+          if (!currentGeocodeResult) {
+            errAddress.textContent = '주소를 먼저 검색해주세요.';
+            valid = false;
+          }
+          if (!valid) return;
+
+          var params = new URLSearchParams();
+          params.append('name', name);
+          params.append('memo', memo);
+          params.append('startOn', startOn);
+          params.append('endOn', endOn);
+          params.append('visible', visible);
+          params.append('status', status);
+          params.append('location.latitude', currentGeocodeResult.latitude);
+          params.append('location.longitude', currentGeocodeResult.longitude);
+          params.append('location.address', currentGeocodeResult.address);
+          params.append('location.sido', currentGeocodeResult.sido);
+          params.append('location.sigungu', currentGeocodeResult.sigungu);
+
+          var encNo = window.__managementEncCompanyNo;
+          var url = '/api/company/' + encNo + '/management';
+          var method = 'POST';
+
+          if (modalMode === 'EDIT') {
+            method = 'PUT';
+            params.append('encLocationNo', editingEncLocationNo);
+          }
+
+          $.ajax({
+            url: url,
+            type: method,
+            data: params.toString(),
+            contentType: 'application/x-www-form-urlencoded',
+            success: function (res, status, xhr) {
+              if (xhr.status === 200) {
+                closeManagementModal();
+                refreshManagementFragment(encNo);
+              }
+            },
+            error: function (xhr) {
+              alert((modalMode === 'ADD' ? '현황 등록' : '현황 수정') + '에 실패했습니다. (' + xhr.status + ')');
+            }
+          });
+        });
+      }
+
+      /* =============================================
+         페이징
+      ============================================= */
+      window.managementMovePage = function (pageNum) {
+        currentPage = pageNum;
+        $.ajax({
+          url: '/api/company/' + window.__managementEncCompanyNo + '/management',
+          type: 'GET',
+          data: { page: pageNum },
+          success: function (res, status, xhr) {
+            if (xhr.status === 200) {
+              renderManagementGrid(res);
+              renderManagementCount(res);
+              renderManagementPagination(res, pageNum);
+              rebindManagementCardEvents();
+              loadKakaoMapsSdk(renderAllManagementMaps);
+              if (window.lucide) lucide.createIcons();
+            }
+          },
+          error: function (xhr) {
+            console.error('작업 현황 조회 실패', xhr);
+          }
+        });
+      };
+
+      function rebindManagementCardEvents() {
+        initManagementEditButtons();
+      }
+
+      /* =============================================
+         조각 재요청 (전역 fetchFragment 재사용 시도)
+      ============================================= */
+      function refreshManagementFragment(encNo) {
+        var url = '/company/' + encNo + '/management';
+        if (typeof fetchFragment === 'function') {
+          fetchFragment(url, 'management');
+        } else {
+          $.ajax({
+            url: url,
+            type: 'GET',
+            success: function (html) {
+              document.getElementById('cv-content-area').innerHTML = html;
+              initManagementFragment();
+            }
+          });
+        }
+      }
+
+      /* =============================================
+         렌더링 (JSON 응답 -> DOM)
+      ============================================= */
+      var VISIBLE_MAP = {
+        ALL: { label: '전체 공개', cls: 'visible-all' },
+        SEMI: { label: '일부 공개', cls: 'visible-semi' },
+        HIDDEN: { label: '미공개', cls: 'visible-hidden' }
+      };
+
+      var STATUS_MAP = {
+        READY: { label: '대기', cls: 'status-ready' },
+        ONGOING: { label: '진행중', cls: 'status-ongoing' },
+        CANCELLED: { label: '취소', cls: 'status-cancelled' },
+        FINISHED: { label: '종료', cls: 'status-finished' }
+      };
+
+      function renderManagementGrid(res) {
+        var grid = document.getElementById('management-grid');
+        var list = res.result.list;
+        grid.innerHTML = '';
+
+        if (!list || list.length === 0) {
+          grid.innerHTML = '<div class="cv-empty-state cv-text-muted cv-text-sm">등록된 작업 현황이 없습니다.</div>';
+          return;
+        }
+
+        list.forEach(function (item) {
+          var card = document.createElement('div');
+          card.className = 'management-card';
+          card.dataset.encLocationNo = item.encLocationNo;
+
+          var editBtnHtml = '';
+          if (isAdmin) {
+            editBtnHtml = '<button type="button" class="management-edit-btn" data-tooltip="수정하기" ' +
+              'data-enc-location-no="' + escapeHtml(item.encLocationNo) + '" ' +
+              'data-name="' + escapeHtml(item.name) + '" ' +
+              'data-memo="' + escapeHtml(item.memo) + '" ' +
+              'data-start-on="' + escapeHtml(item.startOn) + '" ' +
+              'data-end-on="' + escapeHtml(item.endOn) + '" ' +
+              'data-visible="' + escapeHtml(item.visible) + '" ' +
+              'data-status="' + escapeHtml(item.status) + '" ' +
+              'data-latitude="' + item.latitude + '" ' +
+              'data-longitude="' + item.longitude + '" ' +
+              'data-address="' + escapeHtml(item.address) + '" ' +
+              'data-sido="' + escapeHtml(item.sido) + '" ' +
+              'data-sigungu="' + escapeHtml(item.sigungu) + '">' +
+              '<i data-lucide="pencil"></i></button>';
+          }
+
+          var badgesHtml = '';
+          if (isAdmin) {
+            var v = VISIBLE_MAP[item.visible] || { label: item.visible, cls: '' };
+            var s = STATUS_MAP[item.status] || { label: item.status, cls: '' };
+            badgesHtml =
+              '<div class="management-row management-row-badges">' +
+              '<span class="management-badge management-visible-badge ' + v.cls + '">' + v.label + '</span>' +
+              '<span class="management-badge management-status-badge ' + s.cls + '">' + s.label + '</span>' +
+              '</div>';
+          }
+
+          card.innerHTML =
+            editBtnHtml +
+            '<div class="management-row management-row-name"><i data-lucide="map-pin" class="management-row-icon"></i>' +
+            '<span class="management-name">' + escapeHtml(item.name) + '</span></div>' +
+            '<div class="management-row management-row-memo"><p class="management-memo">' + escapeHtml(item.memo) + '</p></div>' +
+            '<div class="management-map" id="management-map-' + item.encLocationNo + '" data-lat="' + item.latitude + '" data-lng="' + item.longitude + '"></div>' +
+            '<div class="management-row management-row-address"><i data-lucide="navigation" class="management-row-icon"></i>' +
+            '<span>' + escapeHtml(item.address) + '</span></div>' +
+            '<div class="management-row management-row-period">' +
+            '<span class="management-period-item"><i data-lucide="calendar-days" class="management-row-icon"></i>' +
+            '<span>' + formatDate(item.startOn) + '</span></span>' +
+            '<span class="management-period-sep">~</span>' +
+            '<span class="management-period-item"><span>' + formatDate(item.endOn) + '</span></span>' +
+            '</div>' +
+            badgesHtml;
+
+          grid.appendChild(card);
+        });
+      }
+
+      function renderManagementCount(res) {
+        document.getElementById('management-total-count-val').textContent = res.result.totalCount;
+
+        var semiEl = document.getElementById('management-semi-count');
+        if (semiEl) {
+          if (res.semiCount >= 0) {
+            semiEl.style.display = '';
+            semiEl.querySelector('strong').textContent = res.semiCount;
+          } else {
+            semiEl.style.display = 'none';
+          }
+        }
+
+        var allEl = document.getElementById('management-all-count');
+        if (allEl) {
+          if (res.allCount >= 0) {
+            allEl.style.display = '';
+            allEl.querySelector('strong').textContent = res.allCount;
+          } else {
+            allEl.style.display = 'none';
+          }
+        }
+      }
+
+      function renderManagementPagination(res, currentPageNum) {
+        var nav = document.getElementById('management-pagination');
+        if (!nav) return;
+        var r = res.result;
+        if (r.totalPage <= 0) { nav.innerHTML = ''; return; }
+
+        var html = '<button class="page-btn page-nav" ' + (!r.hasPrev ? 'disabled' : '') +
+          ' onclick="managementMovePage(' + (r.startPage - 1) + ')"><i data-lucide="chevron-left"></i></button>';
+
+        for (var i = r.startPage; i <= r.endPage; i++) {
+          var active = i === currentPageNum ? ' active' : '';
+          html += '<button class="page-btn' + active + '" onclick="managementMovePage(' + i + ')">' + i + '</button>';
+        }
+
+        html += '<button class="page-btn page-nav" ' + (!r.hasNext ? 'disabled' : '') +
+          ' onclick="managementMovePage(' + (r.endPage + 1) + ')"><i data-lucide="chevron-right"></i></button>';
+
+        nav.innerHTML = html;
+      }
+
+      function formatDate(dateStr) {
+        if (!dateStr) return '-';
+        var d;
+        if (Array.isArray(dateStr)) {
+          d = new Date(dateStr[0], dateStr[1] - 1, dateStr[2]);
+        } else {
+          d = new Date(dateStr);
+        }
+        if (isNaN(d)) return dateStr;
+        var yyyy = d.getFullYear();
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return yyyy + '-' + mm + '-' + dd;
+      }
+
+      function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+    })();
+
+  </script>
+
+</th:block>

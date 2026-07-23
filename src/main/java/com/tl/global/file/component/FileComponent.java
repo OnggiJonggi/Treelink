@@ -41,10 +41,6 @@ public class FileComponent {
 	
 	/**
 	 * 폴더 디렉토리와 파일 이름으로 진짜 경로 만들기
-	 * 
-	 * @param savePath
-	 * @param changedName
-	 * @return 진짜 파일 경로
 	 */
 	public String createPath(String savePath, String changedName) {
 		return savePath + "/" + changedName;

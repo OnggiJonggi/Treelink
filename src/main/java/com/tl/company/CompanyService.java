@@ -13,10 +13,11 @@ import com.tl.global.common.SanitizeComponent;
 import com.tl.global.common.SearchResultVO;
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
-import com.tl.global.file.CompanyFileMapper;
+import com.tl.global.file.CompanyDocMapper;
 import com.tl.global.file.FileInfoVO;
 import com.tl.global.file.FileMapper;
 import com.tl.global.file.component.FileStatusEnum;
+import com.tl.global.location.LocationMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +27,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CompanyService {
 	private final CompanyMapper companyMapper;
-	private final CompanyFileMapper companyFileMapper;
+	private final CompanyDocMapper companyDocMapper;
 	private final FileMapper fileMapper;
+	private final LocationMapper locationMapper;
 	private final SanitizeComponent sanitizeComponent;
 	private final ExtractFromHtml extractFromHtml;
 	
@@ -140,9 +142,10 @@ public class CompanyService {
 
 
 	/**
-	 * 회사 소개문 생성/수정
-	 * @param companyNo
-	 * @param intro 
+	 * 회사 소개문 생성 / 수정
+	 * 
+	 * summernote로 작성한 내용 소독
+	 * FILE_HISTORY에서 ACTIVE상태, 
 	 */
 	@Transactional
 	public void updateIntro(String intro, int companyNo, int memberNo) {
@@ -158,7 +161,7 @@ public class CompanyService {
 		List<String> imageName = extractFromHtml.fileNameFromIntro(intro);
 		
 		// 비활성 대상 파일 정보 불러오기
-		List<FileInfoVO.History> unusedIntroImage = companyFileMapper.selectUnusedIntro(companyNo, imageName);
+		List<FileInfoVO.History> unusedIntroImage = companyDocMapper.selectUnusedIntro(companyNo, imageName);
 		
 		// 비활성 대상 파일이 있을 경우
 		if(unusedIntroImage !=null && !unusedIntroImage.isEmpty()) {
@@ -170,13 +173,13 @@ public class CompanyService {
 			        .toList(); 
 			
 			// 사용하지 않은 이미지 파일 FILE_INFO에서 지우기
-			int result1 = companyFileMapper.deleteUnusedIntroImage(fileNo);
+			int result1 = companyDocMapper.deleteUnusedIntroImage(fileNo);
 			
 			// 비활성 대상 파일과 비활성화 한 파일 수가 같지 않으면 오류!
 			if(result1 != fileNo.size()) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 			
 			
-			// 파일 로그
+			// FILE_HISTORY에 미사용 로그 추가
 			int result2 = 0;
 			for(FileInfoVO.History item : unusedIntroImage) {
 				item.setFileNo(null);
@@ -197,5 +200,108 @@ public class CompanyService {
 		}
 		
 		
+	}
+	
+	/**
+	 * 이 업체 위치 내놔
+	 */
+	public List<CompanyVO.LocationDetail> getLocaions(int companyNo) {
+
+		List<CompanyVO.LocationDetail> result = companyMapper.selectCompanyLocations(companyNo);
+
+		return result;
+	}
+
+	/**
+	 * 업체 위치 추가하실게요
+	 */
+	@Transactional
+	public void insertLocation(CompanyVO.InsertLocation companyLocation) {
+		
+		// LOCATION 테이블 삽입
+		int result1 = locationMapper.insert(companyLocation);
+		if(result1 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		
+		// COMPANY_LOCATION 테이블 삽입
+		int result2 = companyMapper.insertLocation(companyLocation);
+		if(result2 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		
+	}
+
+	/**
+	 * 업체 위치 삭제
+	 */
+	@Transactional
+	public void deleteLocation(int companyNo, int locationNo) {
+		
+		// LOCATION 테이블 삭제
+		int result1 = companyMapper.deleteLocation(companyNo, locationNo);
+		if(result1 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		
+		// COMPANY_LOCATION 테이블 삭제
+		int result2 = locationMapper.delete(locationNo);
+		if(result2 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+	}
+
+
+	/**
+	 * 관리 현황 조회
+	 * 
+	 * isAll이 false면 VISIBLE이 ALL만 조회
+	 * SEMI면 전체 현황 수에는 포함, 세부 조회는 안함
+	 * HIDDEN이면 전체 현황 수에도 미포함
+	 * visible이 true이면 semiCount = -1, allCount = -1
+	 */
+	public ManagementVO.SearchResult getManagement(ManagementVO.Search search) {
+		
+		// 조회
+		List<ManagementVO.Detail> result = companyMapper.selectManagement(search);
+		
+		// 전체 현황 수
+		ManagementVO.SearchCount count = companyMapper.selectManagementTotalCount(search);
+		
+		// searchResult로 감싸기
+		SearchResultVO<ManagementVO.Detail> searchResult = new SearchResultVO<ManagementVO.Detail>(
+				result, count.getTotalCount(), search.getPage()
+				);
+		ManagementVO.SearchResult searchResult2 = new ManagementVO.SearchResult(
+				searchResult, count.getSemiCount());
+		
+		return searchResult2;
+	}
+
+
+	/**
+	 * 작업 현황 추가
+	 */
+	public void insertManagement(ManagementVO.Insert insert) {
+		
+		int result1 = locationMapper.insert(insert.getLocation());
+		if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		
+		int result2 = companyMapper.insertManagement(insert);
+		if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+	}
+	
+	/**
+	 * 작업 현황 삭제
+	 * 
+	 * LOCATION 삭제 후 전체 재등록
+	 */
+	public void updateManagement(ManagementVO.Insert insert, int locationNo) {
+		
+		/**
+		 * LOCATION 테이블에서 행 날리기
+		 * MANAGEMENT_STATUS은 LOCATION과 ON DELETE CASCADE으로 연결되었으므로
+		 * MANAGEMENT_STATUS 행도 같이 날라감
+		 */
+		int result1 = companyMapper.deleteLocationByCompanyNo(insert.getCompanyNo(), locationNo);
+		if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		
+		int result2 = locationMapper.insert(insert.getLocation());
+		if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+	
+		int result3 = companyMapper.insertManagement(insert);
+		if(result3==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 }

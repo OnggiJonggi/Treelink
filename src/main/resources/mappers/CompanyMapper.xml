@@ -19,6 +19,15 @@
     </collection>
   </resultMap>
 
+  <resultMap id="CompanyLocationDetailMap"
+    type="CompanyLocationDetail"
+    autoMapping="true"
+    extends="com.tl.global.location.LocationMapper.LocationDetailMap">
+
+    <id property="companyNo" column="COMPANY_NO"/>
+    <result property="name" column="NAME"/>
+  </resultMap>
+
 
   <select id="selectList" parameterType="companySearch" resultMap="CompanyDetailMap">
     select
@@ -212,4 +221,127 @@
     where COMPANY_NO = #{companyNo}
   </update>
 
+  <select id="selectCompanyLocations" resultMap="CompanyLocationDetailMap">
+    select
+      L.LOCATION_NO
+      ,L.LATITUDE
+      ,L.LONGITUDE
+      ,L.ADDRESS
+      ,L.SIDO
+      ,L.SIGUNGU
+      ,CL.NAME
+    from COMPANY_LOCATION CL
+    left join LOCATION L on (CL.LOCATION_NO = L.LOCATION_NO)
+    where CL.COMPANY_NO = #{companyNo}
+    order by L.LOCATION_NO desc
+  </select>
+
+  <insert id="insertLocation" parameterType="CompanyInsertLocation">
+    insert into COMPANY_LOCATION(
+      COMPANY_NO, LOCATION_NO, NAME
+    )values(
+      #{companyNo}, #{locationNo}, #{name}
+    )
+  </insert>
+
+  <delete id="deleteLocation">
+    delete from COMPANY_LOCATION
+    where LOCATION_NO = #{locationNo}
+    and COMPANY_NO = #{companyNo}
+  </delete>
+
+  <select id="selectManagement" parameterType="ManagementSearch" resultType="ManagementDetail">
+    select *
+    from(
+      select A.*, rownum RN
+      from(
+        select
+          MS.NAME
+          ,MS.MEMO
+          ,MS.START_ON
+          ,MS.END_ON
+          ,MS.VISIBLE
+          ,MS.STATUS
+          ,L.LOCATION_NO
+          ,L.LATITUDE
+          ,L.LONGITUDE
+          ,L.ADDRESS
+          ,L.SIDO
+          ,L.SIGUNGU
+        from MANAGEMENT_STATUS MS
+        left join LOCATION L on (L.LOCATION_NO = MS.LOCATION_NO)
+        where MS.COMPANY_NO = #{companyNo}
+        <if test="visible == false">
+          and MS.VISIBLE = 'ALL'
+        </if>
+        order by MS.START_ON desc
+      ) A
+      where rownum &lt;= #{endRow}
+    ) B
+    where RN &gt;= #{startRow}
+  </select>
+
+  <select id="selectManagementTotalCount" parameterType="ManagementSearch" resultType="ManagementSearchCount">
+    select
+      count(*) as totalCount
+      <choose>
+        <when test="visible == false">
+          ,nvl(sum(case when VISIBLE = 'SEMI' then 1 else 0 end), 0) as semiCount
+        </when>
+        <otherwise>
+          ,-1 as semiCount
+        </otherwise>
+      </choose>
+    from MANAGEMENT_STATUS
+    where COMPANY_NO = #{companyNo}
+    <if test="visible == false">
+      and VISIBLE in ('ALL', 'SEMI')
+    </if>
+  </select>
+
+  <insert id="insertManagement" parameterType="ManagementInsert">
+    insert into MANAGEMENT_STATUS(
+      COMPANY_NO
+      ,LOCATION_NO
+      ,NAME
+      ,MEMO
+      ,START_ON
+      ,END_ON
+      ,VISIBLE
+      ,STATUS
+    )
+    values(
+      #{companyNo}
+      ,#{location.locationNo}
+      ,#{name}
+      ,#{memo}
+      ,#{startOn}
+      ,#{endOn}
+      ,#{visible}
+      ,#{status}
+    )
+  </insert>
+
+  <delete id="deleteLocationByCompanyNo">
+    delete from LOCATION
+    where LOCATION_NO = (
+      select LOCATION_NO
+      from MANAGEMENT_STATUS
+      where COMPANY_NO = #{companyNo}
+      and LOCATION_NO = #{locationNo}
+    )
+  </delete>
+
+  <update id="updateManagement" parameterType="ManagementInsert">
+    update MANAGEMENT_STATUS
+    set
+      LOCATION_NO = #{location.locationNo}
+      ,NAME = #{name}
+      ,MEMO = #{memo}
+      ,START_ON = #{startOn}
+      ,END_ON = #{endOn}
+      ,VISIBLE = #{visible}
+      ,STATUS = #{status}
+    where COMPANY_NO = #{companyNo}
+  </update>
 </mapper>

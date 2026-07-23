@@ -1,11 +1,9 @@
-package com.tl.global.api;
+package com.tl.company;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.format.annotation.DateTimeFormat;
-
-import com.tl.company.CompanyRegexp;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

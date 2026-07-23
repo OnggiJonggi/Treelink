@@ -1,0 +1,731 @@
+<th:block th:fragment="content">
+
+  <div id="eval-fragment-wrapper">
+
+    <div id="eval-root" th:attr="data-enc-company-no=${encCompanyNo}">
+
+      <!-- ============================================
+       상단 액션 바
+  ============================================ -->
+      <div class="cv-card-header eval-action-bar">
+        <h2 class="cv-card-title">
+          <i data-lucide="star"></i>
+          평가 정보
+        </h2>
+        <div class="eval-action-buttons">
+
+          <!-- 3-1: 평가가 없고 ADMIN/EVALUATOR면 생성 버튼 -->
+          <button th:if="${eval == null}" sec:authorize="hasAnyRole('ADMIN','EVALUATOR')" type="button"
+            class="cv-btn cv-btn-primary cv-btn-sm" id="eval-create-btn">
+            <i data-lucide="plus"></i>
+            평가 생성하기
+          </button>
+
+          <!-- 4-1: 평가가 있고 ADMIN/EVALUATOR면 수정 버튼 -->
+          <button th:if="${eval != null}" sec:authorize="hasAnyRole('ADMIN','EVALUATOR')" type="button"
+            class="cv-btn cv-btn-primary cv-btn-sm" id="eval-edit-btn">
+            <i data-lucide="pencil"></i>
+            평가 수정
+          </button>
+
+          <!-- 5-1: 평가 기록 버튼 -->
+          <button type="button" class="cv-btn cv-btn-outline cv-btn-sm" id="eval-history-btn">
+            <i data-lucide="history"></i>
+            평가 기록
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================
+       조회 화면 (기본)
+  ============================================ -->
+      <div id="eval-view-area">
+
+        <div id="eval-empty-state" class="cv-empty-state cv-text-muted cv-text-sm"
+          th:style="${eval == null} ? '' : 'display:none'">
+          등록된 평가 정보가 없습니다.
+        </div>
+
+        <div id="eval-scores-view" class="eval-scores-view"></div>
+
+        <div id="eval-files-view" class="eval-files-view"></div>
+      </div>
+
+      <!-- ============================================
+       5. 평가 기록 목록 화면 (숨김)
+  ============================================ -->
+      <div id="eval-history-area" style="display:none">
+        <div class="eval-action-bar">
+          <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="eval-history-back-btn">
+            <i data-lucide="arrow-left"></i>
+            돌아가기
+          </button>
+        </div>
+        <div id="eval-history-list" class="eval-history-list"></div>
+        <nav class="pagination" id="eval-history-pagination"></nav>
+      </div>
+
+      <!-- ============================================
+       6. 리비전 상세 화면 (숨김)
+  ============================================ -->
+      <div id="eval-revision-area" style="display:none">
+        <div class="eval-action-bar">
+          <button type="button" class="cv-btn cv-btn-ghost cv-btn-sm" id="eval-revision-back-btn">
+            <i data-lucide="arrow-left"></i>
+            뒤로가기
+          </button>
+        </div>
+        <div id="eval-revision-meta" class="eval-revision-meta"></div>
+        <div id="eval-revision-reason" class="eval-revision-reason"></div>
+        <div id="eval-revision-scores" class="eval-scores-view"></div>
+        <div id="eval-revision-files" class="eval-files-view"></div>
+      </div>
+
+    </div><!-- /#eval-root -->
+
+    <!-- ============================================
+     3,4. 평가 생성/수정 모달
+============================================ -->
+    <div id="eval-form-modal" class="cv-modal-backdrop" style="display:none" role="dialog" aria-modal="true">
+      <div class="cv-modal eval-modal">
+        <div class="cv-modal-header">
+          <h3 class="cv-modal-title" id="eval-modal-title">평가 생성</h3>
+          <button type="button" class="cv-modal-close" id="eval-modal-close-btn">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="cv-modal-body">
+          <form id="eval-form">
+            <div id="eval-form-items"></div>
+
+            <!-- 3-8/4-5: 파일 첨부 -->
+            <div class="cv-form-group eval-file-form-group">
+              <label class="cv-form-label">첨부 파일</label>
+              <input type="file" id="eval-file-input" multiple>
+              <div id="eval-file-list" class="eval-file-attach-list"></div>
+            </div>
+
+            <!-- 4-3: 수정 사유 (수정 모드에서만 표시) -->
+            <div class="cv-form-group" id="eval-action-reson-group" style="display:none">
+              <label class="cv-form-label" for="eval-action-reson">평가 수정 사유 <span class="cv-required">*</span></label>
+              <textarea id="eval-action-reson" class="cv-form-control" maxlength="100" placeholder="100자 이내"></textarea>
+              <div class="cv-form-error" id="eval-err-action-reson"></div>
+            </div>
+          </form>
+        </div>
+        <div class="cv-modal-footer">
+          <button type="button" class="cv-btn cv-btn-ghost" id="eval-form-cancel-btn">취소</button>
+          <button type="button" class="cv-btn cv-btn-primary" id="eval-form-submit-btn">제출</button>
+        </div>
+      </div>
+    </div>
+
+    <script th:inline="javascript">
+      (function () {
+        var encCompanyNo = /*[[${encCompanyNo}]]*/ '';
+        var initialEval = /*[[${eval}]]*/ null;
+        var isEditMode = false;
+
+        // ------------------------------------------------
+        // 항목 정의 (itemNo, field, type: sub/top/total, group, min, max)
+        // ------------------------------------------------
+        var ITEM_ORDER = [
+          { itemNo: 11, field: '작업 정보 공개', type: 'sub', group: 'transparency', min: 0, max: 10 },
+          { itemNo: 12, field: '비용 투명성', type: 'sub', group: 'transparency', min: 0, max: 10 },
+          { itemNo: 13, field: '결과 공유', type: 'sub', group: 'transparency', min: 0, max: 10 },
+          { itemNo: 10, field: '투명성 종합', type: 'top', group: 'transparency' },
+
+          { itemNo: 21, field: '작업 이행률', type: 'sub', group: 'responsibility', min: 0, max: 10 },
+          { itemNo: 22, field: '하자 대응', type: 'sub', group: 'responsibility', min: 0, max: 10 },
+          { itemNo: 23, field: '민원 대응', type: 'sub', group: 'responsibility', min: 0, max: 10 },
+          { itemNo: 24, field: '사후 관리', type: 'sub', group: 'responsibility', min: 0, max: 5 },
+          { itemNo: 20, field: '책임성 종합', type: 'top', group: 'responsibility' },
+
+          { itemNo: 31, field: '일정 준수', type: 'sub', group: 'reliability', min: 0, max: 10 },
+          { itemNo: 32, field: '서비스 일관성', type: 'sub', group: 'reliability', min: 0, max: 10 },
+          { itemNo: 33, field: '사용자 평가', type: 'sub', group: 'reliability', min: 0, max: 10 },
+          { itemNo: 34, field: '재이용 의사', type: 'sub', group: 'reliability', min: 0, max: 5 },
+          { itemNo: 30, field: '신뢰성 종합', type: 'top', group: 'reliability' },
+
+          { itemNo: 1, field: '최종 종합', type: 'total', min: 0, max: 100 },
+
+          { itemNo: 41, field: '환경', type: 'sub', group: 'bonus', min: 0, max: 3 },
+          { itemNo: 42, field: '사회', type: 'sub', group: 'bonus', min: 0, max: 3 },
+          { itemNo: 43, field: '거버넌스', type: 'sub', group: 'bonus', min: 0, max: 3 },
+          { itemNo: 40, field: '보너스 종합', type: 'top', group: 'bonus' },
+
+          { itemNo: 2, field: '최종 참조 종합', type: 'total', min: 0, max: 109 }
+        ];
+
+        var GROUP_CHILDREN = {
+          transparency: [11, 12, 13],
+          responsibility: [21, 22, 23, 24],
+          reliability: [31, 32, 33, 34],
+          bonus: [41, 42, 43]
+        };
+        var GROUP_TOP = { transparency: 10, responsibility: 20, reliability: 30, bonus: 40 };
+        var RESON_REGEXP = /^[ㄱ-ㅎ가-힣a-zA-Z0-9!@#$%^*()_+\-=\[\]{};:,.?/~₩·\s]{1,1000}$/;
+        var ACTION_RESON_REGEXP = /^[ㄱ-ㅎ가-힣a-zA-Z0-9!@#$%^*()_+\-=\[\]{};:,.?/~₩·\s]{1,100}$/;
+        var MEMO_REGEXP = /^[^&<>"';]{1,20}$/;
+
+        function itemDef(itemNo) {
+          for (var i = 0; i < ITEM_ORDER.length; i++) {
+            if (ITEM_ORDER[i].itemNo === itemNo) return ITEM_ORDER[i];
+          }
+          return null;
+        }
+
+        function getGrade(score) {
+          if (score >= 95) return 'S+';
+          if (score >= 90) return 'S';
+          if (score >= 85) return 'A+';
+          if (score >= 80) return 'A';
+          if (score >= 75) return 'B+';
+          if (score >= 70) return 'B';
+          if (score >= 65) return 'C+';
+          if (score >= 60) return 'C';
+          if (score >= 50) return 'D';
+          return 'E';
+        }
+        function gradeLabel(score) {
+          return getGrade(score) + '등급 (' + score + '점)';
+        }
+        function escapeHtml(str) {
+          if (str === null || str === undefined) return '';
+          return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+        function formatBytes(size) {
+          if (size == null) return '-';
+          if (size < 1024) return size + ' B';
+          return (size / 1024).toFixed(1) + ' KB';
+        }
+
+        // ================================================
+        // 2. 조회 화면 렌더링 (읽기 전용)
+        // ================================================
+        function scoresToMap(scores) {
+          var map = {};
+          (scores || []).forEach(function (s) { map[s.itemNo] = s; });
+          return map;
+        }
+
+        function renderScoresView(scores, containerId) {
+          var map = scoresToMap(scores);
+          var html = '';
+          var groups = ['transparency', 'responsibility', 'reliability'];
+          var groupLabel = { transparency: '투명성', responsibility: '책임성', reliability: '신뢰성', bonus: '보너스' };
+
+          function subCardHtml(itemNo) {
+            var s = map[itemNo]; if (!s) return '';
+            return '<div class="eval-item-card eval-item--sub">' +
+              '<div class="eval-item-top"><span class="eval-item-field">' + escapeHtml(s.field) + '</span>' +
+              '<span class="eval-item-score">' + s.score + '점</span></div>' +
+              '<div class="eval-item-reson">' + escapeHtml(s.reson) + '</div></div>';
+          }
+          function topCardHtml(itemNo) {
+            var s = map[itemNo]; if (!s) return '';
+            return '<div class="eval-item-card eval-item--top">' +
+              '<div class="eval-item-top"><span class="eval-item-field">' + escapeHtml(s.field) + '</span>' +
+              '<span class="eval-item-score">' + s.score + '점</span></div>' +
+              '<div class="eval-item-reson">' + escapeHtml(s.reson) + '</div></div>';
+          }
+          function totalCardHtml(itemNo) {
+            var s = map[itemNo]; if (!s) return '';
+            return '<div class="eval-item-card eval-item--total">' +
+              '<div class="eval-item-top"><span class="eval-item-field">' + escapeHtml(s.field) + '</span>' +
+              '<span class="eval-item-grade">' + gradeLabel(s.score) + '</span></div>' +
+              '<div class="eval-item-reson">' + escapeHtml(s.reson) + '</div></div>';
+          }
+
+          groups.forEach(function (g) {
+            html += '<div class="eval-group-box"><div class="eval-group-title">' + groupLabel[g] + '</div>';
+            GROUP_CHILDREN[g].forEach(function (no) { html += subCardHtml(no); });
+            html += topCardHtml(GROUP_TOP[g]);
+            html += '</div>';
+            if (g === 'reliability') html += totalCardHtml(1); // 최종 종합
+          });
+          html += '<div class="eval-group-box"><div class="eval-group-title">보너스</div>';
+          GROUP_CHILDREN.bonus.forEach(function (no) { html += subCardHtml(no); });
+          html += topCardHtml(40);
+          html += '</div>';
+          html += totalCardHtml(2); // 최종 참조 종합
+
+          document.getElementById(containerId).innerHTML = html;
+        }
+
+        function renderFilesView(files, containerId) {
+          var el = document.getElementById(containerId);
+          if (!files || files.length === 0) {
+            el.innerHTML = '<div class="cv-empty-state cv-text-muted cv-text-sm">첨부된 파일이 없습니다.</div>';
+            return;
+          }
+          var html = '<h3 class="cv-section-title">첨부 파일</h3><div class="eval-file-list">';
+          files.forEach(function (f) {
+            html += '<div class="eval-file-item" data-enc-file-no="' + f.encFileNo + '">' +
+              '<div class="eval-file-info"><i data-lucide="file"></i>' +
+              '<div class="eval-file-text"><span class="eval-file-name">' + escapeHtml(f.originalName) + '</span>' +
+              '<span class="eval-file-memo cv-text-muted cv-text-sm">' + escapeHtml(f.memo || '') + '</span></div></div>' +
+              '<span class="eval-file-size cv-text-muted cv-text-sm">' + formatBytes(f.fileSize) + '</span>' +
+              '</div>';
+          });
+          html += '</div>';
+          el.innerHTML = html;
+          if (window.lucide) lucide.createIcons();
+          el.querySelectorAll('.eval-file-item').forEach(function (item) {
+            item.addEventListener('click', function () { downloadFile(item.dataset.encFileNo); });
+          });
+        }
+
+        function downloadFile(encFileNo) {
+          $.ajax({
+            url: '/file/eval/' + encFileNo,
+            method: 'GET',
+            data: { encCompanyNo: encCompanyNo },
+            success: function (url) {
+              if (isInlineUrl(url)) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+              } else {
+                window.location.href = url;
+              }
+            },
+            error: function (xhr) {
+              if (xhr.status === 404) alert('해당 파일은 존재하지 않습니다.');
+              else alert('파일 조회 중 오류가 발생했습니다.');
+            }
+          });
+        }
+
+        function isInlineUrl(url) {
+          try {
+            var decoded = decodeURIComponent(url);
+            // response-content-disposition 값 안에 inline이 포함되어 있는지 확인
+            var match = decoded.match(/response-content-disposition=([^&]*)/i);
+            if (!match) return false;
+            return match[1].toLowerCase().indexOf('inline') === 0
+              || match[1].toLowerCase().indexOf('inline') !== -1;
+          } catch (e) {
+            return false;
+          }
+        }
+
+        function renderMainView(eval) {
+          document.getElementById('eval-empty-state').style.display = eval ? 'none' : '';
+          if (!eval) {
+            document.getElementById('eval-scores-view').innerHTML = '';
+            document.getElementById('eval-files-view').innerHTML = '';
+            return;
+          }
+          renderScoresView(eval.scores, 'eval-scores-view');
+          renderFilesView(eval.files, 'eval-files-view');
+          if (window.lucide) lucide.createIcons();
+        }
+
+        renderMainView(initialEval);
+        if (window.lucide) lucide.createIcons();
+
+        // ================================================
+        // 3,4. 생성/수정 모달
+        // ================================================
+        var attachedFiles = []; // { fileObj, memo, encFileNo, locked }
+        var existingFiles = [];  // 수정 모드에서 기존 파일 { encFileNo, originalName, memo, fileSize, removed }
+
+        function calcTop(scoreMap, group) {
+          var sum = 0;
+          GROUP_CHILDREN[group].forEach(function (no) {
+            var v = scoreMap[no] ? Number(scoreMap[no].score) || 0 : 0;
+            sum += v;
+          });
+          return sum;
+        }
+        function calcTotals(scoreMap) {
+          var t = calcTop(scoreMap, 'transparency');
+          var r = calcTop(scoreMap, 'responsibility');
+          var re = calcTop(scoreMap, 'reliability');
+          var b = calcTop(scoreMap, 'bonus');
+          var final = t + r + re;
+          var finalRef = final + b;
+          return { transparency: t, responsibility: r, reliability: re, bonus: b, final: final, finalRef: finalRef };
+        }
+
+        function buildFormItems(existingScores) {
+          var map = scoresToMap(existingScores);
+          var html = '';
+          ITEM_ORDER.forEach(function (def) {
+            var s = map[def.itemNo];
+            var score = s ? s.score : 0;
+            var reson = s ? s.reson : '';
+            var checkboxHtml = isEditMode
+              ? '<label class="eval-edit-check"><input type="checkbox" class="eval-item-edit-toggle" data-item-no="' + def.itemNo + '"> 수정</label>'
+              : '';
+            var scoreInputHtml;
+            if (def.type === 'sub') {
+              scoreInputHtml = '<input type="number" class="cv-form-control eval-score-input" data-item-no="' + def.itemNo +
+                '" min="' + def.min + '" max="' + def.max + '" value="' + score + '" ' + (isEditMode ? 'disabled' : '') + '>';
+            } else {
+              scoreInputHtml = '<input type="number" class="cv-form-control eval-score-input" data-item-no="' + def.itemNo +
+                '" value="' + score + '" readonly>';
+            }
+            html += '<div class="eval-form-item" data-item-no="' + def.itemNo + '" data-type="' + def.type + '"' +
+              (def.group ? ' data-group="' + def.group + '"' : '') + '>' +
+              '<div class="eval-form-item-head">' +
+              '<span class="eval-form-item-field">' + def.field + (def.type === 'sub' ? ' (' + def.min + '~' + def.max + '점)' : '') + '</span>' +
+              checkboxHtml + '</div>' +
+              '<div class="eval-form-item-body">' + scoreInputHtml +
+              '<textarea class="cv-form-control eval-reson-input" data-item-no="' + def.itemNo + '" maxlength="1000" placeholder="점수 산정 이유 (1~1000자)" ' +
+              (isEditMode ? 'disabled' : '') + '>' + escapeHtml(reson) + '</textarea></div>' +
+              '<div class="cv-form-error eval-form-err" data-item-no="' + def.itemNo + '"></div>' +
+              '</div>';
+          });
+          document.getElementById('eval-form-items').innerHTML = html;
+        }
+
+        function currentScoreMap() {
+          var map = {};
+          document.querySelectorAll('.eval-form-item').forEach(function (row) {
+            var no = Number(row.dataset.itemNo);
+            var scoreInput = row.querySelector('.eval-score-input');
+            var resonInput = row.querySelector('.eval-reson-input');
+            map[no] = { itemNo: no, score: Number(scoreInput.value) || 0, reson: resonInput.value };
+          });
+          return map;
+        }
+
+        function recalcTops() {
+          var map = currentScoreMap();
+          var totals = calcTotals(map);
+          setDisplayScore(10, totals.transparency);
+          setDisplayScore(20, totals.responsibility);
+          setDisplayScore(30, totals.reliability);
+          setDisplayScore(40, totals.bonus);
+          setDisplayScore(1, totals.final);
+          setDisplayScore(2, totals.finalRef);
+        }
+        function setDisplayScore(itemNo, value) {
+          var row = document.querySelector('.eval-form-item[data-item-no="' + itemNo + '"]');
+          if (!row) return;
+          var input = row.querySelector('.eval-score-input');
+          if (input) input.value = value;
+        }
+
+        function bindFormEvents() {
+          document.querySelectorAll('.eval-score-input').forEach(function (input) {
+            input.addEventListener('input', recalcTops);
+          });
+          document.querySelectorAll('.eval-item-edit-toggle').forEach(function (chk) {
+            chk.addEventListener('change', function () {
+              var row = chk.closest('.eval-form-item');
+              var scoreInput = row.querySelector('.eval-score-input');
+              var resonInput = row.querySelector('.eval-reson-input');
+              var type = row.dataset.type;
+              resonInput.disabled = !chk.checked;
+              if (type === 'sub') scoreInput.disabled = !chk.checked;
+            });
+          });
+        }
+
+        function openModal(mode, eval) {
+          isEditMode = mode === 'edit';
+          document.getElementById('eval-modal-title').textContent = isEditMode ? '평가 수정' : '평가 생성';
+          document.getElementById('eval-action-reson-group').style.display = isEditMode ? '' : 'none';
+          document.getElementById('eval-action-reson').value = '';
+          attachedFiles = [];
+          existingFiles = (isEditMode && eval && eval.files) ? eval.files.map(function (f) {
+            return { encFileNo: f.encFileNo, originalName: f.originalName, memo: f.memo, fileSize: f.fileSize, removed: false };
+          }) : [];
+          buildFormItems(isEditMode && eval ? eval.scores : null);
+          bindFormEvents();
+          if (!isEditMode) recalcTops();
+          renderFileAttachArea();
+          document.getElementById('eval-file-input').value = '';
+          document.getElementById('eval-form-modal').style.display = 'flex';
+          if (window.lucide) lucide.createIcons();
+        }
+        function closeModal() {
+          document.getElementById('eval-form-modal').style.display = 'none';
+        }
+
+        document.getElementById('eval-create-btn') && document.getElementById('eval-create-btn')
+          .addEventListener('click', function () { openModal('create', null); });
+        document.getElementById('eval-edit-btn') && document.getElementById('eval-edit-btn')
+          .addEventListener('click', function () { openModal('edit', initialEval); });
+        document.getElementById('eval-modal-close-btn').addEventListener('click', closeModal);
+        document.getElementById('eval-form-cancel-btn').addEventListener('click', closeModal);
+
+        // ------------------------------------------------
+        // 3-8/4-5. 파일 첨부
+        // ------------------------------------------------
+        function renderFileAttachArea() {
+          var html = '';
+          existingFiles.forEach(function (f, idx) {
+            if (f.removed) return;
+            html += '<div class="eval-file-attach-item">' +
+              '<i data-lucide="file"></i><span class="eval-file-attach-name">' + escapeHtml(f.originalName) + '</span>' +
+              '<span class="eval-file-attach-memo cv-text-muted cv-text-sm">' + escapeHtml(f.memo || '') + '</span>' +
+              '<button type="button" class="cv-btn cv-btn-danger cv-btn-xs eval-existing-remove-btn" data-idx="' + idx + '">삭제</button>' +
+              '</div>';
+          });
+          attachedFiles.forEach(function (f, idx) {
+            if (f.encFileNo) {
+              html += '<div class="eval-file-attach-item eval-file-attach-item--locked">' +
+                '<i data-lucide="lock"></i><span class="eval-file-attach-name">' + escapeHtml(f.fileObj.name) + '</span>' +
+                '<span class="eval-file-attach-memo cv-text-muted cv-text-sm">' + escapeHtml(f.memo) + '</span>' +
+                '<span class="cv-text-muted cv-text-sm">업로드 완료</span></div>';
+            } else {
+              html += '<div class="eval-file-attach-item">' +
+                '<i data-lucide="file"></i><span class="eval-file-attach-name">' + escapeHtml(f.fileObj.name) + '</span>' +
+                '<input type="text" class="cv-form-control eval-file-memo-input" data-idx="' + idx + '" maxlength="20" placeholder="메모 (20자 이내)">' +
+                '<div class="cv-form-error eval-file-memo-err" data-idx="' + idx + '"></div>' +
+                '<button type="button" class="cv-btn cv-btn-primary cv-btn-xs eval-file-upload-btn" data-idx="' + idx + '">업로드</button>' +
+                '<button type="button" class="cv-btn cv-btn-ghost cv-btn-xs eval-file-remove-btn" data-idx="' + idx + '">취소</button>' +
+                '</div>';
+            }
+          });
+          document.getElementById('eval-file-list').innerHTML = html;
+          if (window.lucide) lucide.createIcons();
+
+          document.querySelectorAll('.eval-existing-remove-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              existingFiles[Number(btn.dataset.idx)].removed = true;
+              renderFileAttachArea();
+            });
+          });
+          document.querySelectorAll('.eval-file-remove-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              attachedFiles.splice(Number(btn.dataset.idx), 1);
+              renderFileAttachArea();
+            });
+          });
+          document.querySelectorAll('.eval-file-upload-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { uploadAttachedFile(Number(btn.dataset.idx)); });
+          });
+        }
+
+        document.getElementById('eval-file-input').addEventListener('change', function (e) {
+          Array.prototype.forEach.call(e.target.files, function (file) {
+            attachedFiles.push({ fileObj: file, memo: '', encFileNo: null });
+          });
+          e.target.value = '';
+          renderFileAttachArea();
+        });
+
+        function uploadAttachedFile(idx) {
+          var item = attachedFiles[idx];
+          var memoInput = document.querySelector('.eval-file-memo-input[data-idx="' + idx + '"]');
+          var errEl = document.querySelector('.eval-file-memo-err[data-idx="' + idx + '"]');
+          var memo = memoInput ? memoInput.value : '';
+          if (!MEMO_REGEXP.test(memo)) {
+            errEl.textContent = '메모는 1~20자, & < > " \' ; 문자를 포함할 수 없습니다.';
+            return;
+          }
+          errEl.textContent = '';
+          var fd = new FormData();
+          fd.append('file', item.fileObj);
+          fd.append('memo', memo);
+          $.ajax({
+            url: '/file/eval', method: 'POST', data: fd, processData: false, contentType: false,
+            success: function (encFileNo) {
+              item.encFileNo = encFileNo;
+              item.memo = memo;
+              renderFileAttachArea();
+            },
+            error: function () { errEl.textContent = '파일 업로드에 실패했습니다.'; }
+          });
+        }
+
+        // ------------------------------------------------
+        // 3-6/3-2/4-3. 유효성 검사
+        // ------------------------------------------------
+        function validateAndCollect() {
+          var scoresToSend = [];
+          var valid = true;
+
+          document.querySelectorAll('.eval-form-item').forEach(function (row) {
+            var no = Number(row.dataset.itemNo);
+            var type = row.dataset.type;
+            var errEl = row.querySelector('.eval-form-err');
+            errEl.textContent = '';
+
+            var chk = row.querySelector('.eval-item-edit-toggle');
+            if (isEditMode && chk && !chk.checked) return; // 4-2: 체크 안 된 항목은 제외
+
+            var def = itemDef(no);
+            var scoreInput = row.querySelector('.eval-score-input');
+            var resonInput = row.querySelector('.eval-reson-input');
+            var score = Number(scoreInput.value);
+            var reson = resonInput.value;
+
+            if (type === 'sub' && (isNaN(score) || score < def.min || score > def.max)) {
+              errEl.textContent = def.min + '~' + def.max + '점 사이의 정수를 입력해주세요.';
+              valid = false;
+            }
+            if (!RESON_REGEXP.test(reson)) {
+              errEl.textContent = (errEl.textContent ? errEl.textContent + ' ' : '') + '이유를 1~1000자로 입력해주세요.';
+              valid = false;
+            }
+            scoresToSend.push({ itemNo: no, score: score, field: def.field, reson: reson });
+          });
+
+          var actionReson = isEditMode ? document.getElementById('eval-action-reson').value : 'NEW';
+          var actionErrEl = document.getElementById('eval-err-action-reson');
+          if (actionErrEl) actionErrEl.textContent = '';
+          if (isEditMode && !ACTION_RESON_REGEXP.test(actionReson)) {
+            if (actionErrEl) actionErrEl.textContent = '수정 사유를 1~100자로 입력해주세요.';
+            valid = false;
+          }
+
+          // 첨부 중이지만 업로드 미완료 파일 존재 시 제출 불가
+          var pending = attachedFiles.some(function (f) { return !f.encFileNo; });
+          if (pending) { alert('첨부한 파일의 업로드(메모 입력 후 업로드)를 완료해주세요.'); valid = false; }
+
+          var encFileNos = [];
+          existingFiles.forEach(function (f) { if (!f.removed) encFileNos.push(f.encFileNo); });
+          attachedFiles.forEach(function (f) { if (f.encFileNo) encFileNos.push(f.encFileNo); });
+
+          return valid ? { scores: scoresToSend, actionReson: actionReson, encFileNos: encFileNos } : null;
+        }
+
+        document.getElementById('eval-form-submit-btn').addEventListener('click', function () {
+          var data = validateAndCollect();
+          if (!data) return;
+
+          var payload = {
+            scores: data.scores,
+            actionReson: data.actionReson,
+            encFileNos: data.encFileNos
+          };
+
+          $.ajax({
+            url: '/api/company/' + encCompanyNo + '/eval',
+            method: 'POST',
+            contentType: 'application/json; charset=utf-8',
+            data: JSON.stringify(payload),
+            success: function () { closeModal(); reloadFragment(); },
+            error: function () { alert('평가 저장에 실패했습니다.'); }
+          });
+        });
+
+        function reloadFragment() {
+          $.ajax({
+            url: '/company/' + encCompanyNo + '/eval',
+            method: 'GET',
+            success: function (html) {
+              $('#eval-fragment-wrapper').replaceWith(html);
+              if (window.lucide) lucide.createIcons();
+            },
+            error: function () { alert('평가 정보를 다시 불러오지 못했습니다.'); }
+          });
+        }
+
+        // ================================================
+        // 5. 평가 기록 목록
+        // ================================================
+        var lastHistoryHtml = '';
+
+        function showHistoryArea() {
+          document.getElementById('eval-view-area').style.display = 'none';
+          document.getElementById('eval-revision-area').style.display = 'none';
+          document.getElementById('eval-history-area').style.display = '';
+        }
+        function showMainArea() {
+          document.getElementById('eval-history-area').style.display = 'none';
+          document.getElementById('eval-revision-area').style.display = 'none';
+          document.getElementById('eval-view-area').style.display = '';
+        }
+
+        function loadHistory(page) {
+          $.ajax({
+            url: '/api/company/' + encCompanyNo + '/eval/history',
+            method: 'GET', data: { page: page || 1 },
+            success: function (result) {
+              renderHistoryList(result);
+              renderHistoryPagination(result);
+              showHistoryArea();
+              if (window.lucide) lucide.createIcons();
+            },
+            error: function () { alert('평가 기록 조회에 실패했습니다.'); }
+          });
+        }
+
+        function renderHistoryList(result) {
+          var html = '';
+          (result.list || []).forEach(function (h) {
+            html += '<div class="eval-history-card" data-revision-no="' + h.revisionNo + '">' +
+              '<div class="eval-history-card-row1">' +
+              '<span class="eval-history-revision">리비전 #' + h.revisionNo + '</span>' +
+              '<span class="eval-history-nickname">' + escapeHtml(h.nickname) + '</span>' +
+              '<span class="eval-history-date">' + formatDateArr(h.updateAt) + '</span></div>' +
+              '<div class="eval-history-card-row2">' + escapeHtml(h.actionReson) + '</div>' +
+              '</div>';
+          });
+          document.getElementById('eval-history-list').innerHTML = html || '<div class="cv-empty-state cv-text-muted cv-text-sm">평가 기록이 없습니다.</div>';
+          document.querySelectorAll('.eval-history-card').forEach(function (card) {
+            card.addEventListener('click', function () { loadRevision(card.dataset.revisionNo); });
+          });
+        }
+
+        function formatDateArr(dt) {
+          if (!dt) return '-';
+          var d = Array.isArray(dt) ? new Date(dt[0], dt[1] - 1, dt[2]) : new Date(dt);
+          if (isNaN(d)) return String(dt);
+          return d.getFullYear() + '년 ' + String(d.getMonth() + 1).padStart(2, '0') + '월 ' + String(d.getDate()).padStart(2, '0') + '일';
+        }
+
+        function renderHistoryPagination(result) {
+          var nav = document.getElementById('eval-history-pagination');
+          if (!result || result.totalPage <= 0) { nav.innerHTML = ''; return; }
+          var html = '<button class="page-btn page-nav" ' + (!result.hasPrev ? 'disabled' : '') +
+            ' data-page="' + (result.startPage - 1) + '"><i data-lucide="chevron-left"></i></button>';
+          for (var i = result.startPage; i <= result.endPage; i++) {
+            html += '<button class="page-btn" data-page="' + i + '">' + i + '</button>';
+          }
+          html += '<button class="page-btn page-nav" ' + (!result.hasNext ? 'disabled' : '') +
+            ' data-page="' + (result.endPage + 1) + '"><i data-lucide="chevron-right"></i></button>';
+          nav.innerHTML = html;
+          nav.querySelectorAll('.page-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () { loadHistory(Number(btn.dataset.page)); });
+          });
+        }
+
+        document.getElementById('eval-history-btn').addEventListener('click', function () { loadHistory(1); });
+        document.getElementById('eval-history-back-btn').addEventListener('click', showMainArea);
+
+        // ================================================
+        // 6. 리비전 상세
+        // ================================================
+        function loadRevision(revisionNo) {
+          $.ajax({
+            url: '/api/company/' + encCompanyNo + '/eval/history/' + revisionNo,
+            method: 'GET',
+            success: function (detail) { renderRevision(detail); },
+            error: function (xhr) {
+              if (xhr.status === 404) alert('해당 리비전을 찾을 수 없습니다.');
+              else alert('리비전 조회에 실패했습니다.');
+            }
+          });
+        }
+
+        function renderRevision(detail) {
+          document.getElementById('eval-revision-meta').innerHTML =
+            '<span class="eval-history-revision">리비전 #' + detail.revisionNo + '</span>' +
+            '<span class="eval-history-nickname">' + escapeHtml(detail.nickname) + '</span>' +
+            '<span class="eval-history-date">' + formatDateArr(detail.updateAt) + '</span>';
+          document.getElementById('eval-revision-reason').textContent = detail.actionReson;
+          renderScoresView(detail.scores, 'eval-revision-scores');
+          renderFilesView(detail.files, 'eval-revision-files');
+
+          document.getElementById('eval-history-area').style.display = 'none';
+          document.getElementById('eval-view-area').style.display = 'none';
+          document.getElementById('eval-revision-area').style.display = '';
+          if (window.lucide) lucide.createIcons();
+        }
+
+        document.getElementById('eval-revision-back-btn').addEventListener('click', function () {
+          document.getElementById('eval-revision-area').style.display = 'none';
+          document.getElementById('eval-history-area').style.display = '';
+        });
+
+      })();
+    </script>
+  </div>
+</th:block>

@@ -31,6 +31,9 @@ public class GeocodingService {
 	
 	/**
 	 * 카카오맵 로컬 api 지오코딩
+	 * https://developers.kakao.com/
+	 * 
+	 * 네이버꺼 사용해서 구현해도 상관없음
 	 */
 	public LocationVO.Detail getCoordinate(String address) {
 		

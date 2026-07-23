@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tl.global.file.EvalDocMapper">
+
+  <insert id="insert" parameterType="EvalDocInsert">
+    insert into EVALUATION_DOC(FILE_NO, MEMO)
+    values(#{fileNo}, #{memo})
+  </insert>
+
+  <update id="updateHistoryNo">
+    update EVALUATION_DOC
+    set HISTORY_NO = #{historyNo}
+    where FILE_NO in
+    <foreach collection="list" item="item" open="(" separator="," close=")">
+      #{item}
+    </foreach>
+  </update>
+
+  <select id="selectBasic" resultType="FileInfoBasic">
+    select
+      FI.ORIGINAL_NAME
+      ,FI.CHANGED_NAME
+      ,FI.MIME
+      ,FI.SAVE_PATH
+    from FILE_INFO FI
+    <if test="!isAll">
+      inner join EVALUATION_DOC ED on (ED.FILE_NO = FI.FILE_NO)
+      inner join EVALUATION_HISTORY EH on (EH.HISTORY_NO = ED.HISTORY_NO)
+      inner join EVALUATION E on (E.EVALUATION_NO = EH.EVALUATION_NO)
+      inner join COMPANY C on (C.COMPANY_NO = E.EVALUATION_NO)
+    </if>
+    where FI.FILE_NO = #{fileNo}
+    <if test="!isAll">
+      and C.STATUS = 'ACTIVE'
+    </if>
+  </select>
+
+</mapper>

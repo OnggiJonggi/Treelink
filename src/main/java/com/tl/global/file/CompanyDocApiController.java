@@ -25,8 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/file/company")
 @RequiredArgsConstructor
 @Slf4j
-public class CompanyFileApiController {
-	private final CompanyFileService companyFileService;
+public class CompanyDocApiController {
+	private final CompanyDocService companyDocService;
 	private final CryptoComponent cryptoComponent;
 	
 	/**
@@ -49,7 +49,7 @@ public class CompanyFileApiController {
 				.size(file.getSize())
 				.bytes(file.getBytes()).build();
 		
-		companyFileService.insertLogo(fileData, companyNo, memberNo);
+		companyDocService.insertLogo(fileData, companyNo, memberNo);
 		
 		return ResponseEntity.ok().build();
 	}
@@ -68,13 +68,14 @@ public class CompanyFileApiController {
 		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		String url;
-		if(userDetails==null ||
-				!userDetails.getAuthorities().stream()
-		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
+		if(userDetails != null &&
+				userDetails.getAuthorities().stream()
+	            .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
 			
-			// 관리자 권한이 없으면 활성화된 회사만 조회 가능
-			url = companyFileService.getSavePath(companyNo, false);
-		}else url = companyFileService.getSavePath(companyNo, true);
+			// 관리자이면 모든 업체 조회 가능
+			url = companyDocService.getSavePath(companyNo, true);
+			
+		}else url = companyDocService.getSavePath(companyNo, false);
 		
 		// 없으면 가세요
 		if(url == null || url.isEmpty())
@@ -106,53 +107,51 @@ public class CompanyFileApiController {
 				.bytes(file.getBytes()).build();
 		
 		// 등록 중...
-		CompanyFileVO.HandOver handOver = CompanyFileVO.HandOver.builder()
+		CompanyDocVO.HandOver handOver = CompanyDocVO.HandOver.builder()
 				.memberNo(cryptoComponent.decrypt(userDetails.getEncMemberNo()))
 				.companyNo(companyNo)
 				.file(fileData)
 				.docType(docType)
 				.expireOn(expireOn).build();
-		companyFileService.insert(handOver);
+		companyDocService.insert(handOver);
 		
 		return ResponseEntity.ok().build();
 	}
 	
 	/**
 	 * 업체 서류 조회
+	 * 
 	 * 관리자
 	 */
-	@GetMapping("{encCompanyNo}/doc/{encDocNo}")
+	@GetMapping("{encCompanyNo}/doc/{encFileNo}")
 	public ResponseEntity<String> getDoc(
 			@PathVariable String encCompanyNo,
-			@PathVariable String encDocNo) throws Exception{
+			@PathVariable String encFileNo) throws Exception{
 		
 		int companyNo = cryptoComponent.decrypt(encCompanyNo);
-		int docNo = cryptoComponent.decrypt(encDocNo);
+		int fileNo = cryptoComponent.decrypt(encFileNo);
 		
-		String url = companyFileService.getFile(companyNo, docNo);
+		String url = companyDocService.getFile(companyNo, fileNo);
 
 		return ResponseEntity.ok().body(url);
 	}
 	
 	/**
 	 * 파일 삭제 요청
-	 * 관리자
 	 * 
-	 * @param CompanyUuid
-	 * @param encDocNo
-	 * @return 204
+	 * 관리자
 	 */
-	@DeleteMapping("{encCompanyNo}/doc/{encDocNo}")
+	@DeleteMapping("{encCompanyNo}/doc/{encFileNo}")
 	public ResponseEntity<Void> deleteDoc(
 			@AuthenticationPrincipal CustomUserDetails userDetails,
 			@PathVariable String encCompanyNo,
-			@PathVariable String encDocNo) throws Exception{
+			@PathVariable String encFileNo) throws Exception{
 		
 		int companyNo = cryptoComponent.decrypt(encCompanyNo);
-		int docNo = cryptoComponent.decrypt(encDocNo);
+		int fileNo = cryptoComponent.decrypt(encFileNo);
 		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
-		companyFileService.deleteDoc(companyNo, docNo, memberNo);
+		companyDocService.deleteDoc(companyNo, fileNo, memberNo);
 		
 		return ResponseEntity.noContent().build();
 	}
@@ -160,6 +159,8 @@ public class CompanyFileApiController {
 	/**
 	 * 업체 소개문 summernote이미지 삽입
 	 * 관리자
+	 * 
+	 * @return uuid+확장자로 변경된 이름
 	 */
 	@PostMapping("{encCompanyNo}/intro")
 	public ResponseEntity<String> insertIntroImage(
@@ -177,7 +178,7 @@ public class CompanyFileApiController {
 				.size(file.getSize())
 				.bytes(file.getBytes()).build();
 		
-		String changedName = companyFileService.insertIntroImage(fileData, companyNo, memberNo);
+		String changedName = companyDocService.insertIntroImage(fileData, companyNo, memberNo);
 		
 		// 변경된 이름 반환
 		return ResponseEntity.ok(changedName);
@@ -202,10 +203,10 @@ public class CompanyFileApiController {
 		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
 			
 			// 관리자 권한이 없으면 활성화된 회사만 조회 가능
-			url = companyFileService.getIntroImage(companyNo, changedName, CompanyStatusEnum.ACTIVE);
+			url = companyDocService.getIntroImage(companyNo, changedName, CompanyStatusEnum.ACTIVE);
 			
 			// 권한 있으면 제한 없음
-		}else url = companyFileService.getIntroImage(companyNo, changedName, null);
+		}else url = companyDocService.getIntroImage(companyNo, changedName, null);
 		
 		return ResponseEntity.ok().body(url);
 	}

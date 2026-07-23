@@ -13,8 +13,7 @@ public class SanitizeComponent {
 
 	/**
 	 * 사용자가 HTML 태그 사용이 가능한 입력칸에 멋대로 나쁜 태그를 으쌰으쌰하면 떽!하는 메소드지요
-	 * 
-	 * JSOUP 라이브러리가 쓰이지요
+	 * summernote에 사용하는 태그는 통화하지요
 	 */
 	private static final Safelist POLICY = Safelist.relaxed()
 		    .removeProtocols("img", "src", "http", "https")
@@ -35,12 +34,8 @@ public class SanitizeComponent {
 		if (rawHtml == null || rawHtml.isBlank())
 			return "";
 
-		// 임시용
 		String cleaned = Jsoup.clean(rawHtml, "/", POLICY.preserveRelativeLinks(true));
 		
-		// 배포용
-//		String cleaned = Jsoup.clean(rawHtml, "https://axc~", POLICY);
-
 		// data: URI 이미지 제거 필터
 		Document doc = Jsoup.parse(cleaned);
 		doc.select("img[src~=(?i)^data:]").remove();

@@ -1,9 +1,6 @@
 package com.tl.global.file;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-
-import org.springframework.format.annotation.DateTimeFormat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tl.global.file.component.FileStatusEnum;
@@ -36,27 +33,6 @@ public class FileInfoVO {
 		private String savePath;
 	}
 	
-	
-	@NoArgsConstructor
-	@AllArgsConstructor
-	@Data
-	@Builder
-	@ToString
-	public static class Detail{
-		
-		@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-		private int fileNo;
-		private String encFileNo;
-		
-		private String originalName;
-		private long fileSize;
-		
-		@DateTimeFormat(pattern = "yyyy-MM-dd")
-		private LocalDate expireOn;
-		
-		private String docType;
-	}
-	
 	@NoArgsConstructor
 	@AllArgsConstructor
 	@Getter
@@ -68,7 +44,12 @@ public class FileInfoVO {
 		private String savePath;
 	}
 	
-	// FILE_HISTORY 삽입
+	/**
+	 * FILE_HISTORY 삽입용
+	 * 
+	 * 본래는 insert용이지만 select에서도 사용됨
+	 * TODO : 삽입용 / 조회용 객체 분리 
+	 */
 	@NoArgsConstructor
 	@AllArgsConstructor
 	@Data

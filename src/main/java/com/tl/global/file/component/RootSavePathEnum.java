@@ -8,6 +8,7 @@ public enum RootSavePathEnum {
 	COMPANY_DOC("company-doc/"),
 	COMPANY_LOGO("image/company-logo/"),
 	COMPANY_INTRO("image/company-intro/"),
+	EVAL_DOC("eval-doc/")
 	;
 	
 	private final String folder;

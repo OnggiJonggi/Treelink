@@ -24,8 +24,6 @@
 
 관리자 페이지(/admin/main)
   업체 추가(get, /company/registor)
-  평가 추가(get, /evaluation/registor)
-  평가 검색(get, /evaluation)
   회원 검색(get, /member)
 
 업체 추가(/company/registor)
@@ -38,7 +36,7 @@
 네비 바
   기본 정보(get, /company/{encCompanyNo})
   업체 소개(get, /company/{encCompanyNo}/intro)
-  평가 목록(get, /evaluation/{encCompanyNo})
+  평가 조회(get, /company/{encCompanyNo}/eval)
   위치 확인(get, /company/{encCompanyNo}/location)
   작업 현황(get, /company/{encCompanyNo}/dashboard)
 기본 정보
@@ -47,21 +45,29 @@
     업체 로고 등록(post, /file/company/{encCompanyNo}/logo)
     업체 수정(put, /api/company/{encCompanyNo})
     업체 서류 등록(post, /file/company/{encCompanyNo}/doc)
-    업체 서류 보기(get, /file/company/{encCompanyNo}/doc/{encDocNo})
-    업체 서류 삭제(delete, /file/company/{encCompanyNo}/doc/{encDocNo})
-    -실제 파일 삭제 로직 구현 필요해요!!
+    업체 서류 보기(get, /file/company/{encCompanyNo}/doc/{encFileNo})
+    업체 서류 삭제(delete, /file/company/{encCompanyNo}/doc/{encFileNo})
 업체 소개
   사진 불러오기(get, /file/company/{encCompanyNo}/intro/{changedName})
   권한 - ADMIN
     소개 생성/수정(put, /api/company/{encCompanyNo}/intro)
-    사진 삽입(post, /file/company/{encCompanyNo}/intro)
-평가 목록(/evaluation/{encCompanyNo})
+      사진 삽입(post, /file/company/{encCompanyNo}/intro)
+평가 조회(/company/{encCompanyNo}/eval)
+  파일 보기(get, /file/eval/{encFileNo})
+  권한 - ADMIN, EVALUATOR
+    평가 추가 / 수정(post, /api/company/{encCompanyNo}/eval)
+      파일 첨부(post, /file/eval)
+    평가 기록 목록(get, /api/company/{encCompanyNo}/eval/history)
+      페이징 바 조작(get, /api/company/{encCompanyNo}/eval/history)
+      리비전 조회(get, /api/company/{encCompanyNo}/eval/history/{revisionNo})
+        파일 보기(get, /file/eval/{encFileNo})
 위치 확인(/company/{encCompanyNo}/location)
   권한 - ADMIN
     지오코드(get, /api/location/geocoding)
     위치 추가(post, /api/company/{encCompanyNo}/location)
     위치 삭제(delete, /api/company/{encCompanyNo}/location)
 작업 현황(/company/{encCompanyNo}/management)
+  페이징 바 조작(get, /api/company/{encCompanyNo}/management)
   권한 - ADMIN
     지오코드(get, /api/location/geocoding)
     현황 추가(post, /api/company/{encCompanyNo}/management)

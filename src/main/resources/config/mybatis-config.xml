@@ -27,19 +27,37 @@
         <typeAlias type="com.tl.company.CompanyVO$InsertLocation" alias="CompanyInsertLocation"/>
         <typeAlias type="com.tl.company.CompanyVO$LocationDetail" alias="CompanyLocationDetail"/>
 
-        <!-- CompanyFile -->
-        <typeAlias type="com.tl.global.file.CompanyFileVO$Insert" alias="CompanyFileInsert"/>
+        <!-- Management -->
+        <typeAlias type="com.tl.company.ManagementVO$Detail" alias="ManagementDetail"/>
+        <typeAlias type="com.tl.company.ManagementVO$Search" alias="ManagementSearch"/>
+        <typeAlias type="com.tl.company.ManagementVO$SearchCount" alias="ManagementSearchCount"/>
+        <typeAlias type="com.tl.company.ManagementVO$Insert" alias="ManagementInsert"/>
+        
+        <!-- Eval -->
+        <typeAlias type="com.tl.company.EvalVO$Detail" alias="EvalDetail"/>
+        <typeAlias type="com.tl.company.EvalVO$ScoreDetail" alias="EvalScoreDetail"/>
+        <typeAlias type="com.tl.company.EvalVO$HistoryDetail" alias="EvalHistoryDetail"/>
+        <typeAlias type="com.tl.company.EvalVO$Insert" alias="EvalInsert"/>
+        <typeAlias type="com.tl.company.EvalVO$InsertScore" alias="EvalInsertScore"/>
+        <typeAlias type="com.tl.company.EvalVO$Search" alias="EvalSearch"/>
+
+        <!-- CompanyDoc -->
+        <typeAlias type="com.tl.global.file.CompanyDocVO$Insert" alias="CompanyDocInsert"/>
+        <typeAlias type="com.tl.global.file.CompanyDocVO$Detail" alias="CompanyDocDetail"/>
+
+        <!-- EvalDoc -->
+        <typeAlias type="com.tl.global.file.EvalDocVO$Insert" alias="EvalDocInsert"/>
+        <typeAlias type="com.tl.global.file.EvalDocVO$Detail" alias="EvalDocDetail"/>
         
         <!-- FileInfo -->
         <typeAlias type="com.tl.global.file.FileInfoVO$Insert" alias="FileInfoInsert"/>
-        <typeAlias type="com.tl.global.file.FileInfoVO$Detail" alias="FileInfoDetail"/>
         <typeAlias type="com.tl.global.file.FileInfoVO$Basic" alias="FileInfoBasic"/>
         <typeAlias type="com.tl.global.file.FileInfoVO$History" alias="FileInfoHistory"/>
 
         <!-- Location -->
         <typeAlias type="com.tl.global.location.LocationVO$Detail" alias="LocationDetail"/>
         <typeAlias type="com.tl.global.location.LocationVO$Insert" alias="LocationInsert"/>
-        
+
         <!-- 전역 설정 -->
         <package name="com.tl"/>
     </typeAliases>

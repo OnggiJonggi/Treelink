@@ -1,0 +1,313 @@
+.eval-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.eval-action-buttons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ============================
+   조회 화면 카드
+============================ */
+.eval-scores-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.eval-group-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg);
+}
+
+.eval-group-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: var(--space-1);
+}
+
+.eval-item-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.eval-item--top {
+  border-color: var(--color-primary);
+  background: var(--color-primary-highlight);
+}
+
+.eval-item--total {
+  border: 1.5px solid var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+.eval-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.eval-item-field {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.eval-item-score {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.eval-item-grade {
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-highlight);
+  padding: 2px var(--space-3);
+  border-radius: 9999px;
+  font-size: var(--text-sm);
+}
+
+.eval-item-reson {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  white-space: pre-wrap;
+}
+
+/* ============================
+   파일 목록 (조회)
+============================ */
+.eval-files-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.eval-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eval-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.eval-file-item:hover {
+  background: var(--color-surface-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.eval-file-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.eval-file-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eval-file-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================
+   생성/수정 모달
+============================ */
+.eval-modal {
+  max-width: 640px;
+}
+
+.eval-form-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eval-form-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.eval-form-item-field {
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.eval-edit-check {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.eval-form-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eval-score-input {
+  width: 100px;
+}
+
+.eval-reson-input {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* ============================
+   파일 첨부 (모달 내부)
+============================ */
+.eval-file-attach-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.eval-file-attach-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  flex-wrap: wrap;
+}
+
+.eval-file-attach-item--locked {
+  opacity: 0.7;
+}
+
+.eval-file-attach-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  flex: 1;
+  min-width: 100px;
+}
+
+.eval-file-memo-input {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* ============================
+   평가 기록 목록
+============================ */
+.eval-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.eval-history-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  transition: background var(--transition), box-shadow var(--transition);
+}
+
+.eval-history-card:hover {
+  background: var(--color-surface-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.eval-history-card-row1 {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: var(--text-sm);
+}
+
+.eval-history-revision {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.eval-history-nickname {
+  color: var(--color-text);
+}
+
+.eval-history-date {
+  color: var(--color-text-muted);
+  margin-left: auto;
+}
+
+.eval-history-card-row2 {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* ============================
+   리비전 상세
+============================ */
+.eval-revision-meta {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.eval-revision-reason {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-4);
+  white-space: pre-wrap;
+}

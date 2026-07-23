@@ -15,9 +15,9 @@ public interface CompanyMapper {
 	public int insertCompany(CompanyVO.Registor companyRegistor);
 
 	public int insertCompanySpecialty(
-			@Param("companyNo") int companyNo
-			,@Param("option") List<Integer> option
-			,@Param("etcMemo") String etcMemo);
+			@Param("companyNo") int companyNo,
+			@Param("option") List<Integer> option,
+			@Param("etcMemo") String etcMemo);
 	
 	public CompanyVO.Detail selectCompanyDetail(int companyNo);
 
@@ -30,5 +30,25 @@ public interface CompanyMapper {
 			@Param("status") CompanyStatusEnum status);
 
 	public int updateIntro(int companyNo, String intro);
+
+	public List<CompanyVO.LocationDetail> selectCompanyLocations(int companyNo);
+
+	public int insertLocation(CompanyVO.InsertLocation companyLocation);
+
+	public int deleteLocation(
+			@Param("companyNo") int companyNo,
+			@Param("locationNo") int locationNo);
+	
+	public List<ManagementVO.Detail> selectManagement(ManagementVO.Search search);
+
+	public ManagementVO.SearchCount selectManagementTotalCount(ManagementVO.Search search);
+
+	public int insertManagement(ManagementVO.Insert insert);
+
+	public int deleteLocationByCompanyNo(
+			@Param("companyNo") int companyNo,
+			@Param("locationNo") int locationNo);
+
+	public int updateManagement(ManagementVO.Insert insert);
 
 }
