@@ -1,13 +1,13 @@
-package com.tl.company;
+package com.tl.company.eval;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.global.common.SearchResultVO;
+import com.tl.global.exception.CustomException;
+import com.tl.global.exception.ErrorCodeEnum;
 import com.tl.global.file.EvalDocMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class EvalService {
 	/**
 	 * 평가 조회
 	 * 
-	 * @param isAll : 전체조회 / 활성화된 회사만 조회 여부
+	 * @param isAll : 전체조회 / 활성화된 업체만 조회 여부
 	 * 
 	 * 각 평가 항목의 최신 리비전 반영 사항을 조회
 	 */
@@ -55,44 +55,45 @@ public class EvalService {
 		// 리비전 번호 추가
 		insert.setRevisionNo(revisionNo + 1);
 		
+		// 신규 추가
 		if(revisionNo == 0) {
-			// 신규 추가
 			
 			// 유효성 검사
 			if(!evalValidComponent.isScoreValid(insert.getScores(), null))
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+				throw new CustomException(ErrorCodeEnum.INVALIED_EVAL_FORMAT);
 			
 			// EVALUATION 테이블 추가
 			int result1 = evalMapper.insert(insert.getEvaluationNo());
 			if(result1 == 0)
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+				throw new CustomException(ErrorCodeEnum.FAILED_CREATE_EVAL);
 			
 			// EVALUATION_SCORE 테이블 추가
 			int result2 = evalMapper.insertScore(insert);
 			if(result2 != insert.getScores().size())
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+				throw new CustomException(ErrorCodeEnum.FAILED_CREATE_EVAL_SCORE);
+			
+		// 수정
 		}else {
-			// 수정
 			
 			// 기존 평가 점수 긁어오기
 			List<EvalVO.ScoreDetail> oldScores = evalMapper.selectOldScores(insert.getEvaluationNo());
 			
 			// 유효성 검사
 			if(!evalValidComponent.isScoreValid(insert.getScores(), oldScores))
-				throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+				throw new CustomException(ErrorCodeEnum.INVALIED_EVAL_FORMAT);
 			
 			// EVALUATION_SCORE 테이블 수정
 			for(EvalVO.InsertScore item : insert.getScores()) {
 				int result1 = evalMapper.update(insert.getEvaluationNo(), item);
 				if(result1 == 0)
-					throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+					throw new CustomException(ErrorCodeEnum.FAILED_UPDATE_EVAL_SCORE);
 			}
 		}
 		
 		// EVALUATION_HISTORY 테이블 추가
 		int result3 = evalMapper.insertHistory(insert);
 		if(result3 == 0)
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new CustomException(ErrorCodeEnum.FAILED_CREATE_EVAL_HISTORY);
 		
 		// scores가 있을 때
 		if(insert.getScores() != null && insert.getScores().size() != 0) {
@@ -100,7 +101,7 @@ public class EvalService {
 			// EVALUATION_SCORE_HISTORY 테이블 추가
 			int result4 = evalMapper.insertHistoryScore(insert);
 			if(result4 != insert.getScores().size())
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new CustomException(ErrorCodeEnum.FAILED_CREATE_EVAL_SCORE_HISTORY);
 		}
 		
 		// 파일 있냐?
@@ -112,7 +113,7 @@ public class EvalService {
 			// EVALUATION_DOC에 변경된 파일 정보 업데이트
 			int result5 = evalDocMapper.updateHistoryNo(insert.getFileNos(), historyNo);
 			if(result5 != insert.getFileNos().size())
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new CustomException(ErrorCodeEnum.FAILED_UPDATE_EVAL_DOC);
 		}
 	}
 
@@ -140,7 +141,7 @@ public class EvalService {
 	 * 
 	 * 각 평가 항목의 최신 리비전 반영 사항을 조회
 	 * 
-	 * @param isAll : true이면 모든 회사 대상, false이면 활성화된 회사만 대상
+	 * @param isAll : true이면 모든 업체 대상, false이면 활성화된 업체만 대상
 	 */
 	public EvalVO.HistoryDetail getRevision(int companyNo, int revisionNo, boolean isAll) {
 		return evalMapper.selectRevision(companyNo, revisionNo, isAll);

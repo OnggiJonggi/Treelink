@@ -5,7 +5,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.RoleEnum;
 
 @Mapper
 public interface MemberMapper {
@@ -26,7 +26,9 @@ public interface MemberMapper {
 
 	public int updateMember(MemberVO.Update member);
 	
-	public int updateRole(@Param("memberNo") int memberNo,
+	public int deleteRole(int memberNo);
+	
+	public int insertRole(@Param("memberNo") int memberNo,
 			@Param("role") RoleEnum role);
 	
 	public int updateStatus(@Param("memberNo") int memberNo,

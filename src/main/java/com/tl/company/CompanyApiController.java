@@ -18,11 +18,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tl.company.eval.EvalService;
+import com.tl.company.eval.EvalVO;
 import com.tl.global.common.SearchResultVO;
 import com.tl.global.file.EvalDocVO;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.CanAccess;
+import com.tl.global.security.role.HasRole;
+import com.tl.global.security.role.RoleEnum;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +44,10 @@ public class CompanyApiController {
 	
 	/**
 	 * 사업자 등록번호 진위확인
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@GetMapping("check-businessno")
 	public ResponseEntity<String> checkBusinessNo(
 			@Valid BusinessNoCheckVO.request businessNoCheckRequest
@@ -57,20 +63,18 @@ public class CompanyApiController {
 	
 	/**
 	 * 업체 목록
+	 * 
+	 * 비회원을 포함한 모든 권한
+	 * 관리자 : 비활성화된 업체도 조회
 	 */
 	@GetMapping("")
 	public ResponseEntity<SearchResultVO<CompanyVO.Detail>> goCompanyList(CompanyVO.Search companySearch,
-			@AuthenticationPrincipal CustomUserDetails userDetails
+			@AuthenticationPrincipal CustomUserDetails userDetails,
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
 			) throws Exception{
 		
-		// 관리자 권한에 따라 조회 범위가 달라요
-		if(userDetails == null ||
-				!userDetails.getAuthorities().stream()
-				.anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
-			
-			// 권한 없으면 활성화된 상태만 조회 가능해요
-			companySearch.setStatus(CompanyStatusEnum.ACTIVE);
-		}
+		// 관리자 권한 없으면 활성화된 업체만 조회 가능
+		if(!isAdmin) companySearch.setStatus(CompanyStatusEnum.ACTIVE);
 		
 		SearchResultVO<CompanyVO.Detail> result = companyService.getCompanyList(companySearch);
 		
@@ -85,14 +89,16 @@ public class CompanyApiController {
 	
 	/**
 	 * 업체 수정
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@PutMapping("{encCompanyNo}")
 	public ResponseEntity<Void> updateCompany(
 			@PathVariable String encCompanyNo,
 			@Valid CompanyVO.Registor company) throws Exception{
 		
-		// 회사 식별번호 복호화
+		// 업체 식별번호 복호화
 		company.setCompanyNo(cryptoComponent.decrypt(encCompanyNo));
 		
 		companyService.updateCompany(company);
@@ -102,9 +108,11 @@ public class CompanyApiController {
 
 	
 	/**
-	 * 회사 소개 생성/수정
+	 * 업체 소개 생성/수정
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@PutMapping("{encCompanyNo}/intro")
 	public ResponseEntity<Void> insertIntro(
 			@RequestParam String intro,
@@ -122,8 +130,10 @@ public class CompanyApiController {
 	
 	/**
 	 * 업체 위치 추가
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@PostMapping("{encCompanyNo}/location")
 	public ResponseEntity<Void> insertLocation(
 			@PathVariable String encCompanyNo,
@@ -139,8 +149,10 @@ public class CompanyApiController {
 	
 	/**
 	 * 업체 위치 삭제
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@DeleteMapping("{encCompanyNo}/location")
 	public ResponseEntity<Void> deleteLocation(
 			@PathVariable String encCompanyNo,
@@ -156,18 +168,20 @@ public class CompanyApiController {
 	
 	/**
 	 * 업체 작업 현황의 페이징 바 조작
-	 * 모든 권한
+	 * 
+	 * 비회원을 포함한 모든 권한
 	 * 관리자 : 현황 추가/수정, 모든 작업 현황 조회
 	 * 
 	 * 업체가 진행 중 / 종료한 프로젝트 나열
 	 * 현황 이름, 메모, 시작일, 종료일, 상태
-	 * 공개 범위(VISIBLE)에 따라 보이는게 달라요 
+	 * 공개 범위(VISIBLE)에 따라 보이는게 달라요
 	 */
 	@GetMapping("{encCompanyNo}/management")
 	public ResponseEntity<ManagementVO.SearchResult> getManagement(
 			@PathVariable String encCompanyNo,
 			@AuthenticationPrincipal UserDetails userDetails,
-			@RequestParam int page
+			@RequestParam int page,
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
 			)throws Exception{
 		
 		int companyNo = cryptoComponent.decrypt(encCompanyNo);
@@ -179,19 +193,13 @@ public class CompanyApiController {
 		search.setCompanyNo(companyNo);
 		search.setPage(page);
 		
-		if(userDetails != null &&
-				userDetails.getAuthorities().stream()
-	            .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
+		// 관리자 권한 : 전체 조회
+		if(isAdmin) search.setVisible(true);
 			
-			// 관리자 권한 : 전체 조회
-			search.setVisible(true);
-			result = companyService.getManagement(search);
-			
-		}else {
-			// 권한 없으면 손가락이나 빠쇼
-			search.setVisible(false);
-			result = companyService.getManagement(search);
-		}
+		// 권한 없으면 손가락이나 빠쇼
+		else search.setVisible(false);
+		
+		result = companyService.getManagement(search);
 		
 		// 식별번호 암호화
 		for(ManagementVO.Detail item : result.getResult().getList()) {
@@ -204,8 +212,10 @@ public class CompanyApiController {
 	
 	/**
 	 * 새로운 작업 현황 추가
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@PostMapping("{encCompanyNo}/management")
 	public ResponseEntity<Void> insertManagement(
 			@PathVariable String encCompanyNo,
@@ -241,7 +251,9 @@ public class CompanyApiController {
 	
 	/**
 	 * 평가 추가 / 수정
-	 * 관리자, 평가자
+	 * 
+	 * 관리자
+	 * 평가자
 	 * 
 	 * @Parma EvalVO.Insert.actionReson : 
 	 * 	EVALUATION_HISTORY 테이블에 들어가는 값으로
@@ -280,7 +292,6 @@ public class CompanyApiController {
 			insert.setEncFileNos(null);
 		}
 		
-		log.info("들어온 insert : \n{}", insert);
 		// 평가 추가 / 수정
 		evalService.insert(insert);
 		
@@ -296,7 +307,9 @@ public class CompanyApiController {
 	public ResponseEntity<SearchResultVO<EvalVO.HistoryDetail>> getHistory(
 			@PathVariable String encCompanyNo,
 			@RequestParam(required = false) int page,
-			@AuthenticationPrincipal CustomUserDetails userDetails) throws Exception{
+			@AuthenticationPrincipal CustomUserDetails userDetails,
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
+			) throws Exception{
 		
 		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
@@ -305,17 +318,11 @@ public class CompanyApiController {
 		search.setEvaluationNo(companyNo);
 		search.setPage(page);
 		
-		// 권한 분기
-		if(userDetails != null &&
-				userDetails.getAuthorities().stream()
-	            .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
-			
-			// 모든 업체 조회
-			search.setAll(true);
-		} else {
-			// 활성화된 업체만 조회
-			search.setAll(false);
-		}
+		// 모든 업체 조회
+		if(isAdmin) search.setAll(true);
+		
+		// 활성화된 업체만 조회
+		else search.setAll(false);
 		
 		// 검색
 		SearchResultVO<EvalVO.HistoryDetail> result = evalService.search(search);
@@ -326,31 +333,25 @@ public class CompanyApiController {
 	/**
 	 * 리비전 조회
 	 * 
-	 * 모든 권한 : 활성화된 업체 리비전 조회
+	 * 비회원을 포함한 모든 권한 : 활성화된 업체 리비전 조회
 	 * 관리자 : 모든 업체 리비전 조회
 	 */
 	@GetMapping("{encCompanyNo}/eval/history/{revisionNo}")
 	public ResponseEntity<EvalVO.HistoryDetail> getRevision(
 			@PathVariable String encCompanyNo,
 			@PathVariable int revisionNo,
-			@AuthenticationPrincipal UserDetails userDetails
+			@AuthenticationPrincipal UserDetails userDetails,
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
 			) throws Exception{
 		int companyNo = cryptoComponent.decrypt(encCompanyNo);
 		
 		EvalVO.HistoryDetail result;
 		
-		// 권한 분기
-		if(userDetails != null &&
-				userDetails.getAuthorities().stream()
-	            .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
-			
-			// 모든 업체 조회
-			 result  = evalService.getRevision(companyNo, revisionNo, true);
-			
-		} else {
-			// 활성화된 업체만 조회
-			result = evalService.getRevision(companyNo, revisionNo, false);
-		}
+		// 관리자 권한이면 모든 업체 리비전 조회
+		if(isAdmin) result  = evalService.getRevision(companyNo, revisionNo, true);
+		
+		// 관리자 아니면 활성화된 업체 리비전 조회
+		else result = evalService.getRevision(companyNo, revisionNo, false);
 		
 		// 없으면 404
 		if(result==null) return ResponseEntity.notFound().build();

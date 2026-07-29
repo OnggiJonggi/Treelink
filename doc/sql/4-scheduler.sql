@@ -1,3 +1,4 @@
+-- TODO : 스케쥴러 변경된 테이블에 맞게 수정
 BEGIN
   DBMS_SCHEDULER.CREATE_JOB(
     job_name        => 'JOB_EXPIRE_FILES',

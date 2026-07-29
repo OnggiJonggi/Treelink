@@ -13,7 +13,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.HasRole;
+import com.tl.global.security.role.RoleEnum;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -65,28 +66,25 @@ public class EvalDocApiController {
 	public ResponseEntity<String> getFile(
 			@PathVariable String encFileNo,
 			@RequestParam String encCompanyNo,
-			@AuthenticationPrincipal UserDetails userDetails) throws Exception{
+			@AuthenticationPrincipal UserDetails userDetails,
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
+			) throws Exception{
 		
 		int fileNo = cryptoComponent.decrypt(encFileNo);
 
 		String url;
-		if(userDetails != null &&
-				userDetails.getAuthorities().stream()
-		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
+		
+		// 관리자이면 모든 업체 조회
+		if(isAdmin) url = evalDocService.getSavePath(0, fileNo, true);
 			
-			// 관리자면 모든 업체 조회 가능
-			url = evalDocService.getSavePath(0, fileNo, true);
-			
-		}else {
-			
-			// 관리자 아니면 활성화된 업체만 조회 가능
+		// 관리자 아니면 활성화된 업체만 조회 가능
+		else {
 			int companyNo = cryptoComponent.decrypt(encCompanyNo);
 			url = evalDocService.getSavePath(companyNo, fileNo, false);
 		}
 		
 		// 없으면 가세요
-		if(url == null || url.isEmpty())
-			return ResponseEntity.notFound().build();
+		if(url == null || url.isEmpty()) return ResponseEntity.notFound().build();
 		
 		return ResponseEntity.ok().body(url);
 	}

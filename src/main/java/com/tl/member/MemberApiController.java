@@ -1,19 +1,22 @@
 package com.tl.member;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.global.common.SearchResultVO;
+import com.tl.global.exception.CustomException;
+import com.tl.global.exception.ErrorCodeEnum;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.CanAccess;
+import com.tl.global.security.role.HasRole;
+import com.tl.global.security.role.RoleEnum;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +32,6 @@ public class MemberApiController {
 	
 	/**
 	 * 아이디 중복 확인
-	 * @param member
-	 * @return 정상 200
 	 */
 	@GetMapping("check-id")
 	public ResponseEntity<Void> checkId(String userId) {
@@ -40,8 +41,6 @@ public class MemberApiController {
 	
 	/**
 	 * 닉네임 중복 확인
-	 * @param nickname
-	 * @return 정상 200, 이상해요 400
 	 */
 	@GetMapping("check-nickname")
 	public ResponseEntity<Void> checkNickName(String nickname) {
@@ -51,8 +50,10 @@ public class MemberApiController {
 	
 	/**
 	 * 회원 목록
-	 * 관리자 권한
+	 * 
+	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@GetMapping("")
 	public ResponseEntity<SearchResultVO<MemberVO.Detail>> getList(MemberVO.Search search) throws Exception{
 		SearchResultVO<MemberVO.Detail> result = memberService.getList(search);
@@ -61,8 +62,11 @@ public class MemberApiController {
 	
 	/**
 	 * 회원 기본정보 수정
-	 * 관리자, 본인 계정
+	 * 
+	 * 모든 회원 : 본인 계정
+	 * 관리자 : 모든 계정
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@PutMapping("{encMemberNo}/update")
 	public ResponseEntity<Void> updateMemberBasicInfo(MemberVO.Update member,
 			@PathVariable String encMemberNo) throws Exception{
@@ -78,14 +82,17 @@ public class MemberApiController {
 	
 	/**
 	 * 권한 수정
+	 * 
 	 * 관리자 : 본인 계정 권한 수정 불가능, 관리자 권한 접근 불가능
 	 * 최고 관리자 : 본인 계정 권한 수정 불가능
-	 * @return : 200 정상, 403 권한 없음
 	 */
 	@PutMapping("{encMemberNo}/update/role")
-	public ResponseEntity<Void> updateMemberRole(@NotNull RoleEnum role,
+	public ResponseEntity<Void> updateMemberRole(
+			@NotNull RoleEnum role,
+			@PathVariable String encMemberNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable String encMemberNo) throws Exception{
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
+			) throws Exception{
 		
 		// 피수정 회원 식별번호
 		int memberNo = cryptoComponent.decrypt(encMemberNo);
@@ -94,26 +101,24 @@ public class MemberApiController {
 		int myMemberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// 최고 관리자 권한은 죽었다 깨어나도 떽! 이야.
-		if(role==RoleEnum.SUPER_ADMIN) {
+		if(role == RoleEnum.SUPER_ADMIN) {
 			
 			log.warn("최고 관리자 권한 생성 시도 발견 memberNo : "+myMemberNo);
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+			throw new CustomException(ErrorCodeEnum.CANNOT_CREATE_SUPER_ADMIN);
 		}
 		
 		// 감히 어딜 관리자 따위가 새로운 관리자를 만드려 하는가
-		if(role==RoleEnum.ADMIN
-				&& !userDetails.getAuthorities().stream()
-				.anyMatch(a -> a.getAuthority().equals(RoleEnum.SUPER_ADMIN.getPrefix()))) {
+		if(role == RoleEnum.ADMIN && isAdmin) {
 			
 			log.warn("관리자 권한 생성 시도 발견 memberNo : "+myMemberNo);
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+			throw new CustomException(ErrorCodeEnum.CANNOT_CREATE_ADMIN);
 		}
 		
 		// 자추는 추하지;;
-		if(myMemberNo==memberNo) {
+		if(myMemberNo == memberNo) {
 			
 			log.warn("자신의 권한을 바꾸려 시도합니다 memberNo : "+myMemberNo);
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+			throw new CustomException(ErrorCodeEnum.CANNOT_CHANGE_MY_ROLE);
 		}
 		
 		memberService.updateMemberRole(memberNo, role);
@@ -124,14 +129,18 @@ public class MemberApiController {
 	
 	/**
 	 * 상태값 수정
-	 * 최고 관리자 상태값 수정 불가
+	 * 
 	 * 관리자 : 본인 계정 수정 불가
-	 * @return : 200 정상, 403 권한 없음
+	 * 
+	 * 최고 관리자 상태값 수정 불가
 	 */
 	@PutMapping("{encMemberNo}/update/status")
-	public ResponseEntity<Void> updateMemberBasicInfo(@NotNull MemberStatusEnum status,
+	public ResponseEntity<Void> updateMemberBasicInfo(
+			@NotNull MemberStatusEnum status,
+			@PathVariable String encMemberNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
-			@PathVariable String encMemberNo) throws Exception{
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin
+			) throws Exception{
 		
 		// 피수정자 회원 식별번호 추출
 		int memberNo = cryptoComponent.decrypt(encMemberNo);
@@ -140,13 +149,9 @@ public class MemberApiController {
 		int myMemberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// 관리자 계정이면 본인 계정 수정 불가능
-		if(userDetails.getAuthorities().stream()
-		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
-			
-			if(myMemberNo==memberNo) {
-				log.warn("관리자가 자신의 계정을 수정하려 시도중입니다. memberNo : "+myMemberNo);
-				throw new ResponseStatusException(HttpStatus.FORBIDDEN);
-			}
+		if(isAdmin && myMemberNo == memberNo) {
+			log.warn("관리자가 자신의 상태값을 수정하려 시도중입니다. memberNo : "+myMemberNo);
+			throw new CustomException(ErrorCodeEnum.CANNOT_UPDATE_MY_STATUS);
 		}
 		
 		// 실시!

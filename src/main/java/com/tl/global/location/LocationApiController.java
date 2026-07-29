@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.tl.global.api.GeocodingService;
+import com.tl.global.security.role.CanAccess;
+import com.tl.global.security.role.RoleEnum;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,12 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class LocationApiController {
-	private final LocationService locationService;
 	private final GeocodingService geocodingService;
 	
 	/**
 	 * 지오코딩
+	 * 
+	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@GetMapping("geocoding")
 	public ResponseEntity<LocationVO.Detail> getCoordinate(
 			@RequestParam String address){

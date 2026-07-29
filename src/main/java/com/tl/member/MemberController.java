@@ -1,6 +1,6 @@
 package com.tl.member;
 
-import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,12 +12,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.global.common.SearchResultVO;
+import com.tl.global.exception.CustomException;
+import com.tl.global.exception.ErrorCodeEnum;
 import com.tl.global.security.CryptoComponent;
 import com.tl.global.security.CustomUserDetails;
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.CanAccess;
+import com.tl.global.security.role.HasRole;
+import com.tl.global.security.role.RoleEnum;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -44,7 +47,6 @@ public class MemberController {
 	
 	/**
 	 * 회원 가입 페이지로 가세요라
-	 * @return 회원가입 페이지
 	 */
 	@GetMapping("/join")
 	public String goJoin(Model model){
@@ -54,9 +56,7 @@ public class MemberController {
 	}
 	
 	/**
-	 * 
-	 * BindingResult : @Valid 뒤에 붙여나와 오류 발생 시 결과 저장
-	 * @return 실패하면 기존 페이지, 성공하면 메인화면
+	 * 회원 가입 시도
 	 */
 	@PostMapping("/join")
 	public String join(@Valid MemberVO.Join memberJoin
@@ -77,11 +77,14 @@ public class MemberController {
 
 	/**
 	 * 회원 목록 페이지로
+	 * 
 	 * 관리자
 	 */
+	@CanAccess(RoleEnum.ADMIN)
 	@GetMapping("")
 	public String getList(Model model) throws Exception {
 		
+		// thymeleaf에서 th:object로 받아갈 빈 객체 보내기
 		MemberVO.Search search = new MemberVO.Search();
 		model.addAttribute("memberSearch", search);
 		
@@ -94,8 +97,10 @@ public class MemberController {
 	
 	/**
 	 * 회원 상세 정보 보기
+	 * 
 	 * 모든 회원
 	 */
+	@PreAuthorize("isAuthenticated()")
 	@GetMapping({"/myinfo","/{encMemberNo}"})
 	public String myInfo(@PathVariable(required = false) String encMemberNo,
 			@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -124,21 +129,23 @@ public class MemberController {
 	
 	/**
 	 * 계정 삭제
+	 * 
 	 * 관리자를 제외한 모든 권한
 	 */
 	@PostMapping("/delete")
-	public String deleteMember(@AuthenticationPrincipal CustomUserDetails userDetails,
-			HttpServletRequest request, HttpServletResponse response) throws Exception {
+	public String deleteMember(
+			@AuthenticationPrincipal CustomUserDetails userDetails,
+			@HasRole(RoleEnum.ADMIN) boolean isAdmin,
+			HttpServletRequest request,
+			HttpServletResponse response) throws Exception {
 
 		// 누구세요
 		int memberNo = cryptoComponent.decrypt(userDetails.getEncMemberNo());
 		
 		// 관리자 계정은 탈퇴가 안 되셔요
-		if(userDetails.getAuthorities().stream()
-		        .anyMatch(a -> a.getAuthority().equals(RoleEnum.ADMIN.getPrefix()))) {
-			
+		if(isAdmin) {
 			log.warn("관리자가 자신의 계정을 탈퇴하려 합니다. memberNo : "+memberNo);
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+			throw new CustomException(ErrorCodeEnum.CANNOT_DELETE_ADMIN_ACCOUNT);
 		}
 		
 		// 가세요

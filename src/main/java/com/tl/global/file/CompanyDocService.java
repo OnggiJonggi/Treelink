@@ -4,10 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.company.CompanyStatusEnum;
 import com.tl.global.exception.CustomException;
@@ -37,9 +35,9 @@ public class CompanyDocService {
 	@Transactional
 	public void insert(HandOver request) throws Exception {
 		
-		// docType이 LOGO(회사 로고, 다른 곳에서 업로드받음)이면 안돼요
+		// docType이 LOGO(업체 로고, 다른 곳에서 업로드받음)이면 안돼요
 		if(request.getDocType().equals(DocTypeEnum.LOGO.name()))
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+			throw new CustomException(ErrorCodeEnum.DOC_TYPE_FORBIDDEN);
 		
 		// 파일 이름 내놔
 		String originalName = request.getFile().getOriginalName();
@@ -150,11 +148,11 @@ public class CompanyDocService {
 			oldHistory.setActionBy(memberNo);
 			
 			int result1 = fileMapper.insertHistory(oldHistory);
-			if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+			if(result1==0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_FILE_HISTORY);
 			
 			// 지워.
 			int result2 = companyDocMapper.deleteLogo(oldHistory.getFileNo());
-			if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+			if(result2==0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_FILE_HISTORY);
 		}
 		
 		// 저장

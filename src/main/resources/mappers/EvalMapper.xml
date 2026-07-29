@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.tl.company.EvalMapper">
+<mapper namespace="com.tl.company.eval.EvalMapper">
 
   <resultMap id="EvalDetailMap" type="EvalDetail" autoMapping="true">
     <id property="evaluationNo" column="EVALUATION_NO"/>

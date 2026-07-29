@@ -2,9 +2,7 @@ package com.tl.global.file;
 
 import java.util.regex.Pattern;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
@@ -41,7 +39,7 @@ public class EvalDocService {
 		// 메모 이상하면 가세요라
 		if(memo == null
 				|| !Pattern.matches(FileRegexp.EVAL_MEMO, memo))
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
+			throw new CustomException(ErrorCodeEnum.FILE_FORBIDDEN);
 		
 		// 저장
 		EvalDocVO.Insert insert = new EvalDocVO.Insert();

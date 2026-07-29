@@ -6,13 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>오류!</title>
     <th:block th:replace="~{common/fragment :: common}"></th:block>
-    <!--
-    <link rel="stylesheet" th:href="@{/css/common.css}">
-    -->
+    <link rel="stylesheet" th:href="@{/css/common/error.css}">
 </head>
 
 <body>
-    404
+    <div class="error-wrapper">
+        <div class="error-card">
+            <div class="error-icon-wrap">
+                <i data-lucide="search-x" class="error-icon"></i>
+            </div>
+
+            <div class="error-code">
+                404
+            </div>
+            <div class="error-title">
+                페이지를 찾을 수 없습니다
+            </div>
+            <p class="error-desc">
+                요청하신 페이지가 존재하지 않거나 이동되었습니다.
+            </p>
+
+            <div class="error-btn-group">
+                <button type="button" id="btnBack" class="btn-error">
+                    <i data-lucide="arrow-left" class="error-icon-sm"></i>
+                    이전 페이지로
+                </button>
+                <a th:href="@{/}" class="btn-error btn-error--primary">
+                    <i data-lucide="home" class="error-icon-sm"></i>
+                    홈페이지로 이동
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.serverStatus = /*[[${status}]]*/ 0;
+        window.serverError = /*[[${error}]]*/ '';
+        window.serverMessage = /*[[${message}]]*/ '';
+        window.serverPath = /*[[${path}]]*/ '';
+        /*]]>*/
+    </script>
+
+    <script th:src="@{/js/common/error.js}"></script>
+    <script>lucide.createIcons();</script>
 </body>
 
 </html>

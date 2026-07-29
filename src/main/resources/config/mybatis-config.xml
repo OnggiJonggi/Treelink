@@ -34,12 +34,12 @@
         <typeAlias type="com.tl.company.ManagementVO$Insert" alias="ManagementInsert"/>
         
         <!-- Eval -->
-        <typeAlias type="com.tl.company.EvalVO$Detail" alias="EvalDetail"/>
-        <typeAlias type="com.tl.company.EvalVO$ScoreDetail" alias="EvalScoreDetail"/>
-        <typeAlias type="com.tl.company.EvalVO$HistoryDetail" alias="EvalHistoryDetail"/>
-        <typeAlias type="com.tl.company.EvalVO$Insert" alias="EvalInsert"/>
-        <typeAlias type="com.tl.company.EvalVO$InsertScore" alias="EvalInsertScore"/>
-        <typeAlias type="com.tl.company.EvalVO$Search" alias="EvalSearch"/>
+        <typeAlias type="com.tl.company.eval.EvalVO$Detail" alias="EvalDetail"/>
+        <typeAlias type="com.tl.company.eval.EvalVO$ScoreDetail" alias="EvalScoreDetail"/>
+        <typeAlias type="com.tl.company.eval.EvalVO$HistoryDetail" alias="EvalHistoryDetail"/>
+        <typeAlias type="com.tl.company.eval.EvalVO$Insert" alias="EvalInsert"/>
+        <typeAlias type="com.tl.company.eval.EvalVO$InsertScore" alias="EvalInsertScore"/>
+        <typeAlias type="com.tl.company.eval.EvalVO$Search" alias="EvalSearch"/>
 
         <!-- CompanyDoc -->
         <typeAlias type="com.tl.global.file.CompanyDocVO$Insert" alias="CompanyDocInsert"/>

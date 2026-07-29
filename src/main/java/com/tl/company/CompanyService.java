@@ -62,19 +62,19 @@ public class CompanyService {
 		
 		// 오류!
 		if(result1 == 0)
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+			throw new CustomException(ErrorCodeEnum.FAILED_CREATE_COMPANY);
 		
 		
 		// 주 종목 등록
 		if(companyRegistor.getOption() != null && !companyRegistor.getOption().isEmpty()) {
 			
 			int result2 = companyMapper.insertCompanySpecialty(
-					companyRegistor.getCompanyNo()
-					,companyRegistor.getOption()
-					,companyRegistor.getEtcMemo());
+					companyRegistor.getCompanyNo(),
+					companyRegistor.getOption(),
+					companyRegistor.getEtcMemo());
 			
 			if(result2 == 0)
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+				throw new CustomException(ErrorCodeEnum.FAILED_CREATE_COMPANY_SPECIALTY);
 		}
 		
 		// 업체 식별번호 반환
@@ -82,39 +82,29 @@ public class CompanyService {
 	}
 
 	/**
-	 * 회사 기본 정보 조회
-	 * @param companyNo
-	 * @return 회사 기본 정보
+	 * 업체 기본 정보 조회
 	 */
 	public CompanyVO.Detail getCompanyBasicInfo(int companyNo) {
-		
 		CompanyVO.Detail result = companyMapper.selectCompanyDetail(companyNo);
-		
-		if(result==null) throw new CustomException(ErrorCodeEnum.COMPANY_NOT_FOUND);
-		
 		return result;
 	}
 
 
 	/**
-	 * 회사 기본정보 업데이트
-	 * @param company
+	 * 업체 기본정보 업데이트
 	 */
 	@Transactional
 	public void updateCompany(CompanyVO.Registor company) {
 		
-		// 기본정보 업데이트 및 회사 식별번호 추출
+		// 기본정보 업데이트
 		int result1 = companyMapper.updateCompany(company);
-		
-		// 오류!
-		if(result1 == 0)
-			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result1 == 0) throw new CustomException(ErrorCodeEnum.FAILED_UPDATE_COMPANY);
 		
 		// 주 종목 삭제
 		companyMapper.deleteCompanySpecialty(company.getCompanyNo());
 		
 		// 갈아치울 주 종목이 있으면 갈아버려
-		if(company.getOption()!=null && !company.getOption().isEmpty()) {
+		if(company.getOption() != null && !company.getOption().isEmpty()) {
 			
 			// 주 종목 새로 삽입
 			int result3 = companyMapper.insertCompanySpecialty(
@@ -123,29 +113,27 @@ public class CompanyService {
 					company.getEtcMemo());
 			
 			// 오류!
-			if(result3 == 0)
-				throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+			if(result3 == 0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_COMPANY_SPECIALTY);
 		}
 	}
 
 
 	/**
-	 * 회사 소개문 보기
-	 * @param status 
+	 * 업체 소개문 보기
 	 */
 	public String getIntro(int companyNo, CompanyStatusEnum status) {
-		
 		String intro = companyMapper.selectIntro(companyNo, status);
-		
 		return intro;
 	}
 
 
 	/**
-	 * 회사 소개문 생성 / 수정
+	 * 업체 소개문 생성 / 수정
 	 * 
-	 * summernote로 작성한 내용 소독
-	 * FILE_HISTORY에서 ACTIVE상태, 
+	 * 1. summernote로 작성한 내용 소독
+	 * 2. COMPANY.INTRO에 반영
+	 * 3. 소개문에서 이미지 파일 이름 추출
+	 * 4. 사용하지 않은 이미지 파일 미사용 로그 생성
 	 */
 	@Transactional
 	public void updateIntro(String intro, int companyNo, int memberNo) {
@@ -176,11 +164,9 @@ public class CompanyService {
 			int result1 = companyDocMapper.deleteUnusedIntroImage(fileNo);
 			
 			// 비활성 대상 파일과 비활성화 한 파일 수가 같지 않으면 오류!
-			if(result1 != fileNo.size()) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-			
+			if(result1 != fileNo.size()) throw new CustomException(ErrorCodeEnum.FAILED_DELETE_UNUSED_INTRO_IMAGAE);
 			
 			// FILE_HISTORY에 미사용 로그 추가
-			int result2 = 0;
 			for(FileInfoVO.History item : unusedIntroImage) {
 				item.setFileNo(null);
 				item.setActionBy(memberNo);
@@ -190,16 +176,9 @@ public class CompanyService {
 				// 시퀀스 + insert all 혹은 foreach + insert는 오류 발생
 				// 그러니 개별 행 삽입 요청
 				int result3 = fileMapper.insertHistory(item);
-				if(result3 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-				
-				result2 ++;
+				if(result3 == 0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_FILE_HISTORY);
 			}
-					
-			if(result2 != fileNo.size()) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-			
 		}
-		
-		
 	}
 	
 	/**
@@ -220,11 +199,11 @@ public class CompanyService {
 		
 		// LOCATION 테이블 삽입
 		int result1 = locationMapper.insert(companyLocation);
-		if(result1 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		if(result1 == 0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_LOCATION);
 		
 		// COMPANY_LOCATION 테이블 삽입
 		int result2 = companyMapper.insertLocation(companyLocation);
-		if(result2 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		if(result2 == 0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_COMPANY_LOCATION);
 		
 	}
 
@@ -236,11 +215,11 @@ public class CompanyService {
 		
 		// LOCATION 테이블 삭제
 		int result1 = companyMapper.deleteLocation(companyNo, locationNo);
-		if(result1 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		if(result1 == 0) throw new CustomException(ErrorCodeEnum.FAILED_DELETE_LOCATION);
 		
 		// COMPANY_LOCATION 테이블 삭제
 		int result2 = locationMapper.delete(locationNo);
-		if(result2 == 0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR	);
+		if(result2 == 0) throw new CustomException(ErrorCodeEnum.FAILED_DELETE_COMPANY_LOCATION);
 	}
 
 
@@ -277,10 +256,10 @@ public class CompanyService {
 	public void insertManagement(ManagementVO.Insert insert) {
 		
 		int result1 = locationMapper.insert(insert.getLocation());
-		if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result1==0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_LOCATION);
 		
 		int result2 = companyMapper.insertManagement(insert);
-		if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result2==0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_COMPANY_MANAGEMNET);
 	}
 	
 	/**
@@ -296,12 +275,12 @@ public class CompanyService {
 		 * MANAGEMENT_STATUS 행도 같이 날라감
 		 */
 		int result1 = companyMapper.deleteLocationByCompanyNo(insert.getCompanyNo(), locationNo);
-		if(result1==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result1==0) throw new CustomException(ErrorCodeEnum.FAILED_DELETE_LOCATION);
 		
 		int result2 = locationMapper.insert(insert.getLocation());
-		if(result2==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result2==0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_LOCATION);
 	
 		int result3 = companyMapper.insertManagement(insert);
-		if(result3==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result3==0) throw new CustomException(ErrorCodeEnum.FAILED_CREATE_COMPANY_MANAGEMNET);
 	}
 }

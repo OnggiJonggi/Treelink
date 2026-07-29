@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tl.global.common.SearchPageVO;
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.RoleEnum;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;

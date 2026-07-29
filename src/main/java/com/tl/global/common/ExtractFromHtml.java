@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class ExtractFromHtml {
 
 	/**
-	 * 회사 소개에서 이미지 이름 추출
+	 * 업체 소개에서 이미지 이름 추출
 	 */
 	public List<String> fileNameFromIntro(String intro) {
 		

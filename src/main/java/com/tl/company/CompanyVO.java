@@ -37,8 +37,8 @@ public class CompanyVO {
 		@Pattern(regexp = CompanyRegexp.BUSINESS_NO_REGEXP, message = "사업자 번호가 이상해요")
 		private String businessNo; // 사업자 등록번호. 하이픈 없이 숫자만.
 
-		@NotBlank(message = "회사 이름이 뭐에요")
-		@Pattern(regexp = CompanyRegexp.COMPANY_NAME_REGEXP, message = "회사 이름이 이상해요")
+		@NotBlank(message = "업체 이름이 뭐에요")
+		@Pattern(regexp = CompanyRegexp.COMPANY_NAME_REGEXP, message = "업체 이름이 이상해요")
 		private String companyName;
 
 		@NotBlank(message = "대표 이름이 뭐에요")

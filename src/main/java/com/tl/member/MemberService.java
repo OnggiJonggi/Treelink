@@ -2,18 +2,16 @@ package com.tl.member;
 
 import java.util.List;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import com.tl.global.common.SanitizeComponent;
 import com.tl.global.common.SearchResultVO;
 import com.tl.global.exception.CustomException;
 import com.tl.global.exception.ErrorCodeEnum;
 import com.tl.global.security.CryptoComponent;
-import com.tl.global.security.RoleEnum;
+import com.tl.global.security.role.RoleEnum;
 
 import lombok.RequiredArgsConstructor;
 
@@ -116,21 +114,27 @@ public class MemberService{
 		if(memberMapper.selectUpdatedNickname(member.getMemberNo(), member.getNickname()) > 0)
 			throw new CustomException(ErrorCodeEnum.NICKNAME_IS_DUPLICATED);
 		
-		// 비번 암호화
-		if(member.getUserPwd()!=null
-				&& !member.getUserPwd().isEmpty())
+		// 비번 바뀌었으면 암호화
+		if(member.getUserPwd() != null && !member.getUserPwd().isEmpty())
 			member.setUserPwd(passwordEncoder.encode(member.getUserPwd()));
 
 		int result = memberMapper.updateMember(member);
-		if(result==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result==0) throw new CustomException(ErrorCodeEnum.FAILED_UPDATE_MEMBER);
 	}
 
 	/**
 	 * 회원 권한 수정 
 	 */
+	@Transactional
 	public void updateMemberRole(int memberNo, RoleEnum role) {
-		int result = memberMapper.updateRole(memberNo, role);
-		if(result==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		
+		// 권한 지워버려
+		int deleteResult = memberMapper.deleteRole(memberNo);
+		if(deleteResult==0) throw new CustomException(ErrorCodeEnum.FAILED_DELETE_ROLE);
+		
+		// 권한 생성하기
+		int result = memberMapper.insertRole(memberNo, role);
+		if(result==0) throw new CustomException(ErrorCodeEnum.FAILED_GRANT_ROLE);
 	}
 
 	/**
@@ -138,7 +142,7 @@ public class MemberService{
 	 */
 	public void updateMemberStatus(int memberNo, MemberStatusEnum status) {
 		int result = memberMapper.updateStatus(memberNo,status);
-		if(result==0) throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+		if(result==0) throw new CustomException(ErrorCodeEnum.FAILED_UPDATE_MEMBER);
 	}
 
 	/**

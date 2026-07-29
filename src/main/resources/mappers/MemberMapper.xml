@@ -182,23 +182,24 @@
 		where MEMBER_NO = #{memberNo}
 	</update>
 
-
-	<update id="updateRole">
-		update MEMBER_ROLE
-		set ROLE_NO = (
-			select ROLE_NO
-			from ROLE_INFO
-			where NAME = 'ROLE_' || #{role}
-		)
-		where MEMBER_NO = #{memberNo}
-		and not exists (
+	<delete id="deleteRole" parameterType="_int">
+		delete from MEMBER_ROLE MR
+		where MR.MEMBER_NO = #{memberNo}
+		and not exists(
 			select 1
-			from MEMBER_ROLE MR
-			join ROLE_INFO RI on RI.ROLE_NO = MR.ROLE_NO
-			where RI.NAME = 'ROLE_SUPER_ADMIN'
-			and MR.MEMBER_NO = #{memberNo}
-		) --최고 관리자 권한 수정 불가
-	</update>
+			from MEMBER_ROLE MR2
+			join ROLE_INFO RI2 on(RI2.ROLE_NO = MR2.ROLE_NO)
+			where RI2.NAME = 'ROLE_SUPER_ADMIN'
+			and MR2.MEMBER_NO = #{memberNo}
+		)
+	</delete>
+
+	<insert id="insertRole">
+		insert into MEMBER_ROLE(MEMBER_NO, ROLE_NO)
+		select #{memberNo}, ROLE_NO
+		from ROLE_INFO
+		where NAME = 'ROLE_' || #{role}
+	</insert>
 
 
 	<update id="updateStatus">

@@ -262,10 +262,10 @@
   function validateMainForm() {
     let ok = true;
 
-    /* 회사 이름 */
+    /* 업체 이름 */
     const companyEl = document.getElementById('companyName');
     if (!REG.COMPANY_NAME.test(companyEl.value.trim())) {
-      markInvalid(companyEl, 'err-companyName', '회사 이름은 한글·영문·숫자 1~100자여야 해요');
+      markInvalid(companyEl, 'err-companyName', '업체 이름은 한글·영문·숫자 1~100자여야 해요');
       ok = false;
     } else {
       markValid(companyEl, 'err-companyName');

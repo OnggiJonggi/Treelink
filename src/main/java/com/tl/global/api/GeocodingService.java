@@ -8,13 +8,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.tl.global.exception.CustomException;
+import com.tl.global.exception.ErrorCodeEnum;
 import com.tl.global.location.LocationVO;
 import com.tl.global.location.LocationVO.GeocodingApiResponse;
 import com.tl.global.location.LocationVO.GeocodingApiResponseWrapper2;
@@ -61,10 +61,10 @@ public class GeocodingService {
         		LocationVO.GeocodingApiResponseWrapper1.class);
         
         if(response.getBody() == null)
-        	throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        	throw new CustomException(ErrorCodeEnum.GEOCODING_API_NOT_WORKING);
         
         if (response.getBody().getMeta().getTotal_count() == 0)
-        	throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        	throw new CustomException(ErrorCodeEnum.GEOCODING_NOT_FOUND);
         
         GeocodingApiResponseWrapper2 doc = response.getBody().getDocuments().get(0);
         
