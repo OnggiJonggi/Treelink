@@ -70,7 +70,7 @@ public class CompanyDocService {
 		fileComponent.save(handOver,
 				fileNo ->{
 					CompanyDocVO.Insert insert = CompanyDocVO.Insert.builder()
-							.companyNo(request.getMemberNo())
+							.companyNo(request.getCompanyNo())
 							.fileNo(fileNo)
 							.docType(request.getDocType())
 							.expireOn(request.getExpireOn())
